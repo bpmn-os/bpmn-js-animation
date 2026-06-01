@@ -1,13 +1,8 @@
 # bpmn-js-animation
 
-API-driven token animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
+API-driven animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 
-Render colored tokens on a BPMN diagram, move them along sequence flows with an
-animation, split them at gateways, and make them clickable — all driven by
-**your** code. There is **no BPMN simulation engine**: you decide when tokens
-are created, where they move, and when they disappear.
-
-> The token-along-connection animator (`lib/Animation.js`) is vendored and
+> The token animation (`lib/Animation.js`) is vendored and
 > adapted from [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation)
 > (MIT). Everything else is new.
 
