@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bpmn-js-token-animation — playground</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      padding: 8px; border-bottom: 1px solid #ccc; background: #fafafa;
+    }
+    #toolbar button {
+      padding: 5px 9px; border: 1px solid #bbb; border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 13px;
+    }
+    #toolbar button:hover { background: #eee; }
+    #toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
+    #main { flex: 1; display: flex; min-height: 0; }
+    #canvas { flex: 1; }
+    #log {
+      width: 280px; border-left: 1px solid #ccc; padding: 8px;
+      overflow: auto; font-family: monospace; font-size: 12px; background: #fcfcfc;
+    }
+    #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <button id="create-a">Create A @ Start</button>
+      <button id="create-b">Create B @ Start</button>
+      <span class="sep"></span>
+      <button id="a-1">A → Task 1</button>
+      <button id="a-2">A → Gateway</button>
+      <button id="rewind">A ← Gateway</button>
+      <button id="split">A split → Task 2 + 3</button>
+      <button id="join">Gateway ← Task 2, Task 3</button>
+      <span class="sep"></span>
+      <button id="spawn">Spawn 5 @ Gateway</button>
+      <button id="remove-a">Remove A</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div id="main">
+      <div id="canvas"></div>
+      <div id="log"></div>
+    </div>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
