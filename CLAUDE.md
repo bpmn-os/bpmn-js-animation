@@ -30,37 +30,40 @@ color per identity and pass it in; the package never assigns colors itself.
 A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two services:
 
 - **`tokens`** (`lib/Tokens.js`) — the public API and the resting-token renderer.
-  - **Token** = `{ node, label, color }`. Identity is the `(node, label)` pair;
-    `color` is any CSS color string (applied directly — no parsing).
-  - State maps: `_tokens` (`"node|label" -> Token`), `_nodeTokens`
-    (`node -> Set<Token>`, render set), `_nodeOverlays` (`node -> overlayId`),
-    `_activeAnimations` (`Token -> animation`).
-  - **API:** `createToken(node,label,color)`, `sendToken([{node,label,flow},…])`
-    → `Promise<Token[]>`, `removeToken(node,label)`, `getTokens(filter?)`,
-    `clear`, `setDuration`.
-  - **`sendToken(transitions)`** takes `[{node,label,flow},…]`. It resolves all transitions first
-    (an invalid one rejects with no side effects), groups them by source `(node,label)`
-    so a shared source is **consumed once and forks** (split), then for each flow
-    spawns a **branch**. Different sources whose flows land on one node **merge**
-    (join — via the `_addToNode`/replace dedupe). `_resolveFlow` accepts a flow that is
-    **outgoing** from the node (forward → target, waypoints as-is) or **incoming**
-    (reverse → source, waypoints reversed — e.g. rewinding); the animator is handed
-    `{ waypoints }` so direction is just the order. Branches keep the source's
-    `label`+`color`. Identity is committed **optimistically at depart** (the branch is
-    registered in `_tokens` at its destination immediately, so it's addressable
-    there during the cosmetic flight); the resting badge is added on landing.
-  - **Replace/join invariant:** one token per `(node, label)`. `createToken` on an
-    occupied pair replaces; a `sendToken` landing on an occupied pair replaces
-    (`_addToNode`/`_removeFromNode` dedupe by `label`). This is how joins collapse.
-  - **Fast events:** `sendToken` calls `_settle(token)` first — if the token is
-    mid-flight it `finish()`es immediately (lands now). So rapid sends never overlap.
-    There is no public "settle"/"arrive" call — settling is internal.
-  - **Rendering:** one overlay per node (`overlays.add`, `bts-token-count`) holding a
-    `.bts-token-count` dot per token (`background: color`, `title = label` for hover,
-    `data-label`/`data-node-id`). Capped at `config.tokenAnimation.maxVisible`
-    (default 3); beyond `max+1`, shows `max` dots + a `.bts-overflow` `+N` marker. A
-    delegated click fires `token.click {node,label}` (a dot) or
-    `token.overflow.click {node,hidden}` (the marker).
+  - **Token** = `{ node, label, color, state }`. `state = { position, sequenceFlow, bounce }`
+    is a pure visual descriptor (no lifecycle meaning baked in): `position` is a 3×3
+    anchor (`{above|center|below}-{left|middle|right}`), `sequenceFlow` rests the dot
+    where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue.
+  - **Identity = `(node, label, state.sequenceFlow)`** — key `` `node|label|sequenceFlow` ``
+    (empty flow for anchor tokens). The rest flow is in the key so same-label tokens can
+    **coexist** on distinct flows at one node (branches piling up at a merging gateway);
+    anchor tokens stay one-per-`(node,label)`.
+  - State maps: `_tokens` (`key -> Token`), `_nodeTokens` (`node -> Set<Token>`, render
+    set, deduped by `identityOf` = `label|flow`), `_nodeOverlays` (`node -> overlayId[]`,
+    one per location cluster), `_activeAnimations` (`Token -> animation`).
+  - **API:** `createToken(node,label,color,state?)`,
+    `sendToken([{node,label,sequenceFlow,state?},…]) → Promise<Token[]>`,
+    `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
+    `getTokens(filter?)`, `clear`, `setDuration`. `setState`/`removeToken` take a trailing
+    `sequenceFlow` to disambiguate; `setState` is a **partial merge** and rekeys (merging)
+    when it changes the rest flow/position — that's how a join completes.
+  - **`sendToken(transitions)`**: resolve all first (invalid → reject, no side effects),
+    group by source token (looked up by `(node,label)`, **rejects if ambiguous**), consume
+    once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
+    incoming=reverse (reversed waypoints); the animator gets `{ waypoints }` so direction
+    is just the order. Branches keep the source's `color`/`label` and take their entry's
+    landing `state`. Identity committed **optimistically at depart**; resting badge added
+    on landing.
+  - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
+    `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
+  - **Rendering:** tokens at a node are grouped into **location clusters** (by anchor
+    `position` or rest `sequenceFlow`); each cluster is its own overlay (`overlays.add`,
+    `bts-token-count`) positioned at the computed point (`_clusterPoint`: anchor fraction
+    of bounds, or the flow's node-end waypoint). Per dot: `background: color`,
+    `title = label`, `.bts-bounce` when `bounce`, `data-position`/`-sequence-flow`/`-bounce`.
+    Capped per cluster at `config.tokenAnimation.maxVisible` (default 3; `max+1` shown
+    rather than a "+1" marker). Delegated click fires `token.click {node,label,sequenceFlow}`
+    or `token.overflow.click {node,hidden}`.
 - **`animation`** (`lib/Animation.js`) — the low-level animator, **vendored from
   bpmn-js-token-simulation** with the engine coupling removed (no `scopeFilter`,
   no simulator/scope events). Moves an SVG dot along `connection.waypoints` with
@@ -75,8 +78,11 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
     (`token.color`); no label text (labels are hover-only on resting badges).
 
 ### Key invariants
-- **`(node, label)` is unique.** Element ids are unique within a diagram, so no
-  process id is needed; `label` distinguishes tokens sharing a node.
+- **Identity = `(node, label, sequenceFlow)`.** Element ids are unique within a
+  diagram (no process id needed); the rest flow lets same-label tokens coexist on
+  distinct flows at one node, while anchor tokens stay one-per-`(node,label)`.
+- **`state` is visual-only.** The library bakes in no lifecycle meaning (arrived/
+  entered/completed and the event/gateway placement rules are caller convention).
 - **Color is caller-supplied and carried** by the token; splits inherit it.
 - **Engine-free.** Do not reintroduce a simulator dependency. `Animation` listens
   only to `diagram.destroy`; `Tokens` to `diagram.clear`/`diagram.destroy`.

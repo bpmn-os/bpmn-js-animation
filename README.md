@@ -38,69 +38,84 @@ const tokens = viewer.get('tokens');
 tokens.createToken('StartEvent_1', 'order-42', 'tomato');
 
 // move it along a sequence flow (animates, then rests at the flow's target)
-await tokens.sendToken([ { node: 'StartEvent_1', label: 'order-42', flow: 'Flow_1' } ]);
+await tokens.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]);
 
 // split at a diverging gateway — same source, several flows; one copy per flow
 await tokens.sendToken([
-  { node: 'Gateway_1', label: 'order-42', flow: 'Flow_3' },
-  { node: 'Gateway_1', label: 'order-42', flow: 'Flow_4' }
+  { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_3' },
+  { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_4' }
 ]);
 
-// join / rewind a split — several sources whose flows land on one node (incoming
-// flows animate in reverse); the arrivals merge into one token
-await tokens.sendToken([
-  { node: 'Task_2', label: 'order-42', flow: 'Flow_3' },
-  { node: 'Task_3', label: 'order-42', flow: 'Flow_4' }
-]);
+// advance its lifecycle in place — position + bounce are your call (see below)
+tokens.setState('Task_1', 'order-42', { position: 'center-middle' });  // "entered"
+tokens.setState('Task_1', 'order-42', { bounce: true });               // needs user action
 
 // react to clicks — the host app decides what to show
-viewer.get('eventBus').on('token.click', ({ node, label }) => {
-  console.log('clicked token', label, 'at', node);
+viewer.get('eventBus').on('token.click', ({ node, label, sequenceFlow }) => {
+  console.log('clicked token', label, 'at', node, sequenceFlow ? `(on ${sequenceFlow})` : '');
 });
 
 // remove it
-tokens.removeToken('Task_2', 'order-42');
+tokens.removeToken('Task_1', 'order-42');
 ```
 
 ## Token identity & color
 
-- A token is identified by the **unique `(node, label)` pair**. `node` is a BPMN
-  element id; `label` is any string you choose (an instance id, an order number,
-  …). Element ids are unique within a diagram, so no process id is needed.
-- Placing a token where `(node, label)` already exists **replaces** it. This also
-  makes **joins** trivial: send several branch tokens (same `label`) into a join
-  node and they collapse to one.
+- A token is identified by **`(node, label, sequenceFlow?)`**. `node` is a BPMN
+  element id; `label` is any string you choose (an instance id, an order number, …);
+  `sequenceFlow` is set only when the token **rests on a flow** (see state, below).
+- Placing a token at an existing identity **replaces** it. At most one token per
+  `(node, label)` rests at an **anchor**; tokens resting on **distinct flows** can
+  **coexist** at one node — that's how branches pile up at a merging gateway. Move
+  them to a shared anchor (or remove the extras) to **merge**.
 - **`color` is required** and may be **any CSS color** — name (`tomato`), hex
-  (`#3399ff`), `rgb()/rgba()`, `hsl()/hsla()`. It's applied directly, no parsing.
-  A token carries its color, so `sendToken` keeps it and split copies inherit it.
-- Need a color? Use the **`getRandomColor()`** helper (a named export): mint one per
-  identity (e.g. per instance) and reuse it so related tokens stay consistent. The
-  package never assigns colors itself.
+  (`#3399ff`), `rgb()/rgba()`, `hsl()/hsla()`. Applied directly, no parsing; a token
+  carries its color, so `sendToken` keeps it and split copies inherit it.
+- Need a color? Use the **`getRandomColor()`** named export: mint one per identity
+  and reuse it so related tokens stay consistent. The package never assigns colors.
 
   ```javascript
   import TokenAnimationModule, { getRandomColor } from 'bpmn-js-token-animation';
-
-  const color = getRandomColor();                 // e.g. "hsl(207, 65%, 45%)"
-  tokens.createToken('StartEvent_1', 'order-42', color);
-  // reuse `color` for any other token of order-42
+  const color = getRandomColor();   // e.g. "hsl(207, 65%, 45%)"
   ```
-- Tokens carry **no other data** — just `color`. The `label` is shown on **hover**
-  (as a tooltip); the dot itself is a plain colored circle.
+- Tokens carry **no other data** — just `color` + `state`. The `label` shows on
+  **hover**; the dot is a plain colored circle.
+
+## Token state — position & bounce
+
+A token's `state` is a **pure visual descriptor**; the library has no built-in
+lifecycle semantics — *you* map your meaning onto positions.
+
+```
+state = {
+  position: '{above|center|below}-{left|middle|right}' | null,  // a 3×3 anchor on/around the node
+  sequenceFlow: '<connected sequence flow id>'         | null,  // rest where that flow meets the node
+  bounce: boolean                                               // a "user action needed" cue
+}
+```
+- `position` and `sequenceFlow` are **mutually exclusive**; `bounce` is independent.
+- Default (when omitted): `{ position: 'below-left', bounce: true }` — the familiar
+  bottom-left bouncing token.
+- A typical **caller convention** for an activity: arrived → `above-left`, entered →
+  `center-middle`, completed → `below-right`; for events/gateways the symbol is
+  centered, so use `center-right`; for a gateway *arrived*, rest on the incoming
+  flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is hard-coded.
 
 ## `tokens` API
 
 | Method | Description |
 | --- | --- |
-| `createToken(node, label, color)` | Place a token (replaces an existing one at `(node,label)`). Returns the token. |
-| `sendToken([{ node, label, flow }, …])` | Send tokens along flows; each entry takes the token at `(node, label)` and animates it along `flow`. Same-source entries = **split**; different sources landing on one node = **join**; a flow may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves a `Promise<Token[]>` when all have landed; auto-settles any in-flight source first. |
-| `removeToken(node, label)` | Remove the token, cancelling any in-flight animation. |
-| `getTokens(filter?)` | List tokens (each `{ node, label, color }`). |
+| `createToken(node, label, color, state?)` | Place a token (replaces one at the same identity). `state` defaults to below-left, bouncing. Returns the token. |
+| `sendToken([{ node, label, sequenceFlow, state? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source first; rejects if a source `(node, label)` is ambiguous. |
+| `setState(node, label, state, sequenceFlow?)` | Update state in place (partial merge — toggle `bounce` without moving, etc.). Trailing `sequenceFlow` selects which token when several rest at the node. |
+| `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |
+| `getTokens(filter?)` | List tokens (each `{ node, label, color, state }`). |
 | `clear()` | Remove all tokens. |
 | `setDuration(ms)` | Global transition duration (see below). |
 
 ### Events (on the bpmn-js `eventBus`)
 
-- `token.click` — `{ node, label }`
+- `token.click` — `{ node, label, sequenceFlow }`
 - `token.overflow.click` — `{ node, hidden }` (the `+N` marker; `hidden` is the
   list of `{ node, label }` not shown)
 

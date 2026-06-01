@@ -20,8 +20,8 @@ function tok(node, label) {
   return get('tokens').getTokens(t => t.node === node && t.label === label)[0];
 }
 
-function transition(node, label, flow) {
-  return { node, label, flow };
+function transition(node, label, sequenceFlow, state) {
+  return { node, label, sequenceFlow, state };
 }
 
 
@@ -61,7 +61,7 @@ describe('tokens', function() {
     });
 
 
-    it('replaces an existing token at the same (node, label)', function() {
+    it('replaces an existing token at the same identity', function() {
       const tokens = get('tokens');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
@@ -84,6 +84,95 @@ describe('tokens', function() {
   });
 
 
+  describe('state', function() {
+
+    it('defaults to below-left, bouncing', function() {
+      get('tokens').createToken('Task_1', 'A', 'tomato');
+
+      const dot = dots()[0];
+
+      expect(dot.dataset.position).to.equal('below-left');
+      expect(dot.dataset.bounce).to.equal('true');
+      expect(dot.classList.contains('bts-bounce')).to.be.true;
+    });
+
+
+    it('honors an explicit position and bounce', function() {
+      get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: false });
+
+      const dot = dots()[0];
+
+      expect(dot.dataset.position).to.equal('center-middle');
+      expect(dot.classList.contains('bts-bounce')).to.be.false;
+    });
+
+
+    it('rests on a sequence flow', function() {
+      get('tokens').createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+
+      const dot = dotAt('Gateway_1');
+
+      expect(dot.dataset.sequenceFlow).to.equal('Flow_3');
+      expect(dot.dataset.position).to.equal('');
+    });
+
+
+    it('renders distinct positions as separate overlays', function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'above-left' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'below-right' });
+
+      // two location clusters -> two overlay containers
+      expect(document.querySelectorAll('.bts-token-count-parent')).to.have.length(2);
+    });
+
+
+    it('rejects position and sequenceFlow together', function() {
+      expect(() => get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', sequenceFlow: 'Flow_2' }))
+        .to.throw(/mutually exclusive/);
+    });
+
+
+    it('rejects an invalid position', function() {
+      expect(() => get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'middle-center' }))
+        .to.throw(/invalid position/);
+    });
+
+
+    describe('setState (partial merge)', function() {
+
+      it('toggles bounce without moving', function() {
+        const tokens = get('tokens');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: true });
+        tokens.setState('Task_1', 'A', { bounce: false });
+
+        const t = tok('Task_1', 'A');
+
+        expect(t.state.position).to.equal('center-middle');
+        expect(t.state.bounce).to.equal(false);
+        expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
+      });
+
+
+      it('setting position clears sequenceFlow', function() {
+        const tokens = get('tokens');
+
+        tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+        tokens.setState('Gateway_1', 'A', { position: 'center-right' }, 'Flow_3');
+
+        const t = tok('Gateway_1', 'A');
+
+        expect(t.state.sequenceFlow).to.equal(null);
+        expect(t.state.position).to.equal('center-right');
+      });
+
+    });
+
+  });
+
+
   describe('sendToken', function() {
 
     it('moves a token along a single flow', async function() {
@@ -98,6 +187,18 @@ describe('tokens', function() {
       expect(tok('StartEvent_1', 'A')).to.not.exist;
       expect(dotAt('Task_1')).to.exist;
       expect(dotAt('StartEvent_1')).to.not.exist;
+    });
+
+
+    it('lands in the given state', async function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('StartEvent_1', 'A', 'tomato');
+
+      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1', { position: 'center-middle', bounce: false }) ]);
+
+      expect(tok('Task_1', 'A').state.position).to.equal('center-middle');
+      expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
     });
 
 
@@ -139,10 +240,7 @@ describe('tokens', function() {
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
-      // first transition left in flight
       const p1 = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
-
-      // a second send while p1 is still animating must settle it first
       const p2 = tokens.sendToken([ transition('Task_1', 'A', 'Flow_2') ]);
 
       const [ landed1 ] = await Promise.all([ p1, p2 ]);
@@ -168,24 +266,6 @@ describe('tokens', function() {
     });
 
 
-    it('joins several sources into one node (rewind of a split)', async function() {
-      const tokens = get('tokens');
-
-      tokens.createToken('Task_2', 'A', 'tomato');
-      tokens.createToken('Task_3', 'A', 'tomato');
-
-      // send both back along their incoming flows -> both land at Gateway_1
-      const result = await tokens.sendToken([
-        transition('Task_2', 'A', 'Flow_3'),
-        transition('Task_3', 'A', 'Flow_4')
-      ]);
-
-      expect(result.map(t => t.node)).to.eql([ 'Gateway_1', 'Gateway_1' ]);
-      expect(tokens.getTokens(t => t.label === 'A')).to.have.length(1); // merged
-      expect(tok('Gateway_1', 'A')).to.exist;
-    });
-
-
     it('rejects a flow not connected to the node', async function() {
       const tokens = get('tokens');
 
@@ -196,6 +276,74 @@ describe('tokens', function() {
 
       expect(err).to.exist;
       expect(err.message).to.match(/is not connected to/);
+    });
+
+  });
+
+
+  describe('identity (rest sequenceFlow)', function() {
+
+    it('lets same-label tokens coexist on different flows at one node', async function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Task_2', 'A', 'tomato');
+      tokens.createToken('Task_3', 'A', 'tomato');
+
+      // both arrive at the gateway resting on their own incoming flow
+      await tokens.sendToken([
+        transition('Task_2', 'A', 'Flow_3', { sequenceFlow: 'Flow_3' }),
+        transition('Task_3', 'A', 'Flow_4', { sequenceFlow: 'Flow_4' })
+      ]);
+
+      const at = tokens.getTokens(t => t.node === 'Gateway_1' && t.label === 'A');
+
+      expect(at).to.have.length(2);
+      expect(at.map(t => t.state.sequenceFlow).sort()).to.eql([ 'Flow_3', 'Flow_4' ]);
+      expect(document.querySelectorAll('.bts-token-count[data-node-id="Gateway_1"]')).to.have.length(2);
+    });
+
+
+    it('merges when both move to a shared anchor', function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+
+      expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
+
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_3');
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_4');
+
+      expect(tokens.getTokens(t => t.label === 'A')).to.have.length(1);
+    });
+
+
+    it('removeToken addresses a token by sequenceFlow', function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+
+      tokens.removeToken('Gateway_1', 'A', 'Flow_3');
+
+      const at = tokens.getTokens(t => t.label === 'A');
+
+      expect(at).to.have.length(1);
+      expect(at[0].state.sequenceFlow).to.equal('Flow_4');
+    });
+
+
+    it('rejects sendToken when the source is ambiguous', async function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+
+      let err;
+      await tokens.sendToken([ transition('Gateway_1', 'A', 'Flow_3') ]).catch(e => (err = e));
+
+      expect(err).to.exist;
+      expect(err.message).to.match(/multiple tokens/);
     });
 
   });
@@ -264,7 +412,7 @@ describe('tokens', function() {
 
   describe('events', function() {
 
-    it('fires token.click with { node, label }', function() {
+    it('fires token.click with { node, label, sequenceFlow }', function() {
       const tokens = get('tokens');
 
       let fired;
@@ -276,6 +424,7 @@ describe('tokens', function() {
       expect(fired).to.exist;
       expect(fired.node).to.equal('Task_1');
       expect(fired.label).to.equal('A');
+      expect(fired.sequenceFlow).to.equal(null);
     });
 
 

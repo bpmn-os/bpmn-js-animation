@@ -26,11 +26,15 @@
   color: var(--token-simulation-grey-darken-30, #212121);
   user-select: none;
   cursor: pointer;
-  animation: bts-jump 1s infinite;
-  animation-timing-function: ease;
   position: relative;
   top: 0;
   display: inline-block;
+}
+
+/* opt-in bounce — signals "user action needed" (state.bounce) */
+.bts-token-count.bts-bounce {
+  animation: bts-jump 1s infinite;
+  animation-timing-function: ease;
 }
 
 /* stack multiple instances resting on the same node */

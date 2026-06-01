@@ -7,37 +7,37 @@
                   targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">
     <bpmn:startEvent id="StartEvent_1">
-      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:outgoing>StartEvent_1-Task_1</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:task id="Task_1" name="Task 1">
-      <bpmn:incoming>Flow_1</bpmn:incoming>
-      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:incoming>StartEvent_1-Task_1</bpmn:incoming>
+      <bpmn:outgoing>Task_1-Gateway_1</bpmn:outgoing>
     </bpmn:task>
     <bpmn:parallelGateway id="Gateway_1">
-      <bpmn:incoming>Flow_2</bpmn:incoming>
-      <bpmn:outgoing>Flow_3</bpmn:outgoing>
-      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:incoming>Task_1-Gateway_1</bpmn:incoming>
+      <bpmn:outgoing>Gateway_1-Task_2</bpmn:outgoing>
+      <bpmn:outgoing>Gateway_1-Task_3</bpmn:outgoing>
     </bpmn:parallelGateway>
     <bpmn:task id="Task_2" name="Task 2">
-      <bpmn:incoming>Flow_3</bpmn:incoming>
-      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:incoming>Gateway_1-Task_2</bpmn:incoming>
+      <bpmn:outgoing>Task_2-EndEvent_1</bpmn:outgoing>
     </bpmn:task>
     <bpmn:task id="Task_3" name="Task 3">
-      <bpmn:incoming>Flow_4</bpmn:incoming>
-      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+      <bpmn:incoming>Gateway_1-Task_3</bpmn:incoming>
+      <bpmn:outgoing>Task_3-EndEvent_2</bpmn:outgoing>
     </bpmn:task>
     <bpmn:endEvent id="EndEvent_1">
-      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:incoming>Task_2-EndEvent_1</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_2">
-      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:incoming>Task_3-EndEvent_2</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1" />
-    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="Gateway_1" />
-    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gateway_1" targetRef="Task_2" />
-    <bpmn:sequenceFlow id="Flow_4" sourceRef="Gateway_1" targetRef="Task_3" />
-    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_2" targetRef="EndEvent_1" />
-    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_3" targetRef="EndEvent_2" />
+    <bpmn:sequenceFlow id="StartEvent_1-Task_1" sourceRef="StartEvent_1" targetRef="Task_1" />
+    <bpmn:sequenceFlow id="Task_1-Gateway_1" sourceRef="Task_1" targetRef="Gateway_1" />
+    <bpmn:sequenceFlow id="Gateway_1-Task_2" sourceRef="Gateway_1" targetRef="Task_2" />
+    <bpmn:sequenceFlow id="Gateway_1-Task_3" sourceRef="Gateway_1" targetRef="Task_3" />
+    <bpmn:sequenceFlow id="Task_2-EndEvent_1" sourceRef="Task_2" targetRef="EndEvent_1" />
+    <bpmn:sequenceFlow id="Task_3-EndEvent_2" sourceRef="Task_3" targetRef="EndEvent_2" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
@@ -62,29 +62,29 @@
       <bpmndi:BPMNShape id="EndEvent_2_di" bpmnElement="EndEvent_2">
         <dc:Bounds x="662" y="322" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+      <bpmndi:BPMNEdge id="StartEvent_1-Task_1_di" bpmnElement="StartEvent_1-Task_1">
         <di:waypoint x="188" y="240" />
         <di:waypoint x="240" y="240" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+      <bpmndi:BPMNEdge id="Task_1-Gateway_1_di" bpmnElement="Task_1-Gateway_1">
         <di:waypoint x="340" y="240" />
         <di:waypoint x="395" y="240" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+      <bpmndi:BPMNEdge id="Gateway_1-Task_2_di" bpmnElement="Gateway_1-Task_2">
         <di:waypoint x="420" y="215" />
         <di:waypoint x="420" y="160" />
         <di:waypoint x="500" y="160" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+      <bpmndi:BPMNEdge id="Gateway_1-Task_3_di" bpmnElement="Gateway_1-Task_3">
         <di:waypoint x="420" y="265" />
         <di:waypoint x="420" y="340" />
         <di:waypoint x="500" y="340" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+      <bpmndi:BPMNEdge id="Task_2-EndEvent_1_di" bpmnElement="Task_2-EndEvent_1">
         <di:waypoint x="600" y="160" />
         <di:waypoint x="662" y="160" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+      <bpmndi:BPMNEdge id="Task_3-EndEvent_2_di" bpmnElement="Task_3-EndEvent_2">
         <di:waypoint x="600" y="340" />
         <di:waypoint x="662" y="340" />
       </bpmndi:BPMNEdge>

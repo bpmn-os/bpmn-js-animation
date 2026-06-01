@@ -40,116 +40,133 @@ async function main() {
   viewer.get('canvas').zoom('fit-viewport');
 
   const tokens = viewer.get('tokens');
+  const elementRegistry = viewer.get('elementRegistry');
+  const eventBus = viewer.get('eventBus');
 
-  // poke from the browser console: tokens.createToken('Task_1', 'X', 'tomato')
   window.viewer = viewer;
   window.tokens = tokens;
 
-  viewer.get('eventBus').on('token.click', e => {
-    log(`click: { node: ${e.node}, label: ${e.label} }`);
-  });
-  viewer.get('eventBus').on('token.overflow.click', e => {
-    log(`overflow @ ${e.node}: ${e.hidden.map(h => h.label).join(', ')}`);
-  });
+  // populate the flow selectors from the diagram
+  const flowIds = elementRegistry.filter(e => e.type === 'bpmn:SequenceFlow').map(e => e.id);
+  const flowsSelect = document.querySelector('#sequenceFlow');
+  flowIds.forEach(id => flowsSelect.add(new Option(id, id)));
 
-  // track where token "A" currently is + the transitions it took, so the step buttons
-  // can send it forward and the rewind button can send it back
-  let aNode = null;
-  const aHistory = []; // [{ flow, from }]
+  let currentNode = null;
+  let currentToken = null; // { node, label, sequenceFlow }
+  let counter = 0;
 
-  // mint a color per instance once, then reuse it consistently
-  const colorA = getRandomColor();
-  const colorB = getRandomColor();
+  function renderReadouts() {
+    document.querySelector('#cur-node').textContent = currentNode || '—';
+    document.querySelector('#cur-token').textContent = currentToken
+      ? `${currentToken.label}@${currentToken.node}${currentToken.sequenceFlow ? ' on ' + currentToken.sequenceFlow : ''}`
+      : '—';
+  }
 
-  on('create-a', () => {
-    tokens.createToken('StartEvent_1', 'A', colorA);
-    aNode = 'StartEvent_1';
-    aHistory.length = 0;
-    log(`createToken(StartEvent_1, A, ${colorA})`);
-  });
+  function selectedFlows() {
+    return Array.from(document.querySelector('#sequenceFlow').selectedOptions).map(o => o.value);
+  }
 
-  on('create-b', () => {
-    tokens.createToken('StartEvent_1', 'B', colorB);
-    log(`createToken(StartEvent_1, B, ${colorB})`);
-  });
+  // state for createToken / setState: position wins; else rest on the first selected flow
+  function buildState() {
+    const position = document.querySelector('#position').value;
+    const flows = selectedFlows();
+    const state = { bounce: document.querySelector('#bounce').checked };
 
-  on('a-1', () => sendA('Flow_1', 'Task_1', 'A → Task_1'));
-  on('a-2', () => sendA('Flow_2', 'Gateway_1', 'A → Gateway'));
-
-  on('rewind', () => {
-    if (!aNode || !aHistory.length) {
-      return log('nothing to rewind');
+    if (position) {
+      state.position = position;
+    } else if (flows.length) {
+      state.sequenceFlow = flows[0];
     }
 
-    // re-send A along the flow it last arrived on; an incoming flow animates
-    // in reverse back to its source
-    const { flow, from } = aHistory.pop();
-    log(`rewind A along ${flow} (incoming flow → reverse)`);
-    tokens.sendToken([ { node: aNode, label: 'A', flow } ]).then(() => log('rewound to ' + from));
-    aNode = from;
-  });
+    return state;
+  }
 
-  on('split', () => {
-    if (!aNode) {
-      return log('move A to the gateway first');
+  // click an element -> current node (for createToken); click a token -> current token
+  eventBus.on('element.click', e => {
+    const el = e.element;
+    if (el && !el.waypoints && el.businessObject && el.type !== 'bpmn:Process' && el.parent) {
+      currentNode = el.id;
+      renderReadouts();
+      log('node: ' + el.id);
     }
-    log('split A: [Gateway_1→Flow_3, Gateway_1→Flow_4]');
-    tokens.sendToken([
-      { node: 'Gateway_1', label: 'A', flow: 'Flow_3' },
-      { node: 'Gateway_1', label: 'A', flow: 'Flow_4' }
-    ]).then(ts => log('A split ✓ → ' + ts.map(t => t.node).join(' + ')));
-    aNode = null; // A now lives at two nodes
-    aHistory.length = 0;
   });
 
-  on('join', () => {
-    // inverse of the split: two sources, incoming flows → both reverse to
-    // Gateway_1 and merge into one token
-    log('join A: [Task_2←Flow_3, Task_3←Flow_4] → Gateway_1');
-    tokens.sendToken([
-      { node: 'Task_2', label: 'A', flow: 'Flow_3' },
-      { node: 'Task_3', label: 'A', flow: 'Flow_4' }
-    ]).then(ts => log('A joined ✓ → ' + [ ...new Set(ts.map(t => t.node)) ].join(', ')));
-    aNode = 'Gateway_1'; // merged back to a single node
+  eventBus.on('token.click', e => {
+    currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null };
+    renderReadouts();
+    log(`token: ${e.label}@${e.node}${e.sequenceFlow ? ' on ' + e.sequenceFlow : ''}`);
   });
 
-  on('spawn', () => {
-    // distinct CSS color formats to prove pass-through; 5 > maxVisible(3)+1 → 3 dots + "+2"
-    const colors = [ 'tomato', '#756bb1', 'rgb(49,163,84)', 'hsl(45, 90%, 50%)', 'steelblue' ];
-    colors.forEach((c, i) => tokens.createToken('Gateway_1', 'S' + (i + 1), c));
-    log('spawned 5 @ Gateway_1 → expect 3 dots + "+2" marker');
-  });
-
-  on('remove-a', () => {
-    // A may be at several nodes after a split — remove every one
-    const as = tokens.getTokens(t => t.label === 'A');
-
-    if (!as.length) {
-      return log('no A tokens to remove');
+  on('createToken', () => {
+    if (!currentNode) {
+      return log('click a node first');
     }
+    const label = 'T' + (++counter);
+    const color = getRandomColor();
+    const state = buildState();
+    tokens.createToken(currentNode, label, color, state);
+    currentToken = { node: currentNode, label, sequenceFlow: state.sequenceFlow || null };
+    renderReadouts();
+    log(`createToken(${currentNode}, ${label}, ${color}, ${JSON.stringify(state)})`);
+  });
 
-    as.forEach(t => tokens.removeToken(t.node, 'A'));
-    aNode = null;
-    aHistory.length = 0;
-    log('removeToken A @ ' + as.map(t => t.node).join(', '));
+  on('sendToken', () => {
+    if (!currentToken) {
+      return log('click a token first');
+    }
+    const flows = selectedFlows();
+    if (!flows.length) {
+      return log('select sequenceFlow(s) to travel along');
+    }
+    const position = document.querySelector('#position').value;
+    const bounce = document.querySelector('#bounce').checked;
+    // land at the chosen position, or (no position) rest on each travel flow
+    const transitions = flows.map(sequenceFlow => ({
+      node: currentToken.node, label: currentToken.label, sequenceFlow,
+      state: position ? { position, bounce } : { sequenceFlow, bounce }
+    }));
+    const label = currentToken.label;
+    log(`sendToken(${JSON.stringify(transitions.map(t => ({ node: t.node, label, sequenceFlow: t.sequenceFlow })))})`);
+    tokens.sendToken(transitions).then(ts => {
+      // single move -> follow it; split -> selection is ambiguous, drop it
+      currentToken = ts.length === 1
+        ? { node: ts[0].node, label, sequenceFlow: ts[0].state.sequenceFlow || null }
+        : null;
+      renderReadouts();
+      log('landed → ' + ts.map(t => t.node).join(', '));
+    }).catch(err => log('ERROR: ' + err.message));
+  });
+
+  on('setState', () => {
+    if (!currentToken) {
+      return log('click a token first');
+    }
+    const state = buildState();
+    const t = tokens.setState(currentToken.node, currentToken.label, state, currentToken.sequenceFlow);
+    currentToken = { node: t.node, label: t.label, sequenceFlow: t.state.sequenceFlow || null };
+    renderReadouts();
+    log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
+  });
+
+  on('removeToken', () => {
+    if (!currentToken) {
+      return log('click a token first');
+    }
+    tokens.removeToken(currentToken.node, currentToken.label, currentToken.sequenceFlow);
+    log(`removeToken(${currentToken.node}, ${currentToken.label})`);
+    currentToken = null;
+    renderReadouts();
   });
 
   on('clear', () => {
     tokens.clear();
-    aNode = null;
-    aHistory.length = 0;
+    currentToken = null;
+    currentNode = null;
+    counter = 0;
+    renderReadouts();
     log('clear');
   });
 
-  log('ready — Create A, then move it along the flows');
-
-  function sendA(flow, target, label) {
-    if (!aNode) {
-      return log('create A first');
-    }
-    log('send A along ' + flow);
-    aHistory.push({ flow, from: aNode });
-    tokens.sendToken([ { node: aNode, label: 'A', flow } ]).then(() => log(label + ' ✓ arrived'));
-    aNode = target; // optimistic: A is addressable at the target immediately
-  }
+  renderReadouts();
+  log('click a node, then createToken; click a token to operate on it');
 }
