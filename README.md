@@ -109,9 +109,10 @@ state = {
 | `sendToken([{ node, label, sequenceFlow, state? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source first; rejects if a source `(node, label)` is ambiguous. |
 | `setState(node, label, state, sequenceFlow?)` | Update state in place (partial merge — toggle `bounce` without moving, etc.). Trailing `sequenceFlow` selects which token when several rest at the node. |
 | `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |
+| `animateSymbol(node)` | Play the element's own **symbol**: throw/end events + **send** tasks fly it diagonally up-right and fade out; everything else with a symbol (catch/start/boundary events, **receive** + other typed tasks like user/service/script) draws it in from up-left and fades in. Native color, shared duration. `→ Promise`; no-op if the element has no symbol. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state }`). |
 | `clear()` | Remove all tokens. |
-| `setDuration(ms)` | Global transition duration (see below). |
+| `setAnimationDuration(ms)` | Global animation duration — token moves **and** `animateSymbol` (see below). |
 
 ### Events (on the bpmn-js `eventBus`)
 
@@ -130,23 +131,23 @@ via module config:
 new BpmnViewer({
   container: '#canvas',
   additionalModules: [ TokenAnimationModule ],
-  tokenAnimation: { maxVisible: 5, duration: 600 }
+  tokenAnimation: { maxVisible: 5, animationDuration: 600 }
 });
 ```
 
 ### Keeping up with fast events
 
 Every transition takes a **fixed duration**, independent of flow length (default
-1000 ms; set globally via `tokenAnimation: { duration }` config or
-`tokens.setDuration(ms)` at runtime — `0` makes transitions instant). If transitions are
-driven by external events that can arrive faster than a token animates:
+1000 ms; set globally via `tokenAnimation: { animationDuration }` config or
+`tokens.setAnimationDuration(ms)` at runtime — `0` makes transitions instant). If
+transitions are driven by external events that can arrive faster than a token animates:
 
 - **No pile-up** — a token's logical position updates the instant you call
   `sendToken` (so it's addressable at the destination immediately), and a new
   `sendToken` auto-finishes any still-running transition first. Rapid sends never
   overlap; the animation is cosmetic catch-up.
-- **Shorten transitions** — lower the global duration with `setDuration(ms)` (or
-  the `tokenAnimation: { duration }` config); `0` makes transitions instant.
+- **Shorten transitions** — lower the global duration with `setAnimationDuration(ms)`
+  (or the `tokenAnimation: { animationDuration }` config); `0` makes them instant.
 
 ## License
 

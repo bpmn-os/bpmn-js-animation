@@ -60,3 +60,32 @@
 @keyframes bts-jump {
   50% { top: 5px; }
 }
+
+/* triggerEvent — the element's own symbol flying in/out diagonally */
+.bts-symbol {
+  pointer-events: none;
+}
+
+.bts-symbol-emit {
+  animation-name: bts-symbol-emit;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+.bts-symbol-receive {
+  animation-name: bts-symbol-receive;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+/* throw/send: out to the upper-right, fading out */
+@keyframes bts-symbol-emit {
+  from { transform: translate(0, 0); opacity: 1; }
+  to   { transform: translate(36px, -36px); opacity: 0; }
+}
+
+/* catch/receive: in from the upper-left toward the node, fading in */
+@keyframes bts-symbol-receive {
+  from { transform: translate(-36px, -36px); opacity: 0; }
+  to   { transform: translate(0, 0); opacity: 1; }
+}

@@ -28,7 +28,7 @@ function transition(node, label, sequenceFlow, state) {
 describe('tokens', function() {
 
   // duration 0 => animations land instantly, so most assertions are synchronous
-  beforeEach(bootstrap(diagramXML, { tokenAnimation: { duration: 0 } }));
+  beforeEach(bootstrap(diagramXML, { tokenAnimation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
 
@@ -234,7 +234,7 @@ describe('tokens', function() {
 
       // a real (non-zero) duration so the first transition is genuinely in flight
       cleanup();
-      await bootstrap(diagramXML, { tokenAnimation: { duration: 40 } })();
+      await bootstrap(diagramXML, { tokenAnimation: { animationDuration: 40 } })();
 
       const tokens = get('tokens');
 
@@ -448,12 +448,68 @@ describe('tokens', function() {
   });
 
 
-  describe('setDuration', function() {
+  describe('setAnimationDuration', function() {
 
-    it('changes the global transition duration', function() {
-      get('tokens').setDuration(250);
+    it('changes the global animation duration', function() {
+      get('tokens').setAnimationDuration(250);
 
-      expect(get('animation').getDuration()).to.equal(250);
+      expect(get('animation').getAnimationDuration()).to.equal(250);
+    });
+
+  });
+
+
+  describe('animateSymbol', function() {
+
+    function symbol() {
+      return document.querySelector('.bts-symbol');
+    }
+
+    it('emits the symbol of a throwing element (send task / message end)', function() {
+      get('tokens').animateSymbol('Task_2'); // send task -> throwing
+
+      const g = document.querySelector('.bts-symbol-emit');
+      expect(g).to.exist;
+      expect(g.querySelector('path')).to.exist; // a cloned symbol path
+    });
+
+
+    it('draws in the symbol of a catching element (receive task / message start)', function() {
+      get('tokens').animateSymbol('StartEvent_1'); // message start -> catching
+
+      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+    });
+
+
+    it('throwing vs catching is detected from the element type', function() {
+      const tokens = get('tokens');
+
+      tokens.animateSymbol('EndEvent_1');   // message end -> emit
+      tokens.animateSymbol('Task_3');       // receive task -> receive
+
+      expect(document.querySelector('.bts-symbol-emit')).to.exist;
+      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+    });
+
+
+    it('animates a typed task (except send) as catching', function() {
+      get('tokens').animateSymbol('Task_1'); // user task -> catching
+
+      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+    });
+
+
+    it('is a no-op for an element with no symbol', async function() {
+      await get('tokens').animateSymbol('EndEvent_2'); // plain end event
+
+      expect(symbol()).to.not.exist;
+    });
+
+
+    it('removes the symbol and resolves when done', async function() {
+      await get('tokens').animateSymbol('Task_2');
+
+      expect(symbol()).to.not.exist;
     });
 
   });

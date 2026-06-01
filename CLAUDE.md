@@ -44,9 +44,18 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
   - **API:** `createToken(node,label,color,state?)`,
     `sendToken([{node,label,sequenceFlow,state?},…]) → Promise<Token[]>`,
     `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
-    `getTokens(filter?)`, `clear`, `setDuration`. `setState`/`removeToken` take a trailing
-    `sequenceFlow` to disambiguate; `setState` is a **partial merge** and rekeys (merging)
-    when it changes the rest flow/position — that's how a join completes.
+    `animateSymbol(node) → Promise`, `getTokens(filter?)`, `clear`, `setAnimationDuration`.
+    `setState`/`removeToken` take a trailing `sequenceFlow` to disambiguate; `setState` is a
+    **partial merge** and rekeys (merging) when it changes the rest flow/position — that's how
+    a join completes.
+  - **`animateSymbol(node)`**: clones the element's symbol/marker geometry from `getGraphics`
+    (`symbolNodes` — any child shape whose bbox isn't the full-size body/outline, so it's
+    tag-agnostic: path/circle/rect/polygon/…), places them over the element on the plane
+    layer, and plays a one-off CSS
+    animation: throwing elements (`_isThrowing`: send task, throw/end event) fly the symbol
+    diagonally up-right + fade out (`.bts-symbol-emit`); catching ones fly it in from up-left +
+    fade in (`.bts-symbol-receive`). Native color, shared `animationDuration`; no-op if no
+    symbol; resolves on `animationend` (timeout fallback).
   - **`sendToken(transitions)`**: resolve all first (invalid → reject, no side effects),
     group by source token (looked up by `(node,label)`, **rejects if ambiguous**), consume
     once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
@@ -70,8 +79,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
   per-segment easing. Inputs it needs: a `tokenLike = { color, element: connection }`
   and a connection with waypoints; `element` only resolves the canvas plane.
   - Local changes vs. the upstream copy (preserve when syncing fixes): the total
-    duration is a **fixed** value (`config.tokenAnimation.duration`, default 1000ms,
-    or `setDuration()`), **not** the upstream geometry-derived `Math.log(length)*…`
+    duration is a **fixed** value (`config.tokenAnimation.animationDuration`, default 1000ms,
+    or `setAnimationDuration()`), **not** the upstream geometry-derived `Math.log(length)*…`
     — segment timings are still distributed by length so speed is steady, but a long
     and a short flow take the same total time. Plus a `finish()` fast-forward and a
     `_done` guard in `completed()`. The token graphic is a plain colored circle
@@ -101,7 +110,7 @@ a `NavigatedViewer` via `test/TestHelper.js`). It uses a **system Chrome** (no
 puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 `CHROME_BIN` (default `google-chrome`, override via env) and runs
 `ChromeHeadlessNoSandbox`. Determinism comes from bootstrapping with
-`tokenAnimation: { duration: 0 }` (instant landings, synchronous-ish) + `await`; the
+`tokenAnimation: { animationDuration: 0 }` (instant landings, synchronous-ish) + `await`; the
 auto-settle test uses a non-zero duration so a transition is genuinely in flight.
 
 The **vite example** (`example/`, `npm run dev`) remains the visual check (placement,

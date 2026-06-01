@@ -8,26 +8,28 @@
   <bpmn:process id="Process_1" isExecutable="false">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_1" />
     </bpmn:startEvent>
-    <bpmn:task id="Task_1" name="Task 1">
+    <bpmn:userTask id="Task_1" name="User">
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
-    </bpmn:task>
+    </bpmn:userTask>
     <bpmn:parallelGateway id="Gateway_1">
       <bpmn:incoming>Flow_2</bpmn:incoming>
       <bpmn:outgoing>Flow_3</bpmn:outgoing>
       <bpmn:outgoing>Flow_4</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:task id="Task_2" name="Task 2">
+    <bpmn:sendTask id="Task_2" name="Send">
       <bpmn:incoming>Flow_3</bpmn:incoming>
       <bpmn:outgoing>Flow_5</bpmn:outgoing>
-    </bpmn:task>
-    <bpmn:task id="Task_3" name="Task 3">
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="Task_3" name="Receive">
       <bpmn:incoming>Flow_4</bpmn:incoming>
       <bpmn:outgoing>Flow_6</bpmn:outgoing>
-    </bpmn:task>
+    </bpmn:receiveTask>
     <bpmn:endEvent id="EndEvent_1">
       <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_2" />
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_2">
       <bpmn:incoming>Flow_6</bpmn:incoming>

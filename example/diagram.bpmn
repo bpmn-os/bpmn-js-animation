@@ -8,29 +8,32 @@
   <bpmn:process id="Process_1" isExecutable="false">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>StartEvent_1-Task_1</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_1" />
     </bpmn:startEvent>
-    <bpmn:task id="Task_1" name="Task 1">
+    <bpmn:userTask id="Task_1" name="User">
       <bpmn:incoming>StartEvent_1-Task_1</bpmn:incoming>
       <bpmn:outgoing>Task_1-Gateway_1</bpmn:outgoing>
-    </bpmn:task>
+    </bpmn:userTask>
     <bpmn:parallelGateway id="Gateway_1">
       <bpmn:incoming>Task_1-Gateway_1</bpmn:incoming>
       <bpmn:outgoing>Gateway_1-Task_2</bpmn:outgoing>
       <bpmn:outgoing>Gateway_1-Task_3</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:task id="Task_2" name="Task 2">
+    <bpmn:sendTask id="Task_2" name="Send">
       <bpmn:incoming>Gateway_1-Task_2</bpmn:incoming>
       <bpmn:outgoing>Task_2-EndEvent_1</bpmn:outgoing>
-    </bpmn:task>
-    <bpmn:task id="Task_3" name="Task 3">
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="Task_3" name="Receive">
       <bpmn:incoming>Gateway_1-Task_3</bpmn:incoming>
       <bpmn:outgoing>Task_3-EndEvent_2</bpmn:outgoing>
-    </bpmn:task>
+    </bpmn:receiveTask>
     <bpmn:endEvent id="EndEvent_1">
       <bpmn:incoming>Task_2-EndEvent_1</bpmn:incoming>
+      <bpmn:signalEventDefinition id="SignalEventDefinition_1" />
     </bpmn:endEvent>
     <bpmn:endEvent id="EndEvent_2">
       <bpmn:incoming>Task_3-EndEvent_2</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1" />
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="StartEvent_1-Task_1" sourceRef="StartEvent_1" targetRef="Task_1" />
     <bpmn:sequenceFlow id="Task_1-Gateway_1" sourceRef="Task_1" targetRef="Gateway_1" />

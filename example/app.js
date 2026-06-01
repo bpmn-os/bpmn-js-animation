@@ -148,6 +148,14 @@ async function main() {
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
 
+  on('animateSymbol', () => {
+    if (!currentNode) {
+      return log('click a node first');
+    }
+    log('animateSymbol(' + currentNode + ')');
+    tokens.animateSymbol(currentNode);
+  });
+
   on('removeToken', () => {
     if (!currentToken) {
       return log('click a token first');
