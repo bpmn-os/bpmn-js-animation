@@ -10,7 +10,7 @@
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_1" />
     </bpmn:startEvent>
-    <bpmn:userTask id="Task_1" name="User">
+    <bpmn:userTask id="Task_1" name="Task 1">
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
     </bpmn:userTask>
@@ -19,11 +19,11 @@
       <bpmn:outgoing>Flow_3</bpmn:outgoing>
       <bpmn:outgoing>Flow_4</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:sendTask id="Task_2" name="Send">
+    <bpmn:sendTask id="Task_2" name="Task 2">
       <bpmn:incoming>Flow_3</bpmn:incoming>
       <bpmn:outgoing>Flow_5</bpmn:outgoing>
     </bpmn:sendTask>
-    <bpmn:receiveTask id="Task_3" name="Receive">
+    <bpmn:receiveTask id="Task_3" name="Task 3">
       <bpmn:incoming>Flow_4</bpmn:incoming>
       <bpmn:outgoing>Flow_6</bpmn:outgoing>
     </bpmn:receiveTask>
