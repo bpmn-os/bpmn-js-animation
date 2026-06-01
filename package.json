@@ -1,5 +1,5 @@
 {
-  "name": "bpmn-js-token-animation",
+  "name": "bpmn-js-animation",
   "version": "0.1.0",
   "description": "A token animation for BPMN with API control",
   "main": "lib/index.js",

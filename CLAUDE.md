@@ -27,9 +27,12 @@ The package entry (`lib/index.js`) exports the module as default **plus a named
 `getRandomColor`** (`lib/color.js`) — a pure CSS-color helper callers use to mint a
 color per identity and pass it in; the package never assigns colors itself.
 
-A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two services:
+A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one service,
+`animation`** (`lib/Animation.js`), which owns both token animation and node animation.
+(The earlier split into `tokens` + `animation` services was merged — `createToken`/
+`setState`/etc. *are* animation concerns, and one service beats a fuzzy boundary.)
 
-- **`tokens`** (`lib/Tokens.js`) — the public API and the resting-token renderer.
+- **`animation`** (`lib/Animation.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state }`. `state = { position, sequenceFlow, bounce }`
     is a pure visual descriptor (no lifecycle meaning baked in): `position` is a 3×3
     anchor (`{above|center|below}-{left|middle|right}`), `sequenceFlow` rests the dot
@@ -40,25 +43,26 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
     anchor tokens stay one-per-`(node,label)`.
   - State maps: `_tokens` (`key -> Token`), `_nodeTokens` (`node -> Set<Token>`, render
     set, deduped by `identityOf` = `label|flow`), `_nodeOverlays` (`node -> overlayId[]`,
-    one per location cluster), `_activeAnimations` (`Token -> animation`).
+    one per location cluster), `_activeAnimations` (`Token -> movement`), `_movements`
+    (all live tween instances), `_filter` (visibility predicate).
   - **API:** `createToken(node,label,color,state?)`,
     `sendToken([{node,label,sequenceFlow,state?},…]) → Promise<Token[]>`,
     `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
-    `animateSymbol(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
+    `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
     `_renderNode`.
     `setState`/`removeToken` take a trailing `sequenceFlow` to disambiguate; `setState` is a
     **partial merge** and rekeys (merging) when it changes the rest flow/position — that's how
     a join completes.
-  - **`animateSymbol(node)`**: clones the element's symbol/marker geometry from `getGraphics`
-    (`symbolNodes` — any child shape whose bbox isn't the full-size body/outline, so it's
-    tag-agnostic: path/circle/rect/polygon/…), places them over the element on the plane
-    layer, and plays a one-off CSS
-    animation: throwing elements (`_isThrowing`: send task, throw/end event) fly the symbol
-    diagonally up-right + fade out (`.bts-symbol-emit`); catching ones fly it in from up-left +
-    fade in (`.bts-symbol-receive`). Native color, shared `animationDuration`; no-op if no
-    symbol; resolves on `animationend` (timeout fallback).
+  - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
+    clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
+    whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
+    place them over the element on the plane layer, and play a one-off CSS animation. `throwIcon`
+    flies the icon diagonally up-right + fades out (`.bts-icon-emit`); `catchIcon` flies it in
+    from up-left + fades in (`.bts-icon-receive`). **Direction is the caller's choice — the node
+    API reads no BPMN semantics** (it does not guess throw/catch from element type). Native color,
+    shared `animationDuration`; no-op if no icon; resolves on `animationend` (timeout fallback).
   - **`sendToken(transitions)`**: resolve all first (invalid → reject, no side effects),
     group by source token (looked up by `(node,label)`, **rejects if ambiguous**), consume
     once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
@@ -73,21 +77,16 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
     `bts-token-count`) positioned at the computed point (`_clusterPoint`: anchor fraction
     of bounds, or the flow's node-end waypoint). Per dot: `background: color`,
     `title = label`, `.bts-bounce` when `bounce`, `data-position`/`-sequence-flow`/`-bounce`.
-    Capped per cluster at `config.tokenAnimation.maxVisible` (default 3; `max+1` shown
+    Capped per cluster at `config.animation.maxVisible` (default 3; `max+1` shown
     rather than a "+1" marker). Delegated click fires `token.click {node,label,sequenceFlow}`
     or `token.overflow.click {node,hidden}`.
-- **`animation`** (`lib/Animation.js`) — the low-level animator, **vendored from
-  bpmn-js-token-simulation** with the engine coupling removed (no `scopeFilter`,
-  no simulator/scope events). Moves an SVG dot along `connection.waypoints` with
-  per-segment easing. Inputs it needs: a `tokenLike = { color, element: connection }`
-  and a connection with waypoints; `element` only resolves the canvas plane.
-  - Local changes vs. the upstream copy (preserve when syncing fixes): the total
-    duration is a **fixed** value (`config.tokenAnimation.animationDuration`, default 1000ms,
-    or `setAnimationDuration()`), **not** the upstream geometry-derived `Math.log(length)*…`
-    — segment timings are still distributed by length so speed is steady, but a long
-    and a short flow take the same total time. Plus a `finish()` fast-forward and a
-    `_done` guard in `completed()`. The token graphic is a plain colored circle
-    (`token.color`); no label text (labels are hover-only on resting badges).
+  - **Low-level tween:** `TokenAnimation` lives at the **bottom of `Animation.js`, below a
+    banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
+    is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
+    (`config.animation.animationDuration` / `setAnimationDuration`, default 1000ms — *not*
+    the upstream geometry-derived `Math.log(length)*…`; per-segment timings are still
+    distributed by length for steady speed), with a `finish()` fast-forward + `_done` guard.
+    `sendToken` drives it via `_move`. Keep edits below the banner minimal for upstream syncing.
 
 ### Key invariants
 - **Identity = `(node, label, sequenceFlow)`.** Element ids are unique within a
@@ -96,15 +95,15 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
 - **`state` is visual-only.** The library bakes in no lifecycle meaning (arrived/
   entered/completed and the event/gateway placement rules are caller convention).
 - **Color is caller-supplied and carried** by the token; splits inherit it.
-- **Engine-free.** Do not reintroduce a simulator dependency. `Animation` listens
-  only to `diagram.destroy`; `Tokens` to `diagram.clear`/`diagram.destroy`.
+- **Engine-free.** Do not reintroduce a simulator dependency. The `animation` service
+  resets on `diagram.clear`/`diagram.destroy`.
 
 ## Vendored code
 
-`lib/Animation.js` derives from upstream `lib/animation/Animation.js`. When touching
-it, preserve attribution and prefer minimal diffs so upstream fixes can be
-re-applied. `assets/token-animation.css` is the token-relevant subset of upstream's
-stylesheet plus the `.bts-overflow` marker style.
+The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) derives from
+upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
+re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
+token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` styles.
 
 ## Testing
 
@@ -113,7 +112,7 @@ a `NavigatedViewer` via `test/TestHelper.js`). It uses a **system Chrome** (no
 puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 `CHROME_BIN` (default `google-chrome`, override via env) and runs
 `ChromeHeadlessNoSandbox`. Determinism comes from bootstrapping with
-`tokenAnimation: { animationDuration: 0 }` (instant landings, synchronous-ish) + `await`; the
+`animation: { animationDuration: 0 }` (instant landings, synchronous-ish) + `await`; the
 auto-settle test uses a non-zero duration so a transition is genuinely in flight.
 
 The **vite example** (`example/`, `npm run dev`) remains the visual check (placement,

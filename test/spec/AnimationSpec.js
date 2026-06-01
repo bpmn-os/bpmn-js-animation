@@ -17,7 +17,7 @@ function dotAt(node) {
 }
 
 function tok(node, label) {
-  return get('tokens').getTokens(t => t.node === node && t.label === label)[0];
+  return get('animation').getTokens(t => t.node === node && t.label === label)[0];
 }
 
 function transition(node, label, sequenceFlow, state) {
@@ -25,17 +25,17 @@ function transition(node, label, sequenceFlow, state) {
 }
 
 
-describe('tokens', function() {
+describe('animation', function() {
 
   // duration 0 => animations land instantly, so most assertions are synchronous
-  beforeEach(bootstrap(diagramXML, { tokenAnimation: { animationDuration: 0 } }));
+  beforeEach(bootstrap(diagramXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
 
   describe('createToken', function() {
 
     it('renders a colored dot with the label on hover', function() {
-      get('tokens').createToken('StartEvent_1', 'A', 'tomato');
+      get('animation').createToken('StartEvent_1', 'A', 'tomato');
 
       expect(dots()).to.have.length(1);
 
@@ -49,7 +49,7 @@ describe('tokens', function() {
 
 
     it('accepts any CSS color', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'rgb(49, 130, 189)');
       tokens.createToken('Task_2', 'B', '#3399ff');
@@ -62,7 +62,7 @@ describe('tokens', function() {
 
 
     it('replaces an existing token at the same identity', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
       tokens.createToken('StartEvent_1', 'A', 'steelblue');
@@ -73,12 +73,12 @@ describe('tokens', function() {
 
 
     it('requires a color', function() {
-      expect(() => get('tokens').createToken('StartEvent_1', 'A')).to.throw(/color is required/);
+      expect(() => get('animation').createToken('StartEvent_1', 'A')).to.throw(/color is required/);
     });
 
 
     it('rejects an unknown node', function() {
-      expect(() => get('tokens').createToken('Nope', 'A', 'tomato')).to.throw(/unknown node/);
+      expect(() => get('animation').createToken('Nope', 'A', 'tomato')).to.throw(/unknown node/);
     });
 
   });
@@ -87,7 +87,7 @@ describe('tokens', function() {
   describe('state', function() {
 
     it('defaults to below-left, bouncing', function() {
-      get('tokens').createToken('Task_1', 'A', 'tomato');
+      get('animation').createToken('Task_1', 'A', 'tomato');
 
       const dot = dots()[0];
 
@@ -98,7 +98,7 @@ describe('tokens', function() {
 
 
     it('honors an explicit position and bounce', function() {
-      get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: false });
+      get('animation').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: false });
 
       const dot = dots()[0];
 
@@ -108,7 +108,7 @@ describe('tokens', function() {
 
 
     it('rests on a sequence flow', function() {
-      get('tokens').createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      get('animation').createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
 
       const dot = dotAt('Gateway_1');
 
@@ -118,7 +118,7 @@ describe('tokens', function() {
 
 
     it('renders distinct positions as separate overlays', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'tomato', { position: 'above-left' });
       tokens.createToken('Task_1', 'B', 'steelblue', { position: 'below-right' });
@@ -129,13 +129,13 @@ describe('tokens', function() {
 
 
     it('rejects position and sequenceFlow together', function() {
-      expect(() => get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', sequenceFlow: 'Flow_2' }))
+      expect(() => get('animation').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', sequenceFlow: 'Flow_2' }))
         .to.throw(/mutually exclusive/);
     });
 
 
     it('rejects an invalid position', function() {
-      expect(() => get('tokens').createToken('Task_1', 'A', 'tomato', { position: 'middle-center' }))
+      expect(() => get('animation').createToken('Task_1', 'A', 'tomato', { position: 'middle-center' }))
         .to.throw(/invalid position/);
     });
 
@@ -143,7 +143,7 @@ describe('tokens', function() {
     describe('setState (partial merge)', function() {
 
       it('toggles bounce without moving', function() {
-        const tokens = get('tokens');
+        const tokens = get('animation');
 
         tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: true });
         tokens.setState('Task_1', 'A', { bounce: false });
@@ -157,7 +157,7 @@ describe('tokens', function() {
 
 
       it('setting position clears sequenceFlow', function() {
-        const tokens = get('tokens');
+        const tokens = get('animation');
 
         tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
         tokens.setState('Gateway_1', 'A', { position: 'center-right' }, 'Flow_3');
@@ -176,7 +176,7 @@ describe('tokens', function() {
   describe('sendToken', function() {
 
     it('moves a token along a single flow', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
@@ -191,7 +191,7 @@ describe('tokens', function() {
 
 
     it('lands in the given state', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
@@ -203,7 +203,7 @@ describe('tokens', function() {
 
 
     it('splits a token across several flows', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Gateway_1', 'A', 'tomato');
 
@@ -220,7 +220,7 @@ describe('tokens', function() {
 
 
     it('keeps the color across a move', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'rgb(1, 2, 3)');
       await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
@@ -234,9 +234,9 @@ describe('tokens', function() {
 
       // a real (non-zero) duration so the first transition is genuinely in flight
       cleanup();
-      await bootstrap(diagramXML, { tokenAnimation: { animationDuration: 40 } })();
+      await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
 
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
@@ -253,7 +253,7 @@ describe('tokens', function() {
 
 
     it('rewinds along an incoming flow', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'tomato');
 
@@ -267,7 +267,7 @@ describe('tokens', function() {
 
 
     it('rejects a flow not connected to the node', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
@@ -284,7 +284,7 @@ describe('tokens', function() {
   describe('identity (rest sequenceFlow)', function() {
 
     it('lets same-label tokens coexist on different flows at one node', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_2', 'A', 'tomato');
       tokens.createToken('Task_3', 'A', 'tomato');
@@ -304,7 +304,7 @@ describe('tokens', function() {
 
 
     it('merges when both move to a shared anchor', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
@@ -319,7 +319,7 @@ describe('tokens', function() {
 
 
     it('removeToken addresses a token by sequenceFlow', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
@@ -334,7 +334,7 @@ describe('tokens', function() {
 
 
     it('rejects sendToken when the source is ambiguous', async function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
@@ -352,7 +352,7 @@ describe('tokens', function() {
   describe('removeToken', function() {
 
     it('removes the token and its dot', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
       tokens.removeToken('StartEvent_1', 'A');
@@ -367,7 +367,7 @@ describe('tokens', function() {
   describe('overflow', function() {
 
     it('caps visible dots and shows a "+N" marker', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       for (let i = 1; i <= 5; i++) {
         tokens.createToken('Gateway_1', 'S' + i, 'tomato');
@@ -381,7 +381,7 @@ describe('tokens', function() {
 
 
     it('shows all when overflow would be just one', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       for (let i = 1; i <= 4; i++) {
         tokens.createToken('Gateway_1', 'S' + i, 'tomato');
@@ -395,8 +395,8 @@ describe('tokens', function() {
     it('respects a custom maxVisible', function() {
       cleanup();
 
-      return bootstrap(diagramXML, { tokenAnimation: { maxVisible: 1 } })().then(() => {
-        const tokens = get('tokens');
+      return bootstrap(diagramXML, { animation: { maxVisible: 1 } })().then(() => {
+        const tokens = get('animation');
 
         for (let i = 1; i <= 3; i++) {
           tokens.createToken('Gateway_1', 'S' + i, 'tomato');
@@ -413,7 +413,7 @@ describe('tokens', function() {
   describe('events', function() {
 
     it('fires token.click with { node, label, sequenceFlow }', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       let fired;
       get('eventBus').on('token.click', e => (fired = e));
@@ -429,7 +429,7 @@ describe('tokens', function() {
 
 
     it('fires token.overflow.click with the hidden tokens', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       let fired;
       get('eventBus').on('token.overflow.click', e => (fired = e));
@@ -451,7 +451,7 @@ describe('tokens', function() {
   describe('setFilter', function() {
 
     it('hides non-matching tokens (kept, not removed)', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'tomato');
       tokens.createToken('Task_2', 'B', 'steelblue');
@@ -466,7 +466,7 @@ describe('tokens', function() {
 
 
     it('setFilter(null) shows all again', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'tomato');
       tokens.createToken('Task_2', 'B', 'steelblue');
@@ -479,7 +479,7 @@ describe('tokens', function() {
 
 
     it('hidden tokens do not count toward the overflow cap', function() {
-      const tokens = get('tokens');
+      const tokens = get('animation');
 
       for (let i = 1; i <= 5; i++) {
         tokens.createToken('Gateway_1', 'S' + i, i <= 2 ? 'tomato' : 'steelblue');
@@ -499,7 +499,7 @@ describe('tokens', function() {
   describe('setAnimationDuration', function() {
 
     it('changes the global animation duration', function() {
-      get('tokens').setAnimationDuration(250);
+      get('animation').setAnimationDuration(250);
 
       expect(get('animation').getAnimationDuration()).to.equal(250);
     });
@@ -507,57 +507,58 @@ describe('tokens', function() {
   });
 
 
-  describe('animateSymbol', function() {
+  describe('throwIcon / catchIcon', function() {
 
-    function symbol() {
-      return document.querySelector('.bts-symbol');
+    function icon() {
+      return document.querySelector('.bts-icon');
     }
 
-    it('emits the symbol of a throwing element (send task / message end)', function() {
-      get('tokens').animateSymbol('Task_2'); // send task -> throwing
+    it('throwIcon emits the element icon (fly out + fade)', function() {
+      get('animation').throwIcon('Task_2'); // send task has a icon
 
-      const g = document.querySelector('.bts-symbol-emit');
+      const g = document.querySelector('.bts-icon-emit');
       expect(g).to.exist;
-      expect(g.querySelector('path')).to.exist; // a cloned symbol path
+      expect(g.querySelector('path')).to.exist; // a cloned icon path
     });
 
 
-    it('draws in the symbol of a catching element (receive task / message start)', function() {
-      get('tokens').animateSymbol('StartEvent_1'); // message start -> catching
+    it('catchIcon draws the element icon in (fly in + fade)', function() {
+      get('animation').catchIcon('StartEvent_1'); // message start has a icon
 
-      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+      expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
 
 
-    it('throwing vs catching is detected from the element type', function() {
-      const tokens = get('tokens');
+    it('direction is the caller\'s choice, not the element type', function() {
+      const animation = get('animation');
 
-      tokens.animateSymbol('EndEvent_1');   // message end -> emit
-      tokens.animateSymbol('Task_3');       // receive task -> receive
+      // a "catching"-looking element thrown, and a "throwing"-looking one caught
+      animation.throwIcon('Task_3');     // receive task, but caller throws
+      animation.catchIcon('EndEvent_1'); // message end, but caller catches
 
-      expect(document.querySelector('.bts-symbol-emit')).to.exist;
-      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+      expect(document.querySelector('.bts-icon-emit')).to.exist;
+      expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
 
 
-    it('animates a typed task (except send) as catching', function() {
-      get('tokens').animateSymbol('Task_1'); // user task -> catching
+    it('works on any element with a icon (e.g. user task)', function() {
+      get('animation').catchIcon('Task_1'); // user task
 
-      expect(document.querySelector('.bts-symbol-receive')).to.exist;
+      expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
 
 
-    it('is a no-op for an element with no symbol', async function() {
-      await get('tokens').animateSymbol('EndEvent_2'); // plain end event
+    it('is a no-op for an element with no icon', async function() {
+      await get('animation').throwIcon('EndEvent_2'); // plain end event
 
-      expect(symbol()).to.not.exist;
+      expect(icon()).to.not.exist;
     });
 
 
-    it('removes the symbol and resolves when done', async function() {
-      await get('tokens').animateSymbol('Task_2');
+    it('removes the icon and resolves when done', async function() {
+      await get('animation').throwIcon('Task_2');
 
-      expect(symbol()).to.not.exist;
+      expect(icon()).to.not.exist;
     });
 
   });

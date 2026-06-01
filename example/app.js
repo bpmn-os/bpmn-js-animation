@@ -4,14 +4,14 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
-import TokenAnimationModule, { getRandomColor } from '../lib/index.js';
+import AnimationModule, { getRandomColor } from '../lib/index.js';
 import '../assets/token-animation.css';
 
 import diagramXML from './diagram.bpmn?raw';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
-  additionalModules: [ TokenAnimationModule ]
+  additionalModules: [ AnimationModule ]
 });
 
 const logEl = document.querySelector('#log');
@@ -39,12 +39,12 @@ async function main() {
   await viewer.importXML(diagramXML);
   viewer.get('canvas').zoom('fit-viewport');
 
-  const tokens = viewer.get('tokens');
+  const animation = viewer.get('animation');
   const elementRegistry = viewer.get('elementRegistry');
   const eventBus = viewer.get('eventBus');
 
   window.viewer = viewer;
-  window.tokens = tokens;
+  window.animation = animation;
 
   // populate the flow selectors from the diagram
   const flowIds = elementRegistry.filter(e => e.type === 'bpmn:SequenceFlow').map(e => e.id);
@@ -104,7 +104,7 @@ async function main() {
     const label = 'T' + (++counter);
     const color = getRandomColor();
     const state = buildState();
-    tokens.createToken(currentNode, label, color, state);
+    animation.createToken(currentNode, label, color, state);
     currentToken = { node: currentNode, label, sequenceFlow: state.sequenceFlow || null };
     renderReadouts();
     log(`createToken(${currentNode}, ${label}, ${color}, ${JSON.stringify(state)})`);
@@ -127,7 +127,7 @@ async function main() {
     }));
     const label = currentToken.label;
     log(`sendToken(${JSON.stringify(transitions.map(t => ({ node: t.node, label, sequenceFlow: t.sequenceFlow })))})`);
-    tokens.sendToken(transitions).then(ts => {
+    animation.sendToken(transitions).then(ts => {
       // single move -> follow it; split -> selection is ambiguous, drop it
       currentToken = ts.length === 1
         ? { node: ts[0].node, label, sequenceFlow: ts[0].state.sequenceFlow || null }
@@ -142,25 +142,33 @@ async function main() {
       return log('click a token first');
     }
     const state = buildState();
-    const t = tokens.setState(currentToken.node, currentToken.label, state, currentToken.sequenceFlow);
+    const t = animation.setState(currentToken.node, currentToken.label, state, currentToken.sequenceFlow);
     currentToken = { node: t.node, label: t.label, sequenceFlow: t.state.sequenceFlow || null };
     renderReadouts();
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
 
-  on('animateSymbol', () => {
+  on('throwIcon', () => {
     if (!currentNode) {
       return log('click a node first');
     }
-    log('animateSymbol(' + currentNode + ')');
-    tokens.animateSymbol(currentNode);
+    log('throwIcon(' + currentNode + ')');
+    animation.throwIcon(currentNode);
+  });
+
+  on('catchIcon', () => {
+    if (!currentNode) {
+      return log('click a node first');
+    }
+    log('catchIcon(' + currentNode + ')');
+    animation.catchIcon(currentNode);
   });
 
   on('removeToken', () => {
     if (!currentToken) {
       return log('click a token first');
     }
-    tokens.removeToken(currentToken.node, currentToken.label, currentToken.sequenceFlow);
+    animation.removeToken(currentToken.node, currentToken.label, currentToken.sequenceFlow);
     log(`removeToken(${currentToken.node}, ${currentToken.label})`);
     currentToken = null;
     renderReadouts();
@@ -172,14 +180,14 @@ async function main() {
     const btn = document.querySelector('#filter');
 
     if (filtering) {
-      tokens.setFilter(null);
+      animation.setFilter(null);
       filtering = false;
       btn.textContent = 'filter color';
       log('show all');
       return;
     }
 
-    const t = currentToken && tokens.getTokens(x =>
+    const t = currentToken && animation.getTokens(x =>
       x.node === currentToken.node &&
       x.label === currentToken.label &&
       (x.state.sequenceFlow || null) === (currentToken.sequenceFlow || null)
@@ -189,15 +197,15 @@ async function main() {
       return log('select a token first');
     }
 
-    tokens.setFilter(x => x.color === t.color);
+    animation.setFilter(x => x.color === t.color);
     filtering = true;
     btn.textContent = 'show all';
     log('filter to color ' + t.color);
   });
 
   on('clear', () => {
-    tokens.clear();
-    tokens.setFilter(null);
+    animation.clear();
+    animation.setFilter(null);
     filtering = false;
     document.querySelector('#filter').textContent = 'filter color';
     currentToken = null;

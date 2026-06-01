@@ -1,6 +1,6 @@
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 
-import TokenAnimationModule from '../lib/index.js';
+import AnimationModule from '../lib/index.js';
 
 let viewer;
 let container;
@@ -10,7 +10,7 @@ let container;
  * token-animation module and imports the given diagram. Resolves when ready.
  *
  * @param {string} xml
- * @param {object} [config] extra viewer config (e.g. { tokenAnimation: { maxVisible } })
+ * @param {object} [config] extra viewer config (e.g. { animation: { maxVisible } })
  */
 export function bootstrap(xml, config = {}) {
   return function() {
@@ -21,7 +21,7 @@ export function bootstrap(xml, config = {}) {
 
     viewer = new BpmnViewer({
       container,
-      additionalModules: [ TokenAnimationModule ],
+      additionalModules: [ AnimationModule ],
       ...config
     });
 

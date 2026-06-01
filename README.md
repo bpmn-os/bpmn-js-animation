@@ -1,4 +1,4 @@
-# bpmn-js-token-animation
+# bpmn-js-animation
 
 API-driven token animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 
@@ -14,41 +14,41 @@ are created, where they move, and when they disappear.
 ## Install
 
 ```sh
-npm install bpmn-js-token-animation
+npm install bpmn-js-animation
 ```
 
 ## Usage
 
 ```javascript
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
-import TokenAnimationModule from 'bpmn-js-token-animation';
+import AnimationModule from 'bpmn-js-animation';
 
-import 'bpmn-js-token-animation/assets/token-animation.css';
+import 'bpmn-js-animation/assets/token-animation.css';
 
 const viewer = new BpmnViewer({
   container: '#canvas',
-  additionalModules: [ TokenAnimationModule ]
+  additionalModules: [ AnimationModule ]
 });
 
 await viewer.importXML(diagramXML);
 
-const tokens = viewer.get('tokens');
+const animation = viewer.get('animation');
 
 // create a token (a colored dot resting on a node)
-tokens.createToken('StartEvent_1', 'order-42', 'tomato');
+animation.createToken('StartEvent_1', 'order-42', 'tomato');
 
 // move it along a sequence flow (animates, then rests at the flow's target)
-await tokens.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]);
+await animation.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]);
 
 // split at a diverging gateway — same source, several flows; one copy per flow
-await tokens.sendToken([
+await animation.sendToken([
   { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_3' },
   { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_4' }
 ]);
 
 // advance its lifecycle in place — position + bounce are your call (see below)
-tokens.setState('Task_1', 'order-42', { position: 'center-middle' });  // "entered"
-tokens.setState('Task_1', 'order-42', { bounce: true });               // needs user action
+animation.setState('Task_1', 'order-42', { position: 'center-middle' });  // "entered"
+animation.setState('Task_1', 'order-42', { bounce: true });               // needs user action
 
 // react to clicks — the host app decides what to show
 viewer.get('eventBus').on('token.click', ({ node, label, sequenceFlow }) => {
@@ -56,7 +56,7 @@ viewer.get('eventBus').on('token.click', ({ node, label, sequenceFlow }) => {
 });
 
 // remove it
-tokens.removeToken('Task_1', 'order-42');
+animation.removeToken('Task_1', 'order-42');
 ```
 
 ## Token identity & color
@@ -75,7 +75,7 @@ tokens.removeToken('Task_1', 'order-42');
   and reuse it so related tokens stay consistent. The package never assigns colors.
 
   ```javascript
-  import TokenAnimationModule, { getRandomColor } from 'bpmn-js-token-animation';
+  import AnimationModule, { getRandomColor } from 'bpmn-js-animation';
   const color = getRandomColor();   // e.g. "hsl(207, 65%, 45%)"
   ```
 - Tokens carry **no other data** — just `color` + `state`. The `label` shows on
@@ -97,11 +97,11 @@ state = {
 - Default (when omitted): `{ position: 'below-left', bounce: true }` — the familiar
   bottom-left bouncing token.
 - A typical **caller convention** for an activity: arrived → `above-left`, entered →
-  `center-middle`, completed → `below-right`; for events/gateways the symbol is
+  `center-middle`, completed → `below-right`; for events/gateways the icon is
   centered, so use `center-right`; for a gateway *arrived*, rest on the incoming
   flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is hard-coded.
 
-## `tokens` API
+## `animation` API
 
 | Method | Description |
 | --- | --- |
@@ -109,11 +109,12 @@ state = {
 | `sendToken([{ node, label, sequenceFlow, state? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source first; rejects if a source `(node, label)` is ambiguous. |
 | `setState(node, label, state, sequenceFlow?)` | Update state in place (partial merge — toggle `bounce` without moving, etc.). Trailing `sequenceFlow` selects which token when several rest at the node. |
 | `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |
-| `animateSymbol(node)` | Play the element's own **symbol**: throw/end events + **send** tasks fly it diagonally up-right and fade out; everything else with a symbol (catch/start/boundary events, **receive** + other typed tasks like user/service/script) draws it in from up-left and fades in. Native color, shared duration. `→ Promise`; no-op if the element has no symbol. |
+| `throwIcon(node)` | Play the element's own **icon** (event/task-type icon) as a **throw**: fly it diagonally up-right and fade out. Native color, shared duration. `→ Promise`; no-op if the element has no icon. |
+| `catchIcon(node)` | Play the element's own **icon** as a **catch**: draw it in from up-left and fade in. Counterpart to `throwIcon`. `→ Promise`; no-op if no icon. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state }`). |
 | `setFilter(predicate \| null)` | Visibility filter: tokens where `predicate(token)` is falsy are **hidden** (kept, not removed — `getTokens` still returns them; they don't count toward the `+N` cap). `null` shows all. |
 | `clear()` | Remove all tokens. |
-| `setAnimationDuration(ms)` | Global animation duration — token moves **and** `animateSymbol` (see below). |
+| `setAnimationDuration(ms)` | Global animation duration — token moves **and** `throwIcon`/`catchIcon` (see below). |
 
 ### Events (on the bpmn-js `eventBus`)
 
@@ -131,16 +132,16 @@ via module config:
 ```javascript
 new BpmnViewer({
   container: '#canvas',
-  additionalModules: [ TokenAnimationModule ],
-  tokenAnimation: { maxVisible: 5, animationDuration: 600 }
+  additionalModules: [ AnimationModule ],
+  animation: { maxVisible: 5, animationDuration: 600 }
 });
 ```
 
 ### Keeping up with fast events
 
 Every transition takes a **fixed duration**, independent of flow length (default
-1000 ms; set globally via `tokenAnimation: { animationDuration }` config or
-`tokens.setAnimationDuration(ms)` at runtime — `0` makes transitions instant). If
+1000 ms; set globally via `animation: { animationDuration }` config or
+`animation.setAnimationDuration(ms)` at runtime — `0` makes transitions instant). If
 transitions are driven by external events that can arrive faster than a token animates:
 
 - **No pile-up** — a token's logical position updates the instant you call
@@ -148,7 +149,7 @@ transitions are driven by external events that can arrive faster than a token an
   `sendToken` auto-finishes any still-running transition first. Rapid sends never
   overlap; the animation is cosmetic catch-up.
 - **Shorten transitions** — lower the global duration with `setAnimationDuration(ms)`
-  (or the `tokenAnimation: { animationDuration }` config); `0` makes them instant.
+  (or the `animation: { animationDuration }` config); `0` makes them instant.
 
 ## License
 

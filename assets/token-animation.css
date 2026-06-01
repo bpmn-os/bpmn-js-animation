@@ -61,31 +61,31 @@
   50% { top: 5px; }
 }
 
-/* triggerEvent — the element's own symbol flying in/out diagonally */
-.bts-symbol {
+/* throwIcon / catchIcon — the element's own icon flying out/in diagonally */
+.bts-icon {
   pointer-events: none;
 }
 
-.bts-symbol-emit {
-  animation-name: bts-symbol-emit;
+.bts-icon-emit {
+  animation-name: bts-icon-emit;
   animation-timing-function: ease-out;
   animation-fill-mode: forwards;
 }
 
-.bts-symbol-receive {
-  animation-name: bts-symbol-receive;
+.bts-icon-receive {
+  animation-name: bts-icon-receive;
   animation-timing-function: ease-out;
   animation-fill-mode: forwards;
 }
 
 /* throw/send: out to the upper-right, fading out */
-@keyframes bts-symbol-emit {
+@keyframes bts-icon-emit {
   from { transform: translate(0, 0); opacity: 1; }
   to   { transform: translate(36px, -36px); opacity: 0; }
 }
 
 /* catch/receive: in from the upper-left toward the node, fading in */
-@keyframes bts-symbol-receive {
+@keyframes bts-icon-receive {
   from { transform: translate(-36px, -36px); opacity: 0; }
   to   { transform: translate(0, 0); opacity: 1; }
 }
