@@ -448,6 +448,54 @@ describe('tokens', function() {
   });
 
 
+  describe('setFilter', function() {
+
+    it('hides non-matching tokens (kept, not removed)', function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      tokens.createToken('Task_2', 'B', 'steelblue');
+      expect(dots()).to.have.length(2);
+
+      tokens.setFilter(t => t.color === 'tomato');
+
+      expect(dots()).to.have.length(1);
+      expect(dots()[0].dataset.label).to.equal('A');
+      expect(tokens.getTokens()).to.have.length(2); // still there
+    });
+
+
+    it('setFilter(null) shows all again', function() {
+      const tokens = get('tokens');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      tokens.createToken('Task_2', 'B', 'steelblue');
+      tokens.setFilter(t => t.label === 'A');
+      expect(dots()).to.have.length(1);
+
+      tokens.setFilter(null);
+      expect(dots()).to.have.length(2);
+    });
+
+
+    it('hidden tokens do not count toward the overflow cap', function() {
+      const tokens = get('tokens');
+
+      for (let i = 1; i <= 5; i++) {
+        tokens.createToken('Gateway_1', 'S' + i, i <= 2 ? 'tomato' : 'steelblue');
+      }
+      expect(dots()).to.have.length(3);
+      expect(marker()).to.exist;
+
+      tokens.setFilter(t => t.color === 'tomato');
+
+      expect(dots()).to.have.length(2);
+      expect(marker()).to.not.exist;
+    });
+
+  });
+
+
   describe('setAnimationDuration', function() {
 
     it('changes the global animation duration', function() {

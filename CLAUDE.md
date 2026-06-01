@@ -44,7 +44,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing two serv
   - **API:** `createToken(node,label,color,state?)`,
     `sendToken([{node,label,sequenceFlow,state?},…]) → Promise<Token[]>`,
     `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
-    `animateSymbol(node) → Promise`, `getTokens(filter?)`, `clear`, `setAnimationDuration`.
+    `animateSymbol(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
+    `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
+    from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
+    `_renderNode`.
     `setState`/`removeToken` take a trailing `sequenceFlow` to disambiguate; `setState` is a
     **partial merge** and rekeys (merging) when it changes the rest flow/position — that's how
     a join completes.

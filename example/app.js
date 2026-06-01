@@ -166,8 +166,40 @@ async function main() {
     renderReadouts();
   });
 
+  let filtering = false;
+
+  on('filter', () => {
+    const btn = document.querySelector('#filter');
+
+    if (filtering) {
+      tokens.setFilter(null);
+      filtering = false;
+      btn.textContent = 'filter color';
+      log('show all');
+      return;
+    }
+
+    const t = currentToken && tokens.getTokens(x =>
+      x.node === currentToken.node &&
+      x.label === currentToken.label &&
+      (x.state.sequenceFlow || null) === (currentToken.sequenceFlow || null)
+    )[0];
+
+    if (!t) {
+      return log('select a token first');
+    }
+
+    tokens.setFilter(x => x.color === t.color);
+    filtering = true;
+    btn.textContent = 'show all';
+    log('filter to color ' + t.color);
+  });
+
   on('clear', () => {
     tokens.clear();
+    tokens.setFilter(null);
+    filtering = false;
+    document.querySelector('#filter').textContent = 'filter color';
     currentToken = null;
     currentNode = null;
     counter = 0;

@@ -111,6 +111,7 @@ state = {
 | `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |
 | `animateSymbol(node)` | Play the element's own **symbol**: throw/end events + **send** tasks fly it diagonally up-right and fade out; everything else with a symbol (catch/start/boundary events, **receive** + other typed tasks like user/service/script) draws it in from up-left and fades in. Native color, shared duration. `→ Promise`; no-op if the element has no symbol. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state }`). |
+| `setFilter(predicate \| null)` | Visibility filter: tokens where `predicate(token)` is falsy are **hidden** (kept, not removed — `getTokens` still returns them; they don't count toward the `+N` cap). `null` shows all. |
 | `clear()` | Remove all tokens. |
 | `setAnimationDuration(ms)` | Global animation duration — token moves **and** `animateSymbol` (see below). |
 
