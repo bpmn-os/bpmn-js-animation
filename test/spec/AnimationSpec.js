@@ -516,6 +516,100 @@ describe('animation', function() {
   });
 
 
+  describe('token order (3b)', function() {
+
+    // dots at a node, in DOM order (= global order)
+    function labelsAt(node) {
+      return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
+    }
+
+    it('getTokens returns tokens in creation order', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      tokens.createToken('Task_2', 'B', 'steelblue');
+      tokens.createToken('Task_1', 'C', 'seagreen');
+
+      expect(tokens.getTokens().map(t => t.label)).to.eql([ 'A', 'B', 'C' ]);
+    });
+
+
+    it('renders a cluster in global order', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+
+      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
+    });
+
+
+    it('moveToFront makes a token first (in getTokens and the render)', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      const b = tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+
+      tokens.moveToFront(b);
+
+      expect(tokens.getTokens().map(t => t.label)).to.eql([ 'B', 'A' ]);
+      expect(labelsAt('Task_1')).to.eql([ 'B', 'A' ]);
+    });
+
+
+    it('moveToBack makes a token last', function() {
+      const tokens = get('animation');
+
+      const a = tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+
+      tokens.moveToBack(a);
+
+      expect(labelsAt('Task_1')).to.eql([ 'B', 'A' ]);
+    });
+
+
+    it('order is stable across setState (token keeps its slot)', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+
+      // re-state A — it should keep its slot, not jump to the back
+      tokens.setState('Task_1', 'A', { bounce: true });
+
+      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
+    });
+
+
+    it('order is stable across a sendToken move (branch inherits the slot)', async function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Gateway_1', 'B', 'steelblue', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'C', 'seagreen', { position: 'center-middle' });
+
+      // move B forward; it should keep its middle slot in the global order
+      await tokens.sendToken([ transition('Gateway_1', 'B', 'Flow_3', { position: 'center-middle' }) ]);
+
+      expect(tokens.getTokens().map(t => t.label)).to.eql([ 'A', 'B', 'C' ]);
+    });
+
+
+    it('a stale/unknown token reference is a no-op', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+
+      tokens.moveToFront({ node: 'Task_1', label: 'ghost' }); // not in _order
+
+      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
+    });
+
+  });
+
+
   describe('selection', function() {
 
     it('selectToken draws a blue ring on the resting dot', function() {

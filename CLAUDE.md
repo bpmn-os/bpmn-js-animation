@@ -41,7 +41,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     (empty flow for anchor tokens). The rest flow is in the key so same-label tokens can
     **coexist** on distinct flows at one node (branches piling up at a merging gateway);
     anchor tokens stay one-per-`(node,label)`.
-  - State maps: `_tokens` (`key -> Token`), `_nodeTokens` (`node -> Set<Token>`, render
+  - State maps: `_tokens` (`key -> Token`), `_order` (`Token[]` in **global order**, front
+    first — the single source of truth for draw order; `getTokens`/`_renderNode` iterate it,
+    `_nodeTokens` stays for membership/dedup), `_nodeTokens` (`node -> Set<Token>`, render
     set, deduped by `identityOf` = `label|flow`), `_nodeOverlays` (`node -> overlayId[]`,
     one per location cluster), `_activeAnimations` (`Token -> movement`), `_movements`
     (all live tween instances), `_filter` (visibility predicate).
@@ -52,8 +54,12 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
     `scrollStack(node,direction='forward'|'backward',nestedStacks?) → Promise`, `getMaxVisible() → number`,
-    `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
-    `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
+    `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (in global order),
+    `moveToFront(token)` / `moveToBack(token)`, `setFilter(predicate|null)`, `clear`,
+    `setAnimationDuration`. `moveToFront`/`moveToBack` take the **token object** (from `createToken`/
+    `getTokens`), splice it to the front/back of `_order`, and re-render its node (front = first at the
+    node = what a stacked node shows on top); a stale/unknown reference is a no-op. The internal
+    `_visibleTokensAt(node)` returns the node's visible tokens in global order. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
     `_renderNode`.
     `setState`/`removeToken`/`selectToken`/`deselectToken` take a trailing `sequenceFlow` to
@@ -114,8 +120,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
     incoming=reverse (reversed waypoints); the animator gets `{ waypoints }` so direction
     is just the order. Branches keep the source's `color`/`label`/`selected` and take their
-    entry's landing `state`. Identity committed **optimistically at depart**; resting badge added
-    on landing.
+    entry's landing `state`, and **inherit the source's slot** in `_order` (splits stay
+    contiguous; a branch merging onto an occupied identity drops the absorbed token from `_order`).
+    Identity committed **optimistically at depart**; resting badge added on landing.
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** tokens at a node are grouped into **location clusters** (by anchor

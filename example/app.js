@@ -211,6 +211,31 @@ async function main() {
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
 
+  function currentTokenObj() {
+    if (!currentToken) {
+      return null;
+    }
+    return animation.getTokens(x => sameToken(x, currentToken.node, currentToken.label, currentToken.sequenceFlow))[0];
+  }
+
+  on('moveToFront', () => {
+    const t = currentTokenObj();
+    if (!t) {
+      return log('click a token first');
+    }
+    animation.moveToFront(t);
+    log(`moveToFront(${t.label}@${t.node})`);
+  });
+
+  on('moveToBack', () => {
+    const t = currentTokenObj();
+    if (!t) {
+      return log('click a token first');
+    }
+    animation.moveToBack(t);
+    log(`moveToBack(${t.label}@${t.node})`);
+  });
+
   on('setStackSize', () => {
     if (!currentNode) {
       return log('click a node first');
