@@ -33,7 +33,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 `setState`/etc. *are* animation concerns, and one service beats a fuzzy boundary.)
 
 - **`animation`** (`lib/Animation.js`) — the whole public API + renderer + low-level tween.
-  - **Token** = `{ node, label, color, state }`. `state = { position, sequenceFlow, bounce }`
+  - **Token** = `{ node, label, color, state, selected }`. `state = { position, sequenceFlow, bounce }`
     is a pure visual descriptor (no lifecycle meaning baked in): `position` is a 3×3
     anchor (`{above|center|below}-{left|middle|right}`), `sequenceFlow` rests the dot
     where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue.
@@ -48,13 +48,25 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   - **API:** `createToken(node,label,color,state?)`,
     `sendToken([{node,label,sequenceFlow,state?},…]) → Promise<Token[]>`,
     `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
+    `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
+    `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
+    `getSelectedNodes() → string[]`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
     `_renderNode`.
-    `setState`/`removeToken` take a trailing `sequenceFlow` to disambiguate; `setState` is a
-    **partial merge** and rekeys (merging) when it changes the rest flow/position — that's how
-    a join completes.
+    `setState`/`removeToken`/`selectToken`/`deselectToken` take a trailing `sequenceFlow` to
+    disambiguate; `setState` is a **partial merge** and rekeys (merging) when it changes the
+    rest flow/position — that's how a join completes.
+  - **Selection** (`selected`, a **carried** token field like `color` — *not* in `state`):
+    `selectToken`/`deselectToken` toggle a blue ring on the resting dot (`.bts-selected`,
+    `data-selected`). It **carries across a move**, is **copied to every branch on a split**,
+    and **OR-merges on a join** (merged token stays selected if any input was — done where
+    identities collapse in `setState` and `sendToken`; `color` is left last-writer-wins).
+    `setNodeSelected(node,selected?)` draws the **modeller-style blue boundary** on an element
+    by appending our own `.bts-node-outline` rect (5px offset, rounded) into its `getGraphics`
+    and adding a `bts-selected` marker class — we *don't* rely on diagram-js's Outline module
+    (a bare viewer may not load it). Tracked in `_selectedNodes`; cleared by `clear`.
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
@@ -67,8 +79,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     group by source token (looked up by `(node,label)`, **rejects if ambiguous**), consume
     once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
     incoming=reverse (reversed waypoints); the animator gets `{ waypoints }` so direction
-    is just the order. Branches keep the source's `color`/`label` and take their entry's
-    landing `state`. Identity committed **optimistically at depart**; resting badge added
+    is just the order. Branches keep the source's `color`/`label`/`selected` and take their
+    entry's landing `state`. Identity committed **optimistically at depart**; resting badge added
     on landing.
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
@@ -76,7 +88,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `position` or rest `sequenceFlow`); each cluster is its own overlay (`overlays.add`,
     `bts-token-count`) positioned at the computed point (`_clusterPoint`: anchor fraction
     of bounds, or the flow's node-end waypoint). Per dot: `background: color`,
-    `title = label`, `.bts-bounce` when `bounce`, `data-position`/`-sequence-flow`/`-bounce`.
+    `title = label`, `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
+    `data-position`/`-sequence-flow`/`-bounce`/`-selected`.
     Capped per cluster at `config.animation.maxVisible` (default 3; `max+1` shown
     rather than a "+1" marker). Delegated click fires `token.click {node,label,sequenceFlow}`
     or `token.overflow.click {node,hidden}`.
@@ -94,7 +107,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   distinct flows at one node, while anchor tokens stay one-per-`(node,label)`.
 - **`state` is visual-only.** The library bakes in no lifecycle meaning (arrived/
   entered/completed and the event/gateway placement rules are caller convention).
-- **Color is caller-supplied and carried** by the token; splits inherit it.
+- **Color is caller-supplied and carried** by the token; splits inherit it. **`selected`
+  is carried the same way** (copied on split, OR-merged on join).
 - **Engine-free.** Do not reintroduce a simulator dependency. The `animation` service
   resets on `diagram.clear`/`diagram.destroy`.
 
@@ -103,7 +117,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) derives from
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
-token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` styles.
+token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
+`.bts-selected` / `.bts-node-outline` styles.
 
 ## Testing
 

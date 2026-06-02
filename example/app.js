@@ -55,6 +55,8 @@ async function main() {
   let currentToken = null; // { node, label, sequenceFlow }
   let counter = 0;
 
+  const selectedNodes = new Set(); // node ids currently selected (multi-select)
+
   function renderReadouts() {
     document.querySelector('#cur-node').textContent = currentNode || '—';
     document.querySelector('#cur-token').textContent = currentToken
@@ -81,20 +83,78 @@ async function main() {
     return state;
   }
 
-  // click an element -> current node (for createToken); click a token -> current token
+  // --- node selection (multi-select tracked in `selectedNodes`) ---
+
+  function setNodeSelected(node, selected) {
+    animation.setNodeSelected(node, selected);
+    if (selected) {
+      selectedNodes.add(node);
+    } else {
+      selectedNodes.delete(node);
+    }
+  }
+
+  function clickNode(node, additive) {
+    if (additive) {
+      // Shift-click: toggle this one, leave the rest of the selection alone
+      setNodeSelected(node, !selectedNodes.has(node));
+    } else {
+      const wasSole = selectedNodes.size === 1 && selectedNodes.has(node);
+      Array.from(selectedNodes).forEach(n => n !== node && setNodeSelected(n, false));
+      // plain click makes this the only selection; clicking the sole selection clears it
+      setNodeSelected(node, !wasSole);
+    }
+    log(`nodes: [${Array.from(selectedNodes).join(', ') || '—'}]`);
+  }
+
+  // --- token selection (state lives on the token; read back via getTokens) ---
+
+  const sameToken = (t, node, label, sf) =>
+    t.node === node && t.label === label && (t.state.sequenceFlow || null) === (sf || null);
+
+  function setTokenSelected(node, label, sequenceFlow, selected) {
+    if (selected) {
+      animation.selectToken(node, label, sequenceFlow || undefined);
+    } else {
+      animation.deselectToken(node, label, sequenceFlow || undefined);
+    }
+  }
+
+  function clickToken(node, label, sequenceFlow, additive) {
+    const t = animation.getTokens(x => sameToken(x, node, label, sequenceFlow))[0];
+    if (!t) {
+      return;
+    }
+    if (additive) {
+      setTokenSelected(node, label, sequenceFlow, !t.selected);
+    } else {
+      const selected = animation.getTokens(x => x.selected);
+      const wasSole = selected.length === 1 && t.selected;
+      selected.forEach(x => {
+        if (x !== t) {
+          setTokenSelected(x.node, x.label, x.state.sequenceFlow, false);
+        }
+      });
+      setTokenSelected(node, label, sequenceFlow, !wasSole);
+    }
+    log(`tokens: [${animation.getTokens(x => x.selected).map(x => `${x.label}@${x.node}`).join(', ') || '—'}]`);
+  }
+
+  // click an element/token -> set it current + select it. Plain click selects only
+  // that one (clears the rest); Shift-click adds to / toggles within the selection.
   eventBus.on('element.click', e => {
     const el = e.element;
     if (el && !el.waypoints && el.businessObject && el.type !== 'bpmn:Process' && el.parent) {
       currentNode = el.id;
       renderReadouts();
-      log('node: ' + el.id);
+      clickNode(el.id, !!(e.originalEvent && e.originalEvent.shiftKey));
     }
   });
 
   eventBus.on('token.click', e => {
     currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null };
     renderReadouts();
-    log(`token: ${e.label}@${e.node}${e.sequenceFlow ? ' on ' + e.sequenceFlow : ''}`);
+    clickToken(e.node, e.label, e.sequenceFlow || null, !!(e.originalEvent && e.originalEvent.shiftKey));
   });
 
   on('createToken', () => {
@@ -206,6 +266,7 @@ async function main() {
   on('clear', () => {
     animation.clear();
     animation.setFilter(null);
+    selectedNodes.clear();
     filtering = false;
     document.querySelector('#filter').textContent = 'filter color';
     currentToken = null;
@@ -216,5 +277,5 @@ async function main() {
   });
 
   renderReadouts();
-  log('click a node, then createToken; click a token to operate on it');
+  log('click a node/token to select it (Shift-click for multi-select); createToken/sendToken operate on the current one');
 }

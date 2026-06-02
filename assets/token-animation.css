@@ -3,11 +3,19 @@
   --token-simulation-grey-base-40: #666666;
   --token-simulation-grey-darken-30: #212121;
   --token-simulation-white: #FFFFFF;
+  --token-simulation-blue-selected: hsl(205, 100%, 50%); /* modeller selection blue */
 }
 
 /* the animated, moving token graphic (SVG) */
 .bts-token .text {
   font-family: 'Arial', sans-serif;
+}
+
+/* selection ring on the moving token (mirrors the resting dot's outline) */
+.bts-token .bts-token-ring {
+  fill: none;
+  stroke: var(--token-simulation-blue-selected, hsl(205, 100%, 50%));
+  stroke-width: 2px;
 }
 
 /* resting token badge(s) rendered as a diagram-js overlay on a node */
@@ -55,6 +63,22 @@
   font-family: 'Arial', sans-serif;
   font-size: 11px;
   animation: none;
+}
+
+/* selected resting token — blue ring with a small gap (raised above siblings) */
+.bts-token-count.bts-selected {
+  outline: 2px solid var(--token-simulation-blue-selected, hsl(205, 100%, 50%));
+  outline-offset: 2px; /* the gap between dot and ring */
+  z-index: 1;
+}
+
+/* selected node — our own outline rect drawn into the element graphics */
+.bts-node-outline {
+  fill: none;
+  stroke: var(--token-simulation-blue-selected, hsl(205, 100%, 50%));
+  stroke-width: 2px;
+  shape-rendering: geometricPrecision;
+  pointer-events: none;
 }
 
 @keyframes bts-jump {

@@ -516,6 +516,181 @@ describe('animation', function() {
   });
 
 
+  describe('selection', function() {
+
+    it('selectToken draws a blue ring on the resting dot', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      expect(dotAt('Task_1').classList.contains('bts-selected')).to.be.false;
+
+      tokens.selectToken('Task_1', 'A');
+
+      const dot = dotAt('Task_1');
+      expect(dot.classList.contains('bts-selected')).to.be.true;
+      expect(dot.dataset.selected).to.equal('true');
+      expect(tok('Task_1', 'A').selected).to.be.true;
+    });
+
+
+    it('deselectToken clears it', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      tokens.selectToken('Task_1', 'A');
+      tokens.deselectToken('Task_1', 'A');
+
+      expect(dotAt('Task_1').classList.contains('bts-selected')).to.be.false;
+      expect(tok('Task_1', 'A').selected).to.be.false;
+    });
+
+
+    it('rejects selecting a missing token', function() {
+      expect(() => get('animation').selectToken('Task_1', 'A')).to.throw(/no token/);
+    });
+
+
+    it('carries the selection across a move', async function() {
+      const tokens = get('animation');
+
+      tokens.createToken('StartEvent_1', 'A', 'tomato');
+      tokens.selectToken('StartEvent_1', 'A');
+
+      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+
+      expect(tok('Task_1', 'A').selected).to.be.true;
+      expect(dotAt('Task_1').classList.contains('bts-selected')).to.be.true;
+    });
+
+
+    it('shows the selection ring on the token while it moves', async function() {
+      cleanup();
+      await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+      const tokens = get('animation');
+      tokens.createToken('StartEvent_1', 'A', 'tomato');
+      tokens.selectToken('StartEvent_1', 'A');
+
+      // _move appends the moving graphic synchronously, so the ring is present in flight
+      const p = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      expect(document.querySelector('.bts-token .bts-token-ring')).to.exist;
+
+      await p;
+    });
+
+
+    it('omits the ring on an unselected moving token', async function() {
+      cleanup();
+      await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+      const tokens = get('animation');
+      tokens.createToken('StartEvent_1', 'A', 'tomato');
+
+      const p = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      expect(document.querySelector('.bts-token .bts-token-ring')).to.not.exist;
+
+      await p;
+    });
+
+
+    it('copies the selection to every branch on a split', async function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Gateway_1', 'A', 'tomato');
+      tokens.selectToken('Gateway_1', 'A');
+
+      await tokens.sendToken([
+        transition('Gateway_1', 'A', 'Flow_3'),
+        transition('Gateway_1', 'A', 'Flow_4')
+      ]);
+
+      expect(tok('Task_2', 'A').selected).to.be.true;
+      expect(tok('Task_3', 'A').selected).to.be.true;
+    });
+
+
+    it('OR-merges the selection on a join', function() {
+      const tokens = get('animation');
+
+      // one selected + one not, both heading to a shared anchor
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+      tokens.selectToken('Gateway_1', 'A', 'Flow_3');
+
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_3');
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_4');
+
+      const merged = tokens.getTokens(t => t.label === 'A');
+      expect(merged).to.have.length(1);
+      expect(merged[0].selected).to.be.true; // survived even though Flow_4 was not selected
+    });
+
+
+    it('getSelectedTokens returns only the selected tokens', function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      tokens.createToken('Task_2', 'B', 'steelblue');
+      tokens.createToken('Task_3', 'C', 'seagreen');
+
+      expect(tokens.getSelectedTokens()).to.have.length(0);
+
+      tokens.selectToken('Task_1', 'A');
+      tokens.selectToken('Task_3', 'C');
+
+      const selected = tokens.getSelectedTokens();
+      expect(selected.map(t => t.label).sort()).to.eql([ 'A', 'C' ]);
+
+      tokens.deselectToken('Task_1', 'A');
+      expect(tokens.getSelectedTokens().map(t => t.label)).to.eql([ 'C' ]);
+    });
+
+
+    it('getSelectedNodes returns the selected node ids', function() {
+      const tokens = get('animation');
+
+      expect(tokens.getSelectedNodes()).to.have.length(0);
+
+      tokens.setNodeSelected('Task_1');
+      tokens.setNodeSelected('Task_2');
+
+      expect(tokens.getSelectedNodes().sort()).to.eql([ 'Task_1', 'Task_2' ]);
+
+      tokens.setNodeSelected('Task_1', false);
+      expect(tokens.getSelectedNodes()).to.eql([ 'Task_2' ]);
+    });
+
+
+    it('setNodeSelected draws a blue outline rect (modeller boundary)', function() {
+      const tokens = get('animation');
+
+      const gfx = get('elementRegistry').getGraphics('Task_1');
+      expect(gfx.querySelector('.bts-node-outline')).to.not.exist;
+
+      tokens.setNodeSelected('Task_1');
+      expect(gfx.classList.contains('bts-selected')).to.be.true;
+      expect(gfx.querySelector('.bts-node-outline')).to.exist;
+
+      tokens.setNodeSelected('Task_1', false);
+      expect(gfx.classList.contains('bts-selected')).to.be.false;
+      expect(gfx.querySelector('.bts-node-outline')).to.not.exist;
+    });
+
+
+    it('clear() removes node selection', function() {
+      const tokens = get('animation');
+
+      tokens.setNodeSelected('Task_1');
+      tokens.clear();
+
+      const gfx = get('elementRegistry').getGraphics('Task_1');
+      expect(gfx.classList.contains('bts-selected')).to.be.false;
+      expect(gfx.querySelector('.bts-node-outline')).to.not.exist;
+    });
+
+  });
+
+
   describe('setAnimationDuration', function() {
 
     it('changes the global animation duration', function() {
