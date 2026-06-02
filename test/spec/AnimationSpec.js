@@ -792,6 +792,62 @@ describe('animation', function() {
       expect(get('animation').getMaxVisible()).to.equal(3);
     });
 
+
+    describe('scrollStack', function() {
+
+      // scrollStack has a fixed UI speed independent of animationDuration, so the
+      // default bootstrap is fine here.
+
+      function frontVisual(node) {
+        return gfxOf(node).querySelector(':scope > .djs-visual');
+      }
+
+
+      it('plays a forward scroll and resolves, restoring the stack', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3);
+
+        const p = tokens.scrollStack('Task_1');
+
+        // the stack elements are being animated in place (Web Animations API)
+        expect(frontVisual('Task_1').getAnimations().length).to.be.greaterThan(0);
+
+        await p;
+
+        // canonical stack restored: animations cleared, copies back in place
+        expect(frontVisual('Task_1').getAnimations().length).to.equal(0);
+        expect(frontVisual('Task_1').style.transform).to.equal('');
+        expect(shapes('Task_1')).to.have.length(2);
+        expect(tokens.getStackSize('Task_1')).to.equal(3);
+      });
+
+
+      it('plays a backward scroll', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3);
+
+        await tokens.scrollStack('Task_1', 'backward');
+
+        expect(frontVisual('Task_1').getAnimations().length).to.equal(0);
+        expect(shapes('Task_1')).to.have.length(2);
+      });
+
+
+      it('is a no-op without a stack', async function() {
+        const tokens = get('animation');
+
+        await tokens.scrollStack('Task_1'); // no stack set
+
+        expect(shapes('Task_1')).to.have.length(0);
+      });
+
+
+      it('rejects an unknown node', function() {
+        expect(() => get('animation').scrollStack('Nope')).to.throw(/unknown node/);
+      });
+
+    });
+
   });
 
 

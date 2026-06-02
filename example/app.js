@@ -220,6 +220,22 @@ async function main() {
     log(`setStackSize(${currentNode}, ${size})`);
   });
 
+  on('scrollBack', () => {
+    if (!currentNode) {
+      return log('click a node first');
+    }
+    log(`scrollStack(${currentNode}, backward)`);
+    animation.scrollStack(currentNode, 'backward');
+  });
+
+  on('scrollFwd', () => {
+    if (!currentNode) {
+      return log('click a node first');
+    }
+    log(`scrollStack(${currentNode}, forward)`);
+    animation.scrollStack(currentNode, 'forward');
+  });
+
   on('throwIcon', () => {
     if (!currentNode) {
       return log('click a node first');

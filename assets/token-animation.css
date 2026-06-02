@@ -85,7 +85,8 @@
   50% { top: 5px; }
 }
 
-/* instance stack — opaque clones of the node's own shape, offset behind it */
+/* instance stack — opaque clones of the node's own shape, offset behind it.
+   scrollStack animates these elements in place via inline transitions. */
 .bts-stack-shape {
   pointer-events: none;
 }

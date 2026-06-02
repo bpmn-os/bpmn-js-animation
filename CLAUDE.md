@@ -51,7 +51,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
-    `getMaxVisible() → number`,
+    `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
@@ -76,6 +76,16 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     reports the true size); `size<=1` removes it; rebuilt each call. Opaque (carries the node's own fill)
     so it hides content behind it. **Visual-only & host-driven — the library never infers the size from
     tokens.** Tracked in `_stackSizes`; cleared by `clear`.
+    `scrollStack(node, direction)` plays a one-off **scroll gesture** by animating the **actual stack
+    elements in place** with the Web Animations API (`el.animate`) — no clones, no plane layer. The recycling
+    shape **arcs over the stack**: lifts up clear of the body, travels across to the far slot, and drops in;
+    every other shape slides one slot. `'forward'`: the front arcs to the back (dropping in *behind*) while
+    copies slide toward the front; `'backward'`: the lowest copy arcs to the front (dropping in *on top*) while
+    the front + copies slide back. The recycler's **paint order is swapped mid-flight** (`gfx.insertBefore`) at
+    the apex — after it lifts clear, before it drops — never up front (else the copies paint over it). On finish
+    it **resets to the canonical stack** via `setStackSize` (seamless — identical clones). Runs at a **fixed
+    `STACK_SCROLL_DURATION` (600ms)** — it's UI feedback, *not* simulation, so it's independent of
+    `animationDuration`; resolves when done; the stack size is unchanged.
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
@@ -127,7 +137,7 @@ The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) d
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
-`.bts-selected` / `.bts-node-outline` / `.bts-stack-shape` styles.
+`.bts-selected` / `.bts-node-outline` / `.bts-stack-*` styles.
 
 ## Testing
 
