@@ -51,6 +51,9 @@ async function main() {
   const flowsSelect = document.querySelector('#sequenceFlow');
   flowIds.forEach(id => flowsSelect.add(new Option(id, id)));
 
+  // the stack caps its drawn shapes at maxVisible copies -> maxVisible + 1 shapes total
+  document.querySelector('#stackSize').max = animation.getMaxVisible() + 1;
+
   let currentNode = null;
   let currentToken = null; // { node, label, sequenceFlow }
   let counter = 0;

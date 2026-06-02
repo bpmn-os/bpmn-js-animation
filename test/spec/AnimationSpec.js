@@ -786,6 +786,12 @@ describe('animation', function() {
       expect(() => get('animation').setStackSize('Nope', 2)).to.throw(/unknown node/);
     });
 
+
+    it('exposes the cap via getMaxVisible', function() {
+      // copies cap at maxVisible (default 3) -> at most maxVisible + 1 shapes
+      expect(get('animation').getMaxVisible()).to.equal(3);
+    });
+
   });
 
 
