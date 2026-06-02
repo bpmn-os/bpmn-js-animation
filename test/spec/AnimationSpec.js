@@ -994,6 +994,76 @@ describe('animation', function() {
     });
 
 
+    describe('top token (3a)', function() {
+
+      function labelsAt(node) {
+        return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
+      }
+
+      it('a stacked node shows only the first token by order', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'below-right' });
+
+        tokens.setStackSize('Task_1', 3);
+
+        expect(labelsAt('Task_1')).to.eql([ 'A' ]); // the top stack's token only
+      });
+
+
+      it('a non-stacked node shows all tokens', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
+
+        expect(labelsAt('Task_1')).to.have.members([ 'A', 'B' ]);
+      });
+
+
+      it('moveToFront swaps which token the stacked node shows', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+        const c = tokens.createToken('Task_1', 'C', 'seagreen', { position: 'below-right' });
+        tokens.setStackSize('Task_1', 3);
+
+        expect(labelsAt('Task_1')).to.eql([ 'A' ]);
+
+        tokens.moveToFront(c);
+        expect(labelsAt('Task_1')).to.eql([ 'C' ]);
+      });
+
+
+      it('shows the top token at its own anchor', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'above-left' });
+        tokens.setStackSize('Task_1', 3);
+
+        expect(dotAt('Task_1').dataset.position).to.equal('above-left');
+      });
+
+
+      it('collapses to the top on stacking and expands back when unstacked', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
+        expect(labelsAt('Task_1')).to.have.length(2);
+
+        tokens.setStackSize('Task_1', 2);
+        expect(labelsAt('Task_1')).to.eql([ 'A' ]);
+
+        tokens.setStackSize('Task_1', 1); // unstacked -> all again
+        expect(labelsAt('Task_1')).to.have.length(2);
+      });
+
+    });
+
+
     describe('container stacking', function() {
 
       it('static stack copies are outline-only (no children)', function() {

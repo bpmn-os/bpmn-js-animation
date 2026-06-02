@@ -126,14 +126,19 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** tokens at a node are grouped into **location clusters** (by anchor
-    `position` or rest `sequenceFlow`); each cluster is its own overlay (`overlays.add`,
-    `bts-token-count`) positioned at the computed point (`_clusterPoint`: anchor fraction
-    of bounds, or the flow's node-end waypoint). Per dot: `background: color`,
+    `position` or rest `sequenceFlow`), in **global `_order`**; each cluster is its own overlay
+    (`overlays.add`, `bts-token-count`) positioned at the computed point (`_clusterPoint`: anchor
+    fraction of bounds, or the flow's node-end waypoint). Per dot: `background: color`,
     `title = label`, `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
     `data-position`/`-sequence-flow`/`-bounce`/`-selected`.
     Capped per cluster at `config.animation.maxVisible` (default 3; `max+1` shown
     rather than a "+1" marker). Delegated click fires `token.click {node,label,sequenceFlow}`
     or `token.overflow.click {node,hidden}`.
+    **Stacked node → only the top token:** when `getStackSize(node) > 1`, `_renderNode` draws
+    just `_visibleTokensAt(node)[0]` (the top stack's token) at its own anchor — the silhouette +
+    stack `+k` convey the rest; `scrollStack`/`moveToFront` bring another to the top. Non-stacked
+    nodes render every token as above. `setStackSize` re-renders so tokens collapse to the top
+    (or expand back) when the size crosses 1.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `Animation.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
