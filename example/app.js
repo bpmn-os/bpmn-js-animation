@@ -160,6 +160,20 @@ async function main() {
     clickToken(e.node, e.label, e.sequenceFlow || null, !!(e.originalEvent && e.originalEvent.shiftKey));
   });
 
+  // double-click a stacked node to scroll it: forward, or backward with Shift held
+  eventBus.on('element.dblclick', e => {
+    const el = e.element;
+    if (!el || el.waypoints || !el.businessObject || el.type === 'bpmn:Process' || !el.parent) {
+      return;
+    }
+    if (animation.getStackSize(el.id) <= 1) {
+      return; // only stacked nodes scroll
+    }
+    const dir = e.originalEvent && e.originalEvent.shiftKey ? 'backward' : 'forward';
+    log(`scrollStack(${el.id}, ${dir})`);
+    animation.scrollStack(el.id, dir, instanceModels.get(el.id));
+  });
+
   on('createToken', () => {
     if (!currentNode) {
       return log('click a node first');
