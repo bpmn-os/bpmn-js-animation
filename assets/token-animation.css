@@ -91,6 +91,19 @@
   pointer-events: none;
 }
 
+/* "+k hidden instances" marker — plain bold text (black), no badge circle.
+   Font matches the bpmn element label (12px Arial). */
+.bts-stack-count {
+  color: var(--token-simulation-grey-darken-30, #212121);
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 25px;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
 /* throwIcon / catchIcon — the element's own icon flying out/in diagonally */
 .bts-icon {
   pointer-events: none;

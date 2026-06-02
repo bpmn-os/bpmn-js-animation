@@ -80,6 +80,13 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     offset) — even for containers; their **contents** (children + nested stacks + flows) are only drawn on the
     `scrollStack` snapshots (`_cloneNodeVisual(element, gfx, withContent)`). **Visual-only & host-driven — the
     library never infers the size from tokens.** Tracked in `_stackSizes`; cleared by `clear`.
+    When the true size exceeds the drawn cap, `_drawStackMarker` adds a **stack `+k` overflow marker** —
+    `k = size − (maxVisible+1)` hidden instances — as a diagram-js overlay (`_stackOverlays`, one per node):
+    **plain bold black text** (`.bts-stack-count`, 12px Arial, *no* badge circle, unlike the token-cluster
+    `+k`), placed on the **right of the stack at ¾ height** (a usually-vacant band), pushed past `_stackExtent`
+    (+2px). The selection outline grows to **span the marker** (`_drawNodeOutline` adds `_stackMarkerWidth`).
+    Redrawn each `setStackSize`, removed when `size ≤ maxVisible+1`; cleared by `clear`. This is the *stack-
+    level* `+k` (hidden instances); the *token-level* `+k` (cluster overflow in `_renderNode`) is unchanged.
     `scrollStack(node, direction, nestedStacks?)` is a one-off **snapshot transition** (Web Animations API):
     snapshot the current instance (A) **with content**; if `nestedStacks` (`[{node,stackSize}]` — the nested
     stacks of the instance that ends up at the front) is given, **commit** them onto the real children

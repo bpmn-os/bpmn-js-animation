@@ -826,6 +826,80 @@ describe('animation', function() {
     });
 
 
+    describe('stack overflow marker (3d)', function() {
+
+      function stackMarker() {
+        return document.querySelector('.bts-stack-count');
+      }
+
+      it('shows a "+k" text marker for instances beyond the drawn cap', function() {
+        const tokens = get('animation');
+        const cap = tokens.getMaxVisible() + 1; // 4
+
+        tokens.setStackSize('Task_1', cap + 5); // size 9
+
+        const m = stackMarker();
+        expect(m).to.exist;
+        expect(m.textContent).to.equal('+5'); // 9 - (3 + 1)
+      });
+
+
+      it('has no badge circle (plain text, not .bts-overflow)', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', tokens.getMaxVisible() + 5);
+
+        const m = stackMarker();
+        expect(m.classList.contains('bts-token-count')).to.be.false;
+        expect(m.classList.contains('bts-overflow')).to.be.false;
+      });
+
+
+      it('shows no marker when the size fits the cap', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', tokens.getMaxVisible() + 1); // exactly the cap
+        expect(stackMarker()).to.not.exist;
+      });
+
+
+      it('removes the marker when shrunk back under the cap', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 20);
+        expect(stackMarker()).to.exist;
+
+        tokens.setStackSize('Task_1', 2);
+        expect(stackMarker()).to.not.exist;
+      });
+
+
+      it('clear() removes the marker', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 20);
+        tokens.clear();
+
+        expect(stackMarker()).to.not.exist;
+      });
+
+
+      it('grows the selection outline to span the marker', function() {
+        const tokens = get('animation');
+        const outlineW = () => +gfxOf('Task_1').querySelector('.bts-node-outline').getAttribute('width');
+
+        tokens.setNodeSelected('Task_1');
+
+        tokens.setStackSize('Task_1', tokens.getMaxVisible() + 1); // capped, no marker
+        const capped = outlineW();
+
+        tokens.setStackSize('Task_1', 20); // marker appears -> outline reaches past it
+        expect(outlineW()).to.be.greaterThan(capped);
+      });
+
+    });
+
+
     describe('container stacking', function() {
 
       it('static stack copies are outline-only (no children)', function() {
