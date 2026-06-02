@@ -826,51 +826,20 @@ describe('animation', function() {
     });
 
 
-    describe('container children', function() {
+    describe('container stacking', function() {
 
-      it('clones the container\'s child shapes + flows into each stack copy', function() {
+      it('static stack copies are outline-only (no children)', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('SubProcess_1', 3);
 
         const copy = shapes('SubProcess_1')[0];
-
-        // the copy carries a cloned children group with the child visuals + flow path
-        const children = copy.querySelector('.djs-children');
-        expect(children).to.exist;
-        expect(children.querySelectorAll('.djs-visual').length).to.be.greaterThan(0);
-        expect(children.querySelector('.djs-connection')).to.exist; // the SubFlow_1 edge
+        expect(copy.querySelector('.djs-visual')).to.exist;   // the silhouette
+        expect(copy.querySelector('.djs-children')).to.not.exist; // no contents
       });
 
 
-      it('strips original ids and hit-rects from the cloned children', function() {
-        const tokens = get('animation');
-
-        tokens.setStackSize('SubProcess_1', 3);
-
-        const copy = shapes('SubProcess_1')[0];
-        // no leaked original ids; the only ids are the fresh inlined arrowhead markers
-        const ids = Array.from(copy.querySelectorAll('[id]')).map(el => el.id);
-        expect(ids.every(id => id.startsWith('bts-marker-'))).to.be.true;
-        expect(copy.querySelectorAll('.djs-hit')).to.have.length(0);
-      });
-
-
-      it('inlines a private arrowhead marker so the cloned flow keeps its arrow', function() {
-        const tokens = get('animation');
-
-        tokens.setStackSize('SubProcess_1', 3);
-
-        const copy = shapes('SubProcess_1')[0];
-        const marker = copy.querySelector('marker[id^="bts-marker-"]');
-        expect(marker).to.exist;
-        // the cloned connection references the private marker, not a shared one
-        const conn = copy.querySelector('.djs-connection [marker-end], .djs-connection [style*="marker-end"]');
-        expect(conn).to.exist;
-      });
-
-
-      it('leaf nodes clone with no children group', function() {
+      it('leaf static copies are outline-only too', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 3);
@@ -918,6 +887,38 @@ describe('animation', function() {
 
         expect(frontVisual('Task_1').style.display).to.equal('');
         expect(shapes('Task_1')).to.have.length(2);
+      });
+
+
+      it('commits nestedStacks (next instance child sizes) and lands on it', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('SubProcess_1', 2);
+
+        await tokens.scrollStack('SubProcess_1', 'forward', [ { node: 'SubTask_2', stackSize: 3 } ]);
+
+        // the next instance's child stack size is committed to the real diagram
+        expect(tokens.getStackSize('SubTask_2')).to.equal(3);
+        // and the real node is back
+        expect(frontVisual('SubProcess_1').style.display).to.equal('');
+      });
+
+
+      it('shows container content + an inlined arrowhead on the in-flight snapshots', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('SubProcess_1', 2);
+
+        const gfx = gfxOf('SubProcess_1');
+        expect(gfx.querySelector('.bts-stack-shape .djs-children')).to.not.exist; // static = outline only
+
+        const p = tokens.scrollStack('SubProcess_1');
+
+        // the A/B snapshots carry the container's contents + a private arrowhead marker
+        expect(gfx.querySelector('.bts-stack-shape .djs-children')).to.exist;
+        expect(gfx.querySelector('.bts-stack-shape marker[id^="bts-marker-"]')).to.exist;
+
+        await p;
+
+        expect(gfx.querySelector('.bts-stack-shape .djs-children')).to.not.exist; // back to outline
       });
 
 

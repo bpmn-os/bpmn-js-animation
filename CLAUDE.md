@@ -51,7 +51,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
-    `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
+    `scrollStack(node,direction='forward'|'backward',nestedStacks?) → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
@@ -76,21 +76,24 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     children** of `getGraphics` so they paint *behind* the body and track pan/zoom. Shifted by
     `STACK_OFFSET` (4px), capped at `maxVisible` copies (so ≤ `maxVisible+1` shapes; `getStackSize` still
     reports the true size); `size<=1` removes it; rebuilt each call. Opaque (carries the node's own fill)
-    so it hides content behind it. For a **container** (expanded sub-process/event sub-process) each copy also
-    clones the children: the *sibling* `.djs-children` group is deep-cloned, compensated by
-    `translate(-x,-y)` (children carry absolute coords), `.djs-hit`/ids/nested decorations stripped, so a
-    stacked sub-process shows its contents. Cloned connections' arrowheads are fixed by `_inlineMarkers` —
-    referenced `<marker>`s are copied into a local `<defs>` with fresh `bts-marker-N` ids (shared `<defs>`
-    don't paint on clones). Tokens are overlays → never cloned. **Visual-only & host-driven — the library never
-    infers the size from tokens.** Tracked in `_stackSizes`; cleared by `clear`.
-    `scrollStack(node, direction)` plays a one-off **scroll gesture** by animating **clones only** (Web
-    Animations API): a clone of the front is added (carrying its children) and the real front + its real
-    `.djs-children` are hidden for the gesture. The recycling clone **arcs over the stack** (lifts clear,
-    travels across, drops in) while the rest slide one slot; `'forward'` recycles the front to the back
-    (dropping in *behind*), `'backward'` brings the lowest to the front (*on top*) — paint order swapped
-    mid-flight at the apex. On finish it restores the real front and **rebuilds the canonical stack** via
-    `setStackSize` (seamless — identical clones). Runs at a **fixed `STACK_SCROLL_DURATION` (600ms)** — UI
-    feedback, *not* simulation, so independent of `animationDuration`; resolves when done; size unchanged.
+    so it hides content behind it. Static copies are **outline-only** (the silhouette suffices at the small
+    offset) — even for containers; their **contents** (children + nested stacks + flows) are only drawn on the
+    `scrollStack` snapshots (`_cloneNodeVisual(element, gfx, withContent)`). **Visual-only & host-driven — the
+    library never infers the size from tokens.** Tracked in `_stackSizes`; cleared by `clear`.
+    `scrollStack(node, direction, nestedStacks?)` is a one-off **snapshot transition** (Web Animations API):
+    snapshot the current instance (A) **with content**; if `nestedStacks` (`[{node,stackSize}]` — the nested
+    stacks of the instance that ends up at the front) is given, **commit** them onto the real children
+    (`setStackSize` per entry — synchronous, between snapshots, before hiding the real node → no flash, lands on
+    the next instance); snapshot that (B) **with content** for the incoming-front slot; the other behind clones
+    are outline ghosts. With-content clones deep-clone the sibling `.djs-children` (compensated `translate(-x,-y)`;
+    `.djs-hit`/outlines stripped, nested kept) and inline arrowhead `<marker>`s with fresh `bts-marker-N` ids
+    (shared `<defs>` don't paint on clones). Hide the real node + its `.djs-children` + old copies; animate
+    **clones only** — the recycling clone **arcs over the stack** (lifts clear, travels across, drops in) while
+    the rest slide one slot (`'forward'` recycles front→back *behind*; `'backward'` lowest→front *on top*; paint
+    order swapped mid-flight at the apex). On finish: reveal the real node (now B) and rebuild
+    the canonical stack via `setStackSize`. Runs at a **fixed `STACK_SCROLL_DURATION` (600ms)** — UI feedback,
+    *not* simulation, so independent of `animationDuration`. (Tokens during the arc: future — drawn as SVG dots
+    from the frozen resting tokens.)
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
