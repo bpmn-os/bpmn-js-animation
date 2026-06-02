@@ -903,6 +903,18 @@ describe('animation', function() {
       });
 
 
+      it('no nestedStacks clears the container\'s nested stacks (no arg -> no stacks)', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('SubProcess_1', 2);
+        tokens.setStackSize('SubTask_2', 3); // a stacked child
+
+        await tokens.scrollStack('SubProcess_1'); // no nestedStacks
+
+        // the next instance has no nested stacks
+        expect(tokens.getStackSize('SubTask_2')).to.equal(0);
+      });
+
+
       it('shows container content + an inlined arrowhead on the in-flight snapshots', async function() {
         const tokens = get('animation');
         tokens.setStackSize('SubProcess_1', 2);
