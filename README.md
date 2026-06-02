@@ -83,16 +83,16 @@ lifecycle semantics — *you* map your meaning onto positions.
 
 ```
 state = {
-  position: '{above|center|below}-{left|middle|right}' | null,  // a 3×3 anchor on/around the node
+  position: '{top|center|bottom}-{left|middle|right}' | null,  // a 3×3 anchor on/around the node
   sequenceFlow: '<connected sequence flow id>'         | null,  // rest where that flow meets the node
   bounce: boolean                                               // a "user action needed" cue
 }
 ```
 - `position` and `sequenceFlow` are **mutually exclusive**; `bounce` is independent.
-- Default (when omitted): `{ position: 'below-left', bounce: true }` — the familiar
+- Default (when omitted): `{ position: 'bottom-left', bounce: true }` — the familiar
   bottom-left bouncing token.
-- A typical **caller convention** for an activity: arrived → `above-left`, entered →
-  `center-middle`, completed → `below-right`; for events/gateways the icon is
+- A typical **caller convention** for an activity: arrived → `top-left`, entered →
+  `center-middle`, completed → `bottom-right`; for events/gateways the icon is
   centered, so use `center-right`; for a gateway *arrived*, rest on the incoming
   flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is hard-coded.
 
@@ -100,7 +100,7 @@ state = {
 
 | Method | Description |
 | --- | --- |
-| `createToken(node, label, color, state?)` | Place a token (replaces one at the same identity). `state` defaults to below-left, bouncing. Returns the token. |
+| `createToken(node, label, color, state?)` | Place a token (replaces one at the same identity). `state` defaults to bottom-left, bouncing. Returns the token. |
 | `sendToken([{ node, label, sequenceFlow, state? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source first; rejects if a source `(node, label)` is ambiguous. |
 | `setState(node, label, state, sequenceFlow?)` | Update state in place (partial merge — toggle `bounce` without moving, etc.). Trailing `sequenceFlow` selects which token when several rest at the node. |
 | `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |

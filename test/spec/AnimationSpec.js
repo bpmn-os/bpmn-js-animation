@@ -86,12 +86,12 @@ describe('animation', function() {
 
   describe('state', function() {
 
-    it('defaults to below-left, bouncing', function() {
+    it('defaults to bottom-left, bouncing', function() {
       get('animation').createToken('Task_1', 'A', 'tomato');
 
       const dot = dots()[0];
 
-      expect(dot.dataset.position).to.equal('below-left');
+      expect(dot.dataset.position).to.equal('bottom-left');
       expect(dot.dataset.bounce).to.equal('true');
       expect(dot.classList.contains('bts-bounce')).to.be.true;
     });
@@ -120,8 +120,8 @@ describe('animation', function() {
     it('renders distinct positions as separate overlays', function() {
       const tokens = get('animation');
 
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'above-left' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'below-right' });
+      tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'bottom-right' });
 
       // two location clusters -> two overlay containers
       expect(document.querySelectorAll('.bts-token-count-parent')).to.have.length(2);
@@ -1004,8 +1004,8 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
-        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'below-right' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' });
 
         tokens.setStackSize('Task_1', 3);
 
@@ -1017,7 +1017,7 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
 
         expect(labelsAt('Task_1')).to.have.members([ 'A', 'B' ]);
       });
@@ -1027,7 +1027,7 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        const c = tokens.createToken('Task_1', 'C', 'seagreen', { position: 'below-right' });
+        const c = tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' });
         tokens.setStackSize('Task_1', 3);
 
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
@@ -1040,10 +1040,10 @@ describe('animation', function() {
       it('shows the top token at its own anchor', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'above-left' });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' });
         tokens.setStackSize('Task_1', 3);
 
-        expect(dotAt('Task_1').dataset.position).to.equal('above-left');
+        expect(dotAt('Task_1').dataset.position).to.equal('top-left');
       });
 
 
@@ -1051,7 +1051,7 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'above-left' });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
         expect(labelsAt('Task_1')).to.have.length(2);
 
         tokens.setStackSize('Task_1', 2);

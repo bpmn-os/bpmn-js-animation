@@ -35,7 +35,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 - **`animation`** (`lib/Animation.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state, selected }`. `state = { position, sequenceFlow, bounce }`
     is a pure visual descriptor (no lifecycle meaning baked in): `position` is a 3×3
-    anchor (`{above|center|below}-{left|middle|right}`), `sequenceFlow` rests the dot
+    anchor (`{top|center|bottom}-{left|middle|right}`), `sequenceFlow` rests the dot
     where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue.
   - **Identity = `(node, label, state.sequenceFlow)`** — key `` `node|label|sequenceFlow` ``
     (empty flow for anchor tokens). The rest flow is in the key so same-label tokens can
