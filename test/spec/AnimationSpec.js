@@ -1200,6 +1200,85 @@ describe('animation', function() {
         expect(() => get('animation').scrollStack('Nope')).to.throw(/unknown node/);
       });
 
+
+      describe('token at the node (3c)', function() {
+
+        function badge(node) {
+          const d = dotAt(node);
+          return d && d.closest('.bts-token-count-parent');
+        }
+
+        it('rides the at-node top token as a snapshot dot, gone after', async function() {
+          const tokens = get('animation');
+          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+          tokens.setStackSize('Task_1', 3);
+
+          const p = tokens.scrollStack('Task_1');
+
+          const dot = gfxOf('Task_1').querySelector('.bts-stack-shape .bts-stack-token');
+          expect(dot).to.exist;
+          expect(dot.style.fill).to.equal('tomato');
+
+          await p;
+          expect(gfxOf('Task_1').querySelector('.bts-stack-token')).to.not.exist;
+        });
+
+
+        it('steps the displayed top token forward and backward', async function() {
+          const tokens = get('animation');
+          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+          tokens.setStackSize('Task_1', 2);
+
+          expect(dotAt('Task_1').dataset.label).to.equal('A');
+
+          await tokens.scrollStack('Task_1', 'forward');
+          expect(dotAt('Task_1').dataset.label).to.equal('B');
+
+          await tokens.scrollStack('Task_1', 'backward');
+          expect(dotAt('Task_1').dataset.label).to.equal('A');
+        });
+
+
+        it('hides the at-node badge during the gesture, restores after', async function() {
+          const tokens = get('animation');
+          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+          tokens.setStackSize('Task_1', 3);
+
+          const p = tokens.scrollStack('Task_1');
+          expect(badge('Task_1').style.display).to.equal('none');
+
+          await p;
+          expect(badge('Task_1').style.display).to.equal('');
+        });
+
+
+        it('hides the "+k" marker during the gesture, restores after', async function() {
+          const tokens = get('animation');
+          tokens.setStackSize('Task_1', 20); // > maxVisible+1 -> a +k marker
+
+          const p = tokens.scrollStack('Task_1');
+          expect(document.querySelector('.bts-stack-count').style.display).to.equal('none');
+
+          await p;
+          expect(document.querySelector('.bts-stack-count').style.display).to.equal('');
+        });
+
+
+        it('does not draw scope/descendant tokens (at-node only)', async function() {
+          const tokens = get('animation');
+          tokens.createToken('SubTask_1', 'A', 'tomato', { position: 'center-middle' }); // a child token
+          tokens.setStackSize('SubProcess_1', 2);
+
+          const p = tokens.scrollStack('SubProcess_1');
+          // the container snapshot carries child shapes, but not the child's token dot
+          expect(gfxOf('SubProcess_1').querySelector('.bts-stack-token')).to.not.exist;
+
+          await p;
+        });
+
+      });
+
     });
 
   });

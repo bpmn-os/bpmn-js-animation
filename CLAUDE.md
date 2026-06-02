@@ -105,8 +105,15 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     the rest slide one slot (`'forward'` recycles front→back *behind*; `'backward'` lowest→front *on top*; paint
     order swapped mid-flight at the apex). On finish: reveal the real node (now B) and rebuild
     the canonical stack via `setStackSize`. Runs at a **fixed `STACK_SCROLL_DURATION` (600ms)** — UI feedback,
-    *not* simulation, so independent of `animationDuration`. (Tokens during the arc: future — drawn as SVG dots
-    from the frozen resting tokens.)
+    *not* simulation, so independent of `animationDuration`.
+    **Token *at the node* rides the scroll (3c):** the with-content clones draw the node's **own top token**
+    (`_drawTokenDots` → `_visibleTokensAt(node)[0]`) as an SVG `.bts-stack-token` dot at its `_clusterPoint`
+    (element-local), so A carries the old top and B the new top. The order **steps by one** mid-gesture (between
+    the A and B snapshots): `'forward'` ⇒ `moveToBack(top)`, `'backward'` ⇒ `moveToFront(last)` — rotation length
+    = the node's at-node token count (cycles among themselves; stack size stays decorative). The real at-node
+    token overlay **and** the `+k` marker are `display:none` for the gesture (the snapshot dots stand in) and
+    restored on finish, where `setStackSize` re-renders them for the new top. **No `filter` arg** — `_order`
+    selects the token. **Tokens *in scope* (descendants) are not drawn (3e, future).**
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),

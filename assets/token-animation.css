@@ -91,6 +91,11 @@
   pointer-events: none;
 }
 
+/* token dot drawn into a scroll snapshot (the at-node top token riding the arc) */
+.bts-stack-token {
+  pointer-events: none;
+}
+
 /* "+k hidden instances" marker — plain bold text (black), no badge circle.
    Font matches the bpmn element label (12px Arial). */
 .bts-stack-count {
