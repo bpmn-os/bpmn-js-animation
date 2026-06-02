@@ -691,6 +691,104 @@ describe('animation', function() {
   });
 
 
+  describe('instance stack', function() {
+
+    function gfxOf(node) {
+      return get('elementRegistry').getGraphics(node);
+    }
+
+    function shapes(node) {
+      return gfxOf(node).querySelectorAll('.bts-stack-shape');
+    }
+
+
+    it('draws size-1 shape copies behind the node', function() {
+      const tokens = get('animation');
+
+      expect(shapes('Task_1')).to.have.length(0);
+
+      tokens.setStackSize('Task_1', 3);
+
+      expect(shapes('Task_1')).to.have.length(2);
+      // copies are leading children, so they paint behind the real node
+      expect(gfxOf('Task_1').firstElementChild.classList.contains('bts-stack-shape')).to.be.true;
+      // each copy wraps a clone of the node's visual
+      expect(shapes('Task_1')[0].querySelector('.djs-visual')).to.exist;
+    });
+
+
+    it('caps the copies at maxVisible', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 10);
+
+      // default maxVisible = 3 -> at most 3 copies behind, even though size is 10
+      expect(shapes('Task_1')).to.have.length(3);
+      expect(tokens.getStackSize('Task_1')).to.equal(10);
+    });
+
+
+    it('strips ids from the cloned shapes', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 2);
+
+      const copy = shapes('Task_1')[0];
+      expect(copy.querySelectorAll('[id]')).to.have.length(0);
+    });
+
+
+    it('getStackSize reflects the set size', function() {
+      const tokens = get('animation');
+
+      expect(tokens.getStackSize('Task_1')).to.equal(0);
+
+      tokens.setStackSize('Task_1', 4);
+      expect(tokens.getStackSize('Task_1')).to.equal(4);
+    });
+
+
+    it('size <= 1 removes the stack', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      expect(shapes('Task_1')).to.have.length(2);
+
+      tokens.setStackSize('Task_1', 1);
+
+      expect(shapes('Task_1')).to.have.length(0);
+      expect(tokens.getStackSize('Task_1')).to.equal(0);
+    });
+
+
+    it('rebuilds (no accumulation) on repeated calls', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.setStackSize('Task_1', 2);
+
+      expect(shapes('Task_1')).to.have.length(1);
+    });
+
+
+    it('clear() removes the stack', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.clear();
+
+      expect(shapes('Task_1')).to.have.length(0);
+      expect(tokens.getStackSize('Task_1')).to.equal(0);
+    });
+
+
+    it('rejects an unknown node', function() {
+      expect(() => get('animation').setStackSize('Nope', 2)).to.throw(/unknown node/);
+    });
+
+  });
+
+
   describe('setAnimationDuration', function() {
 
     it('changes the global animation duration', function() {

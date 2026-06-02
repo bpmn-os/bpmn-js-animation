@@ -50,7 +50,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `setState(node,label,state,sequenceFlow?)`, `removeToken(node,label,sequenceFlow?)`,
     `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
-    `getSelectedNodes() → string[]`,
+    `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `setFilter` hides non-matching tokens (kept, not removed; excluded
     from rendering + the cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in
@@ -67,6 +67,14 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     by appending our own `.bts-node-outline` rect (5px offset, rounded) into its `getGraphics`
     and adding a `bts-selected` marker class — we *don't* rely on diagram-js's Outline module
     (a bare viewer may not load it). Tracked in `_selectedNodes`; cleared by `clear`.
+  - **Instance stack** (`setStackSize(node,size)` / `getStackSize`): renders a node as a diagonally-
+    offset **stack of its own shape** — the real node on top, with `size-1` faithful, opaque clones of
+    `.djs-visual` (ids stripped, `pointer-events:none`, class `bts-stack-shape`) inserted as **leading
+    children** of `getGraphics` so they paint *behind* the body and track pan/zoom. Shifted by
+    `STACK_OFFSET` (4px), capped at `maxVisible` copies (so ≤ `maxVisible+1` shapes; `getStackSize` still
+    reports the true size); `size<=1` removes it; rebuilt each call. Opaque (carries the node's own fill)
+    so it hides content behind it. **Visual-only & host-driven — the library never infers the size from
+    tokens.** Tracked in `_stackSizes`; cleared by `clear`.
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
@@ -118,7 +126,7 @@ The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) d
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
-`.bts-selected` / `.bts-node-outline` styles.
+`.bts-selected` / `.bts-node-outline` / `.bts-stack-shape` styles.
 
 ## Testing
 

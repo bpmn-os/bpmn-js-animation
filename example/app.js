@@ -208,6 +208,15 @@ async function main() {
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
 
+  on('setStackSize', () => {
+    if (!currentNode) {
+      return log('click a node first');
+    }
+    const size = +document.querySelector('#stackSize').value;
+    animation.setStackSize(currentNode, size);
+    log(`setStackSize(${currentNode}, ${size})`);
+  });
+
   on('throwIcon', () => {
     if (!currentNode) {
       return log('click a node first');
@@ -269,6 +278,7 @@ async function main() {
     selectedNodes.clear();
     filtering = false;
     document.querySelector('#filter').textContent = 'filter color';
+    document.querySelector('#stackSize').value = 1;
     currentToken = null;
     currentNode = null;
     counter = 0;

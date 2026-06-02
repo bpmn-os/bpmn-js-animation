@@ -85,6 +85,11 @@
   50% { top: 5px; }
 }
 
+/* instance stack — opaque clones of the node's own shape, offset behind it */
+.bts-stack-shape {
+  pointer-events: none;
+}
+
 /* throwIcon / catchIcon — the element's own icon flying out/in diagonally */
 .bts-icon {
   pointer-events: none;
