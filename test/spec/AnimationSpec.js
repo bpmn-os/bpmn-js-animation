@@ -782,6 +782,39 @@ describe('animation', function() {
     });
 
 
+    it('grows the selection outline to cover the stack', function() {
+      const tokens = get('animation');
+      const outline = () => gfxOf('Task_1').querySelector('.bts-node-outline');
+      const w = () => +outline().getAttribute('width');
+      const h = () => +outline().getAttribute('height');
+
+      tokens.setNodeSelected('Task_1');
+      const baseW = w(), baseH = h();
+
+      // stack of 3 -> 2 copies -> outline grows by 2 * STACK_OFFSET (4) = 8 each way
+      tokens.setStackSize('Task_1', 3);
+      expect(w()).to.equal(baseW + 8);
+      expect(h()).to.equal(baseH + 8);
+
+      // shrinking back removes the extra
+      tokens.setStackSize('Task_1', 1);
+      expect(w()).to.equal(baseW);
+      expect(h()).to.equal(baseH);
+    });
+
+
+    it('draws the selection outline stack-sized when selected after stacking', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.setNodeSelected('Task_1');
+
+      const outline = gfxOf('Task_1').querySelector('.bts-node-outline');
+      const element = get('elementRegistry').get('Task_1');
+      expect(+outline.getAttribute('width')).to.equal(element.width + 10 + 8);
+    });
+
+
     it('rejects an unknown node', function() {
       expect(() => get('animation').setStackSize('Nope', 2)).to.throw(/unknown node/);
     });

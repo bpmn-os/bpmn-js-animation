@@ -67,7 +67,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `setNodeSelected(node,selected?)` draws the **modeller-style blue boundary** on an element
     by appending our own `.bts-node-outline` rect (5px offset, rounded) into its `getGraphics`
     and adding a `bts-selected` marker class — we *don't* rely on diagram-js's Outline module
-    (a bare viewer may not load it). Tracked in `_selectedNodes`; cleared by `clear`.
+    (a bare viewer may not load it). The outline is **stack-aware**: `_drawNodeOutline` grows it by the
+    stack extent (`_stackExtent` = visible copies × `STACK_OFFSET`) so it wraps the whole stack, and
+    `setStackSize` re-syncs it when the size changes. Tracked in `_selectedNodes`; cleared by `clear`.
   - **Instance stack** (`setStackSize(node,size)` / `getStackSize`): renders a node as a diagonally-
     offset **stack of its own shape** — the real node on top, with `size-1` faithful, opaque clones of
     `.djs-visual` (ids stripped, `pointer-events:none`, class `bts-stack-shape`) inserted as **leading
