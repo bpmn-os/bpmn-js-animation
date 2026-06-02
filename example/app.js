@@ -245,12 +245,87 @@ async function main() {
     log(`setStackSize(${currentNode}, ${size})`);
   });
 
+  // --- instance-stack scope demo (3e) -------------------------------------------------
+  // For a chosen container we build N instances, each with its own random scope tokens
+  // (on the container's children) and random nested stack sizes. All tokens are created
+  // up front (distinct labels); a per-container `getInstance` callback returns the active
+  // instance's token refs + nested stack sizes, and scrolling cycles through them.
+
+  const instanceModels = new Map(); // container id -> getInstance(node, indices)
+
+  const POSITIONS = [
+    'top-left', 'top-middle', 'top-right',
+    'center-left', 'center-middle', 'center-right',
+    'bottom-left', 'bottom-middle', 'bottom-right'
+  ];
+  const rand = n => Math.floor(Math.random() * n);
+  const pick = arr => arr[rand(arr.length)];
+
+  function isDescendant(childId, ancestorId) {
+    let el = elementRegistry.get(childId);
+    el = el && el.parent;
+    while (el) {
+      if (el.id === ancestorId) {
+        return true;
+      }
+      el = el.parent;
+    }
+    return false;
+  }
+
+  on('randomInstances', () => {
+    if (!currentNode) {
+      return log('click a container node first');
+    }
+
+    const el = elementRegistry.get(currentNode);
+    const children = (el.children || []).filter(c => !c.waypoints && c.businessObject);
+
+    if (!children.length) {
+      return log(`${currentNode} is not an expanded container`);
+    }
+
+    // drop any existing scope tokens / stacks under this container, then rebuild
+    animation.getTokens(t => isDescendant(t.node, currentNode))
+      .forEach(t => animation.removeToken(t.node, t.label, t.state.sequenceFlow));
+    children.forEach(c => animation.setStackSize(c.id, 0));
+
+    const count = 2 + rand(4); // 2..5 instances
+    const instances = [];
+    let seq = 0;
+
+    for (let i = 0; i < count; i++) {
+      const tokens = [];
+      const stacks = [];
+
+      children.forEach(child => {
+        for (let j = 0, k = rand(3); j < k; j++) { // 0..2 tokens per child
+          const label = `i${i}.${++seq}`;
+          animation.createToken(child.id, label, getRandomColor(), { position: pick(POSITIONS) });
+          tokens.push({ node: child.id, label });
+        }
+        if (Math.random() < 0.4) { // sometimes give the child its own nested stack
+          stacks.push({ node: child.id, stackSize: 2 + rand(3), stackIndex: 0 });
+        }
+      });
+
+      instances.push({ tokens, stacks });
+    }
+
+    const getInstance = (node, indices) => instances[indices[node] || 0];
+    instanceModels.set(currentNode, getInstance);
+
+    animation.setStackSize(currentNode, count);
+    animation.setStackIndex(currentNode, 0, getInstance); // seed instance 0
+    log(`randomInstances(${currentNode}): ${count} instances`);
+  });
+
   on('scrollBack', () => {
     if (!currentNode) {
       return log('click a node first');
     }
     log(`scrollStack(${currentNode}, backward)`);
-    animation.scrollStack(currentNode, 'backward');
+    animation.scrollStack(currentNode, 'backward', instanceModels.get(currentNode));
   });
 
   on('scrollFwd', () => {
@@ -258,7 +333,7 @@ async function main() {
       return log('click a node first');
     }
     log(`scrollStack(${currentNode}, forward)`);
-    animation.scrollStack(currentNode, 'forward');
+    animation.scrollStack(currentNode, 'forward', instanceModels.get(currentNode));
   });
 
   on('throwIcon', () => {
@@ -320,6 +395,7 @@ async function main() {
     animation.clear();
     animation.setFilter(null);
     selectedNodes.clear();
+    instanceModels.clear();
     filtering = false;
     document.querySelector('#filter').textContent = 'filter color';
     document.querySelector('#stackSize').value = 1;

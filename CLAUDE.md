@@ -53,7 +53,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
-    `scrollStack(node,direction='forward'|'backward',nestedStacks?) → Promise`, `getMaxVisible() → number`,
+    `getStackIndex(node) → number`, `setStackIndex(node,index,getInstance?)`,
+    `scrollStack(node,direction='forward'|'backward',getInstance?) → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (in global order),
     `moveToFront(token)` / `moveToBack(token)`, `setFilter(predicate|null)`, `clear`,
     `setAnimationDuration`. `moveToFront`/`moveToBack` take the **token object** (from `createToken`/
@@ -85,7 +86,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     so it hides content behind it. Static copies are **outline-only** (the silhouette suffices at the small
     offset) — even for containers; their **contents** (children + nested stacks + flows) are only drawn on the
     `scrollStack` snapshots (`_cloneNodeVisual(element, gfx, withContent)`). **Visual-only & host-driven — the
-    library never infers the size from tokens.** Tracked in `_stackSizes`; cleared by `clear`.
+    library never infers the size from tokens.** Tracked in `_stackSizes` (+ `_stackIndex`, the front-instance
+    index — see 3e below); cleared by `clear`.
     When the true size exceeds the drawn cap, `_drawStackMarker` adds a **stack `+k` overflow marker** —
     `k = size − (maxVisible+1)` hidden instances — as a diagram-js overlay (`_stackOverlays`, one per node):
     **plain bold black text** (`.bts-stack-count`, 12px Arial, *no* badge circle, unlike the token-cluster
@@ -93,11 +95,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     (+2px). The selection outline grows to **span the marker** (`_drawNodeOutline` adds `_stackMarkerWidth`).
     Redrawn each `setStackSize`, removed when `size ≤ maxVisible+1`; cleared by `clear`. This is the *stack-
     level* `+k` (hidden instances); the *token-level* `+k` (cluster overflow in `_renderNode`) is unchanged.
-    `scrollStack(node, direction, nestedStacks?)` is a one-off **snapshot transition** (Web Animations API):
-    snapshot the current instance (A) **with content**; if `nestedStacks` (`[{node,stackSize}]` — the nested
-    stacks of the instance that ends up at the front) is given, **commit** them onto the real children
-    (`setStackSize` per entry — synchronous, between snapshots, before hiding the real node → no flash, lands on
-    the next instance); snapshot that (B) **with content** for the incoming-front slot; the other behind clones
+    `scrollStack(node, direction, getInstance?)` is a one-off **snapshot transition** (Web Animations API):
+    snapshot the current instance (A) **with content**; **commit the next instance** onto the real descendants
+    via `setStackIndex` (synchronous, between snapshots, before hiding the real node → no flash, lands on the
+    next instance); snapshot that (B) **with content** for the incoming-front slot; the other behind clones
     are outline ghosts. With-content clones deep-clone the sibling `.djs-children` (compensated `translate(-x,-y)`;
     `.djs-hit`/outlines stripped, nested kept) and inline arrowhead `<marker>`s with fresh `bts-marker-N` ids
     (shared `<defs>` don't paint on clones). Hide the real node + its `.djs-children` + old copies; animate
@@ -113,8 +114,22 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     = the node's at-node token count (cycles among themselves; stack size stays decorative). The real at-node
     token overlay is `display:none` for the gesture (the snapshot dot stands in) and restored on finish, where
     `setStackSize` re-renders it for the new top; the **`+k` marker stays visible** (stack-level — the instance
-    count is unchanged by a scroll and it sits outside the stack footprint). **No `filter` arg** — `_order`
-    selects the token. **Tokens *in scope* (descendants) are not drawn (3e, future).**
+    count is unchanged by a scroll and it sits outside the stack footprint).
+    **Tokens *in scope* of a container (3e):** the descendants' tokens are instance-specific state the library
+    can't infer (an **event sub-process has no at-node token, only inside**), and the scroll is always a UI
+    gesture the client app doesn't initiate — so the library **pulls**. It keeps a per-node front index
+    (`_stackIndex`, 0-based, wraps on scroll / clamps on resize / reset by `clear`; `getStackIndex`) and, on a
+    scroll, calls **`getInstance(node, indices) → { tokens, stacks }`** — `indices` = `{ stackNodeId: index }`
+    for every stacked node up `node`'s ancestor chain (`node` at its new index); `tokens` are **references**
+    `{ node, label }` to already-created tokens; `stacks` are `[{ node, stackSize, stackIndex }]`. All instances'
+    scope tokens **coexist** in the model (created once, distinct identities, color/state stable); a scroll only
+    **toggles** which show — `setStackIndex` applies the nested sizes/indices and sets `_scopeHidden` on the
+    non-active scope tokens (honored by `_isVisible`, so they're excluded from render + cap). `setStackIndex(node,
+    index, getInstance?)` is the no-animation **load primitive** (seed instance 0 / jump); `scrollStack` wraps it
+    with the A/B snapshots. `_drawTokenDots` draws the node's own top token **and** every visible descendant
+    token into the snapshot (so scope tokens ride the arc); the node's + descendants' token overlays (and
+    descendant `+k` markers) hide for the gesture. Flat — one `getInstance` per scrolled node returns its whole
+    subtree; no recursion. Composes with 3c (event sub-process → no at-node token, only 3e runs).
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),

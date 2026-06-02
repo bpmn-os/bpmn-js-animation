@@ -1128,11 +1128,12 @@ describe('animation', function() {
       });
 
 
-      it('commits nestedStacks (next instance child sizes) and lands on it', async function() {
+      it('commits the instance\'s nested stack sizes (from getInstance) and lands on it', async function() {
         const tokens = get('animation');
         tokens.setStackSize('SubProcess_1', 2);
 
-        await tokens.scrollStack('SubProcess_1', 'forward', [ { node: 'SubTask_2', stackSize: 3 } ]);
+        await tokens.scrollStack('SubProcess_1', 'forward',
+          () => ({ stacks: [ { node: 'SubTask_2', stackSize: 3 } ] }));
 
         // the next instance's child stack size is committed to the real diagram
         expect(tokens.getStackSize('SubTask_2')).to.equal(3);
@@ -1141,12 +1142,12 @@ describe('animation', function() {
       });
 
 
-      it('no nestedStacks clears the container\'s nested stacks (no arg -> no stacks)', async function() {
+      it('an empty instance clears the container\'s nested stacks', async function() {
         const tokens = get('animation');
         tokens.setStackSize('SubProcess_1', 2);
         tokens.setStackSize('SubTask_2', 3); // a stacked child
 
-        await tokens.scrollStack('SubProcess_1'); // no nestedStacks
+        await tokens.scrollStack('SubProcess_1', 'forward', () => ({})); // empty instance
 
         // the next instance has no nested stacks
         expect(tokens.getStackSize('SubTask_2')).to.equal(0);
@@ -1265,16 +1266,113 @@ describe('animation', function() {
         });
 
 
-        it('does not draw scope/descendant tokens (at-node only)', async function() {
+      });
+
+
+      describe('tokens in scope (3e)', function() {
+
+        function labelsAt(node) {
+          return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
+        }
+
+        const refs = (...labels) => ({ tokens: labels.map(label => ({ node: 'SubTask_1', label })) });
+
+        it('advances the stack index forward and backward', async function() {
           const tokens = get('animation');
-          tokens.createToken('SubTask_1', 'A', 'tomato', { position: 'center-middle' }); // a child token
+          tokens.setStackSize('SubProcess_1', 3);
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(0);
+
+          await tokens.scrollStack('SubProcess_1', 'forward');
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+
+          await tokens.scrollStack('SubProcess_1', 'backward');
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(0);
+        });
+
+
+        it('wraps the index (setStackIndex) and clamps it on shrink', function() {
+          const tokens = get('animation');
+          tokens.setStackSize('SubProcess_1', 4);
+
+          tokens.setStackIndex('SubProcess_1', 5);          // 5 mod 4 = 1
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+          tokens.setStackIndex('SubProcess_1', -1);         // wraps to 3
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(3);
+
+          tokens.setStackSize('SubProcess_1', 2);           // clamp 3 -> 1
+          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+        });
+
+
+        it('calls getInstance with the node and the ancestor indices (new index)', async function() {
+          const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
 
-          const p = tokens.scrollStack('SubProcess_1');
-          // the container snapshot carries child shapes, but not the child's token dot
-          expect(gfxOf('SubProcess_1').querySelector('.bts-stack-token')).to.not.exist;
+          let received;
+          await tokens.scrollStack('SubProcess_1', 'forward', (node, indices) => {
+            received = { node, indices };
+            return {};
+          });
+
+          expect(received.node).to.equal('SubProcess_1');
+          expect(received.indices).to.eql({ SubProcess_1: 1 });
+        });
+
+
+        it('toggles which scope tokens are shown (tokens persist)', async function() {
+          const tokens = get('animation');
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
+          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' });
+          tokens.setStackSize('SubProcess_1', 2);
+
+          // seed instance 0 -> only a0 shown
+          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
+          expect(labelsAt('SubTask_1')).to.eql([ 'a0' ]);
+
+          // scroll to instance 1 -> only a1 shown; both tokens still in the model
+          await tokens.scrollStack('SubProcess_1', 'forward', () => refs('a1'));
+          expect(labelsAt('SubTask_1')).to.eql([ 'a1' ]);
+          expect(tokens.getTokens()).to.have.length(2);
+        });
+
+
+        it('applies the instance\'s nested stack size and index', async function() {
+          const tokens = get('animation');
+          tokens.setStackSize('SubProcess_1', 2);
+
+          await tokens.scrollStack('SubProcess_1', 'forward',
+            () => ({ stacks: [ { node: 'SubTask_2', stackSize: 3, stackIndex: 2 } ] }));
+
+          expect(tokens.getStackSize('SubTask_2')).to.equal(3);
+          expect(tokens.getStackIndex('SubTask_2')).to.equal(2);
+        });
+
+
+        it('rides a descendant scope token as a snapshot dot, gone after', async function() {
+          const tokens = get('animation');
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
+          tokens.setStackSize('SubProcess_1', 2);
+          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
+
+          const p = tokens.scrollStack('SubProcess_1', 'forward', () => refs('a0'));
+          expect(gfxOf('SubProcess_1').querySelector('.bts-stack-shape .bts-stack-token')).to.exist;
 
           await p;
+          expect(gfxOf('SubProcess_1').querySelector('.bts-stack-token')).to.not.exist;
+        });
+
+
+        it('hides the descendant token overlay during the gesture', async function() {
+          const tokens = get('animation');
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
+          tokens.setStackSize('SubProcess_1', 2);
+          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
+
+          const p = tokens.scrollStack('SubProcess_1', 'forward', () => refs('a0'));
+          expect(dotAt('SubTask_1').closest('.bts-token-count-parent').style.display).to.equal('none');
+
+          await p;
+          expect(dotAt('SubTask_1').closest('.bts-token-count-parent').style.display).to.equal('');
         });
 
       });
