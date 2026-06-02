@@ -1253,15 +1253,15 @@ describe('animation', function() {
         });
 
 
-        it('hides the "+k" marker during the gesture, restores after', async function() {
+        it('keeps the "+k" marker visible during the gesture (stack-level, count unchanged)', async function() {
           const tokens = get('animation');
           tokens.setStackSize('Task_1', 20); // > maxVisible+1 -> a +k marker
 
           const p = tokens.scrollStack('Task_1');
-          expect(document.querySelector('.bts-stack-count').style.display).to.equal('none');
+          expect(document.querySelector('.bts-stack-count').style.display).to.not.equal('none');
 
           await p;
-          expect(document.querySelector('.bts-stack-count').style.display).to.equal('');
+          expect(document.querySelector('.bts-stack-count')).to.exist;
         });
 
 

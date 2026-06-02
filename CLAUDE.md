@@ -111,8 +111,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     (element-local), so A carries the old top and B the new top. The order **steps by one** mid-gesture (between
     the A and B snapshots): `'forward'` ⇒ `moveToBack(top)`, `'backward'` ⇒ `moveToFront(last)` — rotation length
     = the node's at-node token count (cycles among themselves; stack size stays decorative). The real at-node
-    token overlay **and** the `+k` marker are `display:none` for the gesture (the snapshot dots stand in) and
-    restored on finish, where `setStackSize` re-renders them for the new top. **No `filter` arg** — `_order`
+    token overlay is `display:none` for the gesture (the snapshot dot stands in) and restored on finish, where
+    `setStackSize` re-renders it for the new top; the **`+k` marker stays visible** (stack-level — the instance
+    count is unchanged by a scroll and it sits outside the stack footprint). **No `filter` arg** — `_order`
     selects the token. **Tokens *in scope* (descendants) are not drawn (3e, future).**
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
