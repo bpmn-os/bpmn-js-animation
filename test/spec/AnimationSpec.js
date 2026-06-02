@@ -826,6 +826,61 @@ describe('animation', function() {
     });
 
 
+    describe('container children', function() {
+
+      it('clones the container\'s child shapes + flows into each stack copy', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('SubProcess_1', 3);
+
+        const copy = shapes('SubProcess_1')[0];
+
+        // the copy carries a cloned children group with the child visuals + flow path
+        const children = copy.querySelector('.djs-children');
+        expect(children).to.exist;
+        expect(children.querySelectorAll('.djs-visual').length).to.be.greaterThan(0);
+        expect(children.querySelector('.djs-connection')).to.exist; // the SubFlow_1 edge
+      });
+
+
+      it('strips original ids and hit-rects from the cloned children', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('SubProcess_1', 3);
+
+        const copy = shapes('SubProcess_1')[0];
+        // no leaked original ids; the only ids are the fresh inlined arrowhead markers
+        const ids = Array.from(copy.querySelectorAll('[id]')).map(el => el.id);
+        expect(ids.every(id => id.startsWith('bts-marker-'))).to.be.true;
+        expect(copy.querySelectorAll('.djs-hit')).to.have.length(0);
+      });
+
+
+      it('inlines a private arrowhead marker so the cloned flow keeps its arrow', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('SubProcess_1', 3);
+
+        const copy = shapes('SubProcess_1')[0];
+        const marker = copy.querySelector('marker[id^="bts-marker-"]');
+        expect(marker).to.exist;
+        // the cloned connection references the private marker, not a shared one
+        const conn = copy.querySelector('.djs-connection [marker-end], .djs-connection [style*="marker-end"]');
+        expect(conn).to.exist;
+      });
+
+
+      it('leaf nodes clone with no children group', function() {
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 3);
+
+        expect(shapes('Task_1')[0].querySelector('.djs-children')).to.not.exist;
+      });
+
+    });
+
+
     describe('scrollStack', function() {
 
       // scrollStack has a fixed UI speed independent of animationDuration, so the
@@ -836,20 +891,20 @@ describe('animation', function() {
       }
 
 
-      it('plays a forward scroll and resolves, restoring the stack', async function() {
+      it('plays a forward scroll on clones, hiding then restoring the real front', async function() {
         const tokens = get('animation');
-        tokens.setStackSize('Task_1', 3);
+        tokens.setStackSize('Task_1', 3); // 2 copies
 
         const p = tokens.scrollStack('Task_1');
 
-        // the stack elements are being animated in place (Web Animations API)
-        expect(frontVisual('Task_1').getAnimations().length).to.be.greaterThan(0);
+        // clone-only: the real front is hidden and an extra clone is added in flight
+        expect(frontVisual('Task_1').style.display).to.equal('none');
+        expect(shapes('Task_1')).to.have.length(3); // 2 copies + the front clone
 
         await p;
 
-        // canonical stack restored: animations cleared, copies back in place
-        expect(frontVisual('Task_1').getAnimations().length).to.equal(0);
-        expect(frontVisual('Task_1').style.transform).to.equal('');
+        // canonical stack restored: real front shown, clone removed
+        expect(frontVisual('Task_1').style.display).to.equal('');
         expect(shapes('Task_1')).to.have.length(2);
         expect(tokens.getStackSize('Task_1')).to.equal(3);
       });
@@ -861,8 +916,23 @@ describe('animation', function() {
 
         await tokens.scrollStack('Task_1', 'backward');
 
-        expect(frontVisual('Task_1').getAnimations().length).to.equal(0);
+        expect(frontVisual('Task_1').style.display).to.equal('');
         expect(shapes('Task_1')).to.have.length(2);
+      });
+
+
+      it('hides and restores a container\'s real children during the gesture', async function() {
+        const tokens = get('animation');
+        const realChildren = () => gfxOf('SubProcess_1').parentNode.querySelector(':scope > .djs-children');
+
+        tokens.setStackSize('SubProcess_1', 3);
+
+        const p = tokens.scrollStack('SubProcess_1');
+        expect(realChildren().style.display).to.equal('none');
+
+        await p;
+        expect(realChildren().style.display).to.equal('');
+        expect(frontVisual('SubProcess_1').style.display).to.equal('');
       });
 
 

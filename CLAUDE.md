@@ -76,18 +76,21 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     children** of `getGraphics` so they paint *behind* the body and track pan/zoom. Shifted by
     `STACK_OFFSET` (4px), capped at `maxVisible` copies (so ≤ `maxVisible+1` shapes; `getStackSize` still
     reports the true size); `size<=1` removes it; rebuilt each call. Opaque (carries the node's own fill)
-    so it hides content behind it. **Visual-only & host-driven — the library never infers the size from
-    tokens.** Tracked in `_stackSizes`; cleared by `clear`.
-    `scrollStack(node, direction)` plays a one-off **scroll gesture** by animating the **actual stack
-    elements in place** with the Web Animations API (`el.animate`) — no clones, no plane layer. The recycling
-    shape **arcs over the stack**: lifts up clear of the body, travels across to the far slot, and drops in;
-    every other shape slides one slot. `'forward'`: the front arcs to the back (dropping in *behind*) while
-    copies slide toward the front; `'backward'`: the lowest copy arcs to the front (dropping in *on top*) while
-    the front + copies slide back. The recycler's **paint order is swapped mid-flight** (`gfx.insertBefore`) at
-    the apex — after it lifts clear, before it drops — never up front (else the copies paint over it). On finish
-    it **resets to the canonical stack** via `setStackSize` (seamless — identical clones). Runs at a **fixed
-    `STACK_SCROLL_DURATION` (600ms)** — it's UI feedback, *not* simulation, so it's independent of
-    `animationDuration`; resolves when done; the stack size is unchanged.
+    so it hides content behind it. For a **container** (expanded sub-process/event sub-process) each copy also
+    clones the children: the *sibling* `.djs-children` group is deep-cloned, compensated by
+    `translate(-x,-y)` (children carry absolute coords), `.djs-hit`/ids/nested decorations stripped, so a
+    stacked sub-process shows its contents. Cloned connections' arrowheads are fixed by `_inlineMarkers` —
+    referenced `<marker>`s are copied into a local `<defs>` with fresh `bts-marker-N` ids (shared `<defs>`
+    don't paint on clones). Tokens are overlays → never cloned. **Visual-only & host-driven — the library never
+    infers the size from tokens.** Tracked in `_stackSizes`; cleared by `clear`.
+    `scrollStack(node, direction)` plays a one-off **scroll gesture** by animating **clones only** (Web
+    Animations API): a clone of the front is added (carrying its children) and the real front + its real
+    `.djs-children` are hidden for the gesture. The recycling clone **arcs over the stack** (lifts clear,
+    travels across, drops in) while the rest slide one slot; `'forward'` recycles the front to the back
+    (dropping in *behind*), `'backward'` brings the lowest to the front (*on top*) — paint order swapped
+    mid-flight at the apex. On finish it restores the real front and **rebuilds the canonical stack** via
+    `setStackSize` (seamless — identical clones). Runs at a **fixed `STACK_SCROLL_DURATION` (600ms)** — UI
+    feedback, *not* simulation, so independent of `animationDuration`; resolves when done; size unchanged.
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
