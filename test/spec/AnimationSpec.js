@@ -493,6 +493,26 @@ describe('animation', function() {
       expect(marker()).to.not.exist;
     });
 
+
+    it('the "+N" marker counts only matching tokens', function() {
+      const tokens = get('animation');
+
+      // 6 tomato + 3 steelblue at one location
+      for (let i = 1; i <= 9; i++) {
+        tokens.createToken('Gateway_1', 'S' + i, i <= 6 ? 'tomato' : 'steelblue');
+      }
+
+      // unfiltered: 3 dots + "+6" (all 9)
+      expect(dots()).to.have.length(3);
+      expect(marker().textContent.trim()).to.equal('+6');
+
+      tokens.setFilter(t => t.color === 'tomato');
+
+      // filtered: 6 match -> 3 dots + "+3" (hidden steelblue ignored)
+      expect(dots()).to.have.length(3);
+      expect(marker().textContent.trim()).to.equal('+3');
+    });
+
   });
 
 
