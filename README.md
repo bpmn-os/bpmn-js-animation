@@ -104,6 +104,10 @@ state = {
 | `sendToken([{ node, label, sequenceFlow, state? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source first; rejects if a source `(node, label)` is ambiguous. |
 | `setState(node, label, state, sequenceFlow?)` | Update state in place (partial merge — toggle `bounce` without moving, etc.). Trailing `sequenceFlow` selects which token when several rest at the node. |
 | `removeToken(node, label, sequenceFlow?)` | Remove a token, cancelling any in-flight animation. |
+| `selectToken(node, label, sequenceFlow?)` / `deselectToken(…)` | Toggle a blue ring on a resting token. Selection is **carried**: it survives a move, is copied to each split branch, and OR-merges on a join. |
+| `getSelectedTokens()` | The selected tokens (`Token[]`). |
+| `moveToFront(token)` / `moveToBack(token)` | Reorder a token in the **global draw order** (pass the token object from `createToken`/`getTokens`). Front = first drawn at its node, and the token a stacked node shows on top. Stale reference → no-op. |
+| `setNodeSelected(node, selected?)` / `getSelectedNodes()` | Draw a modeller-style blue boundary on an element (stack-aware); list selected node ids. |
 | `throwIcon(node)` | Play the element's own **icon** (event/task-type icon) as a **throw**: fly it diagonally up-right and fade out. Native color, shared duration. `→ Promise`; no-op if the element has no icon. |
 | `catchIcon(node)` | Play the element's own **icon** as a **catch**: draw it in from up-left and fade in. Counterpart to `throwIcon`. `→ Promise`; no-op if no icon. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state }`). |
@@ -145,6 +149,54 @@ transitions are driven by external events that can arrive faster than a token an
   overlap; the animation is cosmetic catch-up.
 - **Shorten transitions** — lower the global duration with `setAnimationDuration(ms)`
   (or the `animation: { animationDuration }` config); `0` makes them instant.
+
+## Instance stacks
+
+Render a node as a **stack of its own shape** (multiple instances) and scroll through
+them. Visualization only — the host drives sizes and contents; the library never infers
+a stack from tokens.
+
+| Method | Description |
+| --- | --- |
+| `setStackSize(node, size)` | Render `node` as a diagonally-offset stack of `size` copies of its own shape (`size <= 1` removes it). A plain **`+k`** marks instances beyond the drawn cap. |
+| `getStackSize(node)` / `getMaxVisible()` | The stack size; the per-node drawn cap (default 3, configurable via `animation: { maxVisible }`). |
+| `getStackIndex(node)` / `setStackIndex(node, index, getInstance?)` | The current front-instance index (0-based, wraps); set/seed it (loads that instance via `getInstance`, no animation). |
+| `scrollStack(node, direction?, getInstance?)` | Animate stepping to the next (`'forward'`) / previous (`'backward'`) instance, at a fixed UI speed. `→ Promise`. |
+| `getProcessBox()` | Id of the box drawn around an implicit (pool-less) `bpmn:Process` while it's stacked, else `null`. |
+
+**Tokens on a stack.** A stacked node shows only its **top** token (first by global order —
+use `moveToFront` / `moveToBack` to choose which). On scroll, that token rides the
+transition and steps to the next instance's.
+
+**Instance content (`getInstance`).** Scrolling a *container* (sub-process, event
+sub-process, or a pool-less process) is a UI gesture, so the library owns the index and
+**pulls** the incoming instance from a host callback:
+
+```javascript
+animation.setStackSize('SubProcess_1', 5);
+animation.setStackIndex('SubProcess_1', 0, getInstance);          // seed instance 0
+await animation.scrollStack('SubProcess_1', 'forward', getInstance);
+
+function getInstance(node, indices) {
+  // indices = { stackNodeId: index } for every stacked node up the ancestor chain
+  // (node at its new index). Return what the instance shows:
+  return {
+    tokens: [ { node: 'SubTask_1', label: 'order-42' } ],          // refs to existing tokens
+    stacks: [ { node: 'SubTask_2', stackSize: 3, stackIndex: 0 } ] // nested stack sizes/indices
+  };
+}
+```
+
+All instances' scope tokens live in the model at once (created once, with their own
+color/state); `getInstance` returns **references** `{ node, label }` to the ones shown for
+the active instance, and the library toggles visibility — nothing is recreated and
+color/state never change on a scroll.
+
+**Implicit process box.** A bare `bpmn:Process` with no pool has no shape to stack.
+`setStackSize(processId, n > 1)` draws a **pool-style box** (outer rect + left banner with
+the process name) around its flow nodes and stacks that; `setStackSize(processId, 1)`
+removes it. `getProcessBox()` returns its id. The box behaves like a sub-process — it
+carries tokens at the process and tokens in its scope, and supports selection.
 
 ## License
 
