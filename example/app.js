@@ -114,33 +114,43 @@ async function main() {
 
   // --- token selection (state lives on the token; read back via getTokens) ---
 
-  const sameToken = (t, node, label, sf) =>
-    t.node === node && t.label === label && (t.state.sequenceFlow || null) === (sf || null);
+  // normalize an instance map the way the library keys it (non-zero entries, sorted) so
+  // tokens are matched by the same identity regardless of how the map was spelled
+  const ctxKey = indices =>
+    !indices ? '' : Object.keys(indices).filter(id => indices[id]).sort().map(id => `${id}:${indices[id]}`).join(',');
 
-  function setTokenSelected(node, label, sequenceFlow, selected) {
+  const sameToken = (t, node, label, sf, stackIndices) =>
+    t.node === node && t.label === label &&
+    (t.state.sequenceFlow || null) === (sf || null) &&
+    ctxKey(t.stackIndices) === ctxKey(stackIndices);
+
+  // selector = { sequenceFlow?, stackIndices? } — the instance is what lets us address a
+  // token on a non-front stack (not just the base instance)
+  function setTokenSelected(node, label, sequenceFlow, stackIndices, selected) {
+    const selector = { sequenceFlow: sequenceFlow || undefined, stackIndices };
     if (selected) {
-      animation.selectToken(node, label, sequenceFlow || undefined);
+      animation.selectToken(node, label, selector);
     } else {
-      animation.deselectToken(node, label, sequenceFlow || undefined);
+      animation.deselectToken(node, label, selector);
     }
   }
 
-  function clickToken(node, label, sequenceFlow, additive) {
-    const t = animation.getTokens(x => sameToken(x, node, label, sequenceFlow))[0];
+  function clickToken(node, label, sequenceFlow, stackIndices, additive) {
+    const t = animation.getTokens(x => sameToken(x, node, label, sequenceFlow, stackIndices))[0];
     if (!t) {
       return;
     }
     if (additive) {
-      setTokenSelected(node, label, sequenceFlow, !t.selected);
+      setTokenSelected(node, label, sequenceFlow, stackIndices, !t.selected);
     } else {
       const selected = animation.getTokens(x => x.selected);
       const wasSole = selected.length === 1 && t.selected;
       selected.forEach(x => {
         if (x !== t) {
-          setTokenSelected(x.node, x.label, x.state.sequenceFlow, false);
+          setTokenSelected(x.node, x.label, x.state.sequenceFlow, x.stackIndices, false);
         }
       });
-      setTokenSelected(node, label, sequenceFlow, !wasSole);
+      setTokenSelected(node, label, sequenceFlow, stackIndices, !wasSole);
     }
     log(`tokens: [${animation.getTokens(x => x.selected).map(x => `${x.label}@${x.node}`).join(', ') || '—'}]`);
   }
@@ -164,9 +174,9 @@ async function main() {
   });
 
   eventBus.on('token.click', e => {
-    currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null };
+    currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null, stackIndices: e.stackIndices };
     renderReadouts();
-    clickToken(e.node, e.label, e.sequenceFlow || null, !!(e.originalEvent && e.originalEvent.shiftKey));
+    clickToken(e.node, e.label, e.sequenceFlow || null, e.stackIndices, !!(e.originalEvent && e.originalEvent.shiftKey));
   });
 
   // double-click a stacked node to scroll it: forward, or backward with Shift held

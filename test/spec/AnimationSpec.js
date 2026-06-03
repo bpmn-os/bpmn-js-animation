@@ -429,6 +429,30 @@ describe('animation', function() {
     });
 
 
+    it('token.click carries the clicked instance\'s stackIndices (not just the base)', function() {
+      const tokens = get('animation');
+
+      let fired;
+      get('eventBus').on('token.click', e => (fired = e));
+
+      tokens.setStackSize('Task_1', 2);
+      tokens.createToken('Task_1', 'A', 'tomato', undefined, { Task_1: 0 });
+      tokens.createToken('Task_1', 'A', 'steelblue', undefined, { Task_1: 1 });
+
+      // front = instance 1: the visible dot is that instance's
+      tokens.setStackIndex('Task_1', 1);
+      dotAt('Task_1').click();
+
+      expect(fired.stackIndices).to.eql({ Task_1: 1 });
+
+      // and it addresses the right (non-base) token
+      tokens.selectToken('Task_1', 'A', { stackIndices: fired.stackIndices });
+      const selected = tokens.getSelectedTokens();
+      expect(selected).to.have.length(1);
+      expect(selected[0].stackIndices).to.eql({ Task_1: 1 });
+    });
+
+
     it('fires token.overflow.click with the hidden tokens', function() {
       const tokens = get('animation');
 

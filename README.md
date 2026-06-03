@@ -116,9 +116,11 @@ state = {
 
 ### Events (on the bpmn-js `eventBus`)
 
-- `token.click` — `{ node, label, sequenceFlow }`
+- `token.click` — `{ node, label, sequenceFlow, stackIndices }` (`stackIndices` is the
+  clicked **instance** — pass it back as the selector to address that token, since a
+  stacked node shows only its front instance)
 - `token.overflow.click` — `{ node, hidden }` (the `+N` marker; `hidden` is the
-  list of `{ node, label }` not shown)
+  list of `{ node, label, stackIndices }` not shown)
 
 ### Crowded nodes
 
