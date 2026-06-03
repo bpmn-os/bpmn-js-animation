@@ -1382,6 +1382,110 @@ describe('animation', function() {
   });
 
 
+  describe('process box (T4)', function() {
+
+    // test/diagram.bpmn root is a bare bpmn:Process (no collaboration)
+    function box() {
+      return document.querySelector('.bts-process-box');
+    }
+
+    it('draws a pool-style box around the implicit process on setStackSize', function() {
+      const tokens = get('animation');
+      expect(box()).to.not.exist;
+
+      tokens.setStackSize('Process_1', 3);
+
+      expect(box()).to.exist;
+      expect(box().querySelector('.djs-visual rect')).to.exist;        // outer rect
+      expect(box().querySelector('.bts-process-box-label')).to.exist;  // banner label
+      expect(tokens.getStackSize('Process_1')).to.equal(3);
+      expect(tokens.getProcessBox()).to.equal('Process_1');
+      expect(box().querySelectorAll('.bts-stack-shape')).to.have.length(2); // size-1 copies
+    });
+
+
+    it('wraps the box bounds around the flow nodes (banner to the left)', function() {
+      const tokens = get('animation');
+      const er = get('elementRegistry');
+
+      tokens.setStackSize('Process_1', 2);
+
+      const root = er.get('Process_1');
+      expect(root.width).to.be.above(0);
+      expect(root.x).to.be.below(er.get('StartEvent_1').x); // banner + padding left of content
+    });
+
+
+    it('renders an at-process token on the box', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Process_1', 2);
+      tokens.createToken('Process_1', 'P', 'tomato', { position: 'center-middle' });
+
+      expect(dotAt('Process_1')).to.exist;
+    });
+
+
+    it('scrolls the process box, flow nodes riding the snapshot', async function() {
+      const tokens = get('animation');
+
+      tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
+      tokens.setStackSize('Process_1', 2);
+
+      const p = tokens.scrollStack('Process_1', 'forward', () => ({}));
+      // the with-content snapshot carries cloned flow-node gfx (root children are djs-group)
+      expect(box().querySelector('.bts-stack-shape .djs-group')).to.exist;
+
+      await p;
+      expect(tokens.getStackIndex('Process_1')).to.equal(1);
+    });
+
+
+    it('draws a selection outline around the boxed process', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Process_1', 2);
+      tokens.setNodeSelected('Process_1');
+
+      const box = document.querySelector('.bts-process-box');
+      expect(box.querySelector('.bts-node-outline')).to.exist;
+    });
+
+
+    it('selecting an unboxed process is a safe no-op (no outline)', function() {
+      const tokens = get('animation');
+
+      expect(() => tokens.setNodeSelected('Process_1')).to.not.throw();
+      expect(document.querySelector('.bts-node-outline')).to.not.exist;
+    });
+
+
+    it('removes the box on size <= 1 (and restores the root)', function() {
+      const tokens = get('animation');
+      const er = get('elementRegistry');
+
+      tokens.setStackSize('Process_1', 3);
+      tokens.setStackSize('Process_1', 1);
+
+      expect(box()).to.not.exist;
+      expect(tokens.getProcessBox()).to.equal(null);
+      expect(er.get('Process_1').width).to.equal(undefined); // bounds restored
+    });
+
+
+    it('clear() removes the box', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Process_1', 3);
+      tokens.clear();
+
+      expect(box()).to.not.exist;
+      expect(tokens.getProcessBox()).to.equal(null);
+    });
+
+  });
+
+
   describe('setAnimationDuration', function() {
 
     it('changes the global animation duration', function() {

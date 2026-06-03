@@ -109,6 +109,27 @@
   pointer-events: none;
 }
 
+/* implicit-process box (T4): a pool-style container we draw around a pool-less process
+   so it can be stacked. Outer rect + left banner divider + rotated process name. */
+.bts-process-box {
+  pointer-events: none;
+}
+.bts-process-box .djs-visual > rect {
+  fill: var(--token-simulation-white, #FFFFFF); /* opaque, so offset stack copies hide content */
+  stroke: var(--token-simulation-grey-base-40, #666666);
+  stroke-width: 1.5px;
+}
+.bts-process-box .djs-visual > line {
+  fill: none;
+  stroke: var(--token-simulation-grey-base-40, #666666);
+  stroke-width: 1.5px;
+}
+.bts-process-box-label {
+  fill: var(--token-simulation-grey-darken-30, #212121);
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+}
+
 /* throwIcon / catchIcon — the element's own icon flying out/in diagonally */
 .bts-icon {
   pointer-events: none;

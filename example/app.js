@@ -147,7 +147,12 @@ async function main() {
   // that one (clears the rest); Shift-click adds to / toggles within the selection.
   eventBus.on('element.click', e => {
     const el = e.element;
-    if (el && !el.waypoints && el.businessObject && el.type !== 'bpmn:Process' && el.parent) {
+    if (!el || el.waypoints || !el.businessObject) {
+      return;
+    }
+    // clicking the empty background fires element.click with the root; for a pool-less
+    // diagram that root IS the bpmn:Process — select it so it can be stacked (T4)
+    if (el.type === 'bpmn:Process' || el.parent) {
       currentNode = el.id;
       renderReadouts();
       clickNode(el.id, !!(e.originalEvent && e.originalEvent.shiftKey));
@@ -163,7 +168,9 @@ async function main() {
   // double-click a stacked node to scroll it: forward, or backward with Shift held
   eventBus.on('element.dblclick', e => {
     const el = e.element;
-    if (!el || el.waypoints || !el.businessObject || el.type === 'bpmn:Process' || !el.parent) {
+    // any stacked node/connection-free shape — including the implicit process root
+    // (double-click the empty background) — scrolls; Shift reverses
+    if (!el || el.waypoints || !el.businessObject) {
       return;
     }
     if (animation.getStackSize(el.id) <= 1) {
@@ -288,19 +295,26 @@ async function main() {
   }
 
   on('randomInstances', () => {
-    if (!currentNode) {
+    // default to the (implicit) process when nothing is selected
+    const root = viewer.get('canvas').getRootElement();
+    const target = currentNode || (root && root.type === 'bpmn:Process' ? root.id : null);
+
+    if (!target) {
       return log('click a container node first');
     }
 
-    const el = elementRegistry.get(currentNode);
+    const el = elementRegistry.get(target);
     const children = (el.children || []).filter(c => !c.waypoints && c.businessObject);
 
     if (!children.length) {
-      return log(`${currentNode} is not an expanded container`);
+      return log(`${target} is not an expanded container`);
     }
 
+    currentNode = target; // so the scroll buttons + readouts act on it
+    renderReadouts();
+
     // drop any existing scope tokens / stacks under this container, then rebuild
-    animation.getTokens(t => isDescendant(t.node, currentNode))
+    animation.getTokens(t => isDescendant(t.node, target))
       .forEach(t => animation.removeToken(t.node, t.label, t.state.sequenceFlow));
     children.forEach(c => animation.setStackSize(c.id, 0));
 
@@ -327,11 +341,11 @@ async function main() {
     }
 
     const getInstance = (node, indices) => instances[indices[node] || 0];
-    instanceModels.set(currentNode, getInstance);
+    instanceModels.set(target, getInstance);
 
-    animation.setStackSize(currentNode, count);
-    animation.setStackIndex(currentNode, 0, getInstance); // seed instance 0
-    log(`randomInstances(${currentNode}): ${count} instances`);
+    animation.setStackSize(target, count);
+    animation.setStackIndex(target, 0, getInstance); // seed instance 0
+    log(`randomInstances(${target}): ${count} instances`);
   });
 
   on('scrollBack', () => {

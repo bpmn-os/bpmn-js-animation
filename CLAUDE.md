@@ -53,7 +53,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `selectToken(node,label,sequenceFlow?)` / `deselectToken(…)`,
     `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size)`, `getStackSize(node) → number`,
-    `getStackIndex(node) → number`, `setStackIndex(node,index,getInstance?)`,
+    `getStackIndex(node) → number`, `setStackIndex(node,index,getInstance?)`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward',getInstance?) → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (in global order),
     `moveToFront(token)` / `moveToBack(token)`, `setFilter(predicate|null)`, `clear`,
@@ -130,6 +130,18 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     token into the snapshot (so scope tokens ride the arc); the node's + descendants' token overlays (and
     descendant `+k` markers) hide for the gesture. Flat — one `getInstance` per scrolled node returns its whole
     subtree; no recursion. Composes with 3c (event sub-process → no at-node token, only 3e runs).
+  - **Implicit-process box (T4)** — a bare `bpmn:Process` (no `bpmn:Collaboration`/pool) has its flow nodes on
+    the root plane with **no shape** to stack. So when `setStackSize(node, size>1)` is called on a node where
+    `is(element, 'bpmn:Process')` (a pool is `bpmn:Participant`, excluded), `_ensureProcessBox` lazily draws a
+    **pool-style box** we own: `getBBox(children) + banner/padding`, **set on the root element** (`x/y/width/
+    height`, saved + restored) so every bounds-based path works on it, and a `.bts-process-box` `<g>`
+    (`.djs-visual` = white-filled rect + `x=30` banner divider + rotated `bpmn:Process` name) inserted as the
+    **first child of `canvas.getActiveLayer()`** (behind the flow groups; opaque white so offset copies hide
+    content). Only `getGraphics` is shimmed (`_stackGfx` → the box, since `getGraphics(root)` is the layer);
+    bounds are real, so at-process tokens (3a/3c) + scope tokens (3e — `root.children` have real `parent`) work
+    unchanged. Scroll content = the layer's groups beside the box (`_processBoxContent`, the root has no
+    `.djs-children`). `getProcessBox() → id|null`; removed on `size<=1`/`clear` (bounds restored). The example
+    selects the pool-less process by **clicking the empty background** (`element.click` fires with the root).
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
     whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
