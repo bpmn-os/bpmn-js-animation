@@ -109,7 +109,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     current; snapshot that (B); hide the real node + content + the node's & descendants' token overlays; animate
     **clones only** — the recycling clone **arcs over the stack** while the rest slide one slot (paint order
     swapped at the apex). On finish: reveal, `_redrawStack` + re-render the subtree. Which tokens A/B carry is the
-    resolution rule (`_drawTokenDots` draws every rule-visible token of the node + descendants). Fixed
+    resolution rule (`_drawTokenDots` draws every rule-visible token of the node + descendants that are
+    **co-rendered on the same plane** (`_coRendered`) — a collapsed sub-process's drill-plane children are
+    excluded from its collapsed-view snapshot). Fixed
     `STACK_SCROLL_DURATION` (600ms) — UI feedback, independent of `animationDuration`. `moveToFront`/`moveToBack(
     node, instanceIndex)` and `setStackIndex(node, index)` reorder the same `stackOrder` (no animation);
     `getStackIndex` = `stackOrder[0]`. With-content clones deep-clone the sibling `.djs-children` (compensated

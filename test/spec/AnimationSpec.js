@@ -1527,6 +1527,23 @@ describe('animation — collapsed sub-process (drill plane)', function() {
   });
 
 
+  it('a collapsed scroll snapshot excludes drill-plane child dots (keeps the at-node dot)', async function() {
+    const animation = get('animation');
+
+    animation.setStackSize('Collapsed_1', 2);
+    animation.createToken('Collapsed_1', 'n', 'tomato', { position: 'center-middle' }, { Collapsed_1: 0 });
+    animation.createToken('Inner_1', 'c', 'steelblue', { position: 'center-middle' }, { Collapsed_1: 0 });
+    animation.setAnimationDuration(300);
+
+    const scrolling = animation.scrollStack('Collapsed_1', 'forward'); // collapsed view, on the parent plane
+
+    const dots = document.querySelectorAll('.bts-stack-shape .bts-stack-token');
+    expect(dots, 'only the at-node token rides the collapsed snapshot').to.have.length(1);
+
+    await scrolling;
+  });
+
+
   it('shows the front instance\'s own child token', function() {
     const animation = get('animation');
 
