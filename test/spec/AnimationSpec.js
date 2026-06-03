@@ -778,7 +778,7 @@ describe('animation', function() {
     });
 
 
-    it('size <= 1 removes the stack', function() {
+    it('size 1 is a single instance (no offset copies)', function() {
       const tokens = get('animation');
 
       tokens.setStackSize('Task_1', 3);
@@ -786,8 +786,22 @@ describe('animation', function() {
 
       tokens.setStackSize('Task_1', 1);
 
+      expect(shapes('Task_1'), 'one instance => no copies behind').to.have.length(0);
+      expect(tokens.getStackSize('Task_1'), 'count is the instance count').to.equal(1);
+    });
+
+
+    it('size 0 / null clears the stack', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.setStackSize('Task_1', 0);
       expect(shapes('Task_1')).to.have.length(0);
       expect(tokens.getStackSize('Task_1')).to.equal(0);
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.setStackSize('Task_1', null);
+      expect(tokens.getStackSize('Task_1'), 'null also clears').to.equal(0);
     });
 
 
@@ -1395,16 +1409,32 @@ describe('animation', function() {
     });
 
 
-    it('removes the box on size <= 1 (and restores the root)', function() {
+    it('keeps the box at a single instance (size 1, no stack copies)', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Process_1', 1);
+
+      expect(box(), 'box drawn for one instance').to.exist;
+      expect(tokens.getProcessBox()).to.equal('Process_1');
+      expect(box().querySelectorAll('.bts-stack-shape'), 'no offset copies at size 1').to.have.length(0);
+      expect(tokens.getStackSize('Process_1')).to.equal(1);
+    });
+
+
+    it('removes the box on size 0 / null (and restores the root)', function() {
       const tokens = get('animation');
       const er = get('elementRegistry');
 
       tokens.setStackSize('Process_1', 3);
-      tokens.setStackSize('Process_1', 1);
+      tokens.setStackSize('Process_1', 0);
 
       expect(box()).to.not.exist;
       expect(tokens.getProcessBox()).to.equal(null);
       expect(er.get('Process_1').width).to.equal(undefined); // bounds restored
+
+      tokens.setStackSize('Process_1', 2);
+      tokens.setStackSize('Process_1', null);
+      expect(box(), 'null also removes').to.not.exist;
     });
 
 

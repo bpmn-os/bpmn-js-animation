@@ -84,7 +84,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     diagonally-offset **stack of its own shape** — the real node on top, with `size-1` opaque clones of
     `.djs-visual` (ids stripped, `pointer-events:none`, class `bts-stack-shape`) inserted as **leading children**
     of `getGraphics` so they paint *behind* the body and track pan/zoom. Shifted by `STACK_OFFSET` (4px), capped
-    at `maxVisible` copies; `size<=1` removes it. Static copies are **outline-only**; their **contents** are only
+    at `maxVisible` copies. **`size` is the instance count, uniform across node kinds:** `setStackSize` records
+    `size>=1` and `0`/`null` clears it; the first instance is the node itself (or the process box), so only the
+    `size-1` extras become copies — **size 1 = a single instance, no copies** (`getStackSize` returns 1). Static
+    copies are **outline-only**; their **contents** are only
     drawn on the `scrollStack` snapshots (`_cloneNodeVisual(element, gfx, withContent)`). **Visual-only &
     host-driven — never inferred from tokens.** `_redrawStack(node)` draws the silhouette/`+k`/outline + re-renders
     tokens for the **currently-resolved** size.
@@ -125,7 +128,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     ids. The `+k` marker stays visible through the gesture (stack-level). Composes for nesting (the rule checks
     every stacked ancestor) and event sub-processes (no at-node token → only scope tokens).
   - **Implicit-process box (T4)** — a bare `bpmn:Process` (no `bpmn:Collaboration`/pool) has its flow nodes on
-    the root plane with **no shape** to stack. So when `setStackSize(node, size>1)` is called on a node where
+    the root plane with **no shape** of its own — so the box *is* its first instance. When `setStackSize(node,
+    size>=1)` is called on a node where
     `is(element, 'bpmn:Process')` (a pool is `bpmn:Participant`, excluded), `_ensureProcessBox` lazily draws a
     **pool-style box** we own: `getBBox(children) + banner/padding`, **set on the root element** (`x/y/width/
     height`, saved + restored) so every bounds-based path works on it, and a `.bts-process-box` `<g>`
@@ -134,7 +138,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     content). Only `getGraphics` is shimmed (`_stackGfx` → the box, since `getGraphics(root)` is the layer);
     bounds are real, so at-process tokens (3a/3c) + scope tokens (3e — `root.children` have real `parent`) work
     unchanged. Scroll content = the layer's groups beside the box (`_processBoxContent`, the root has no
-    `.djs-children`). `getProcessBox() → id|null`; removed on `size<=1`/`clear` (bounds restored). The example
+    `.djs-children`). `getProcessBox() → id|null`; drawn for `size>=1` (size 1 = box only), removed on
+    `size<1`/`clear` (bounds restored). The example
     selects the pool-less process by **clicking the empty background** (`element.click` fires with the root).
   - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
     clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape

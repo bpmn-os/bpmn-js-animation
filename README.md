@@ -157,7 +157,7 @@ a stack from tokens.
 
 | Method | Description |
 | --- | --- |
-| `setStackSize(node, size, ancestorStackIndices?)` | Render `node` as a diagonally-offset stack of `size` copies of its own shape (`size <= 1` removes it). A plain **`+k`** marks instances beyond the drawn cap. `ancestorStackIndices` (a map `{ stackedAncestorId: index }`) declares the size *for a given outer instance*, so a nested activity can have a different count per outer instance — **contexts are independent** (a size set under one outer instance never leaks to another). Omit it to target the instance **currently on screen**; pass `{}` for the base/flat context explicitly. |
+| `setStackSize(node, size, ancestorStackIndices?)` | Declare `node`'s **instance count** (`size`). The first instance is drawn by whatever already represents the node — its own shape, or the implicit process's box (T4) — and the additional `size - 1` instances render as diagonally-offset copies, so **size 1 is a single instance with no copies** and `0`/`null` clears it (for the process, removes the box). A plain **`+k`** marks instances beyond the drawn cap. `ancestorStackIndices` (a map `{ stackedAncestorId: index }`) declares the count *for a given outer instance*, so a nested activity can differ per outer instance — **contexts are independent** (a count set under one outer instance never leaks to another). Omit it to target the instance **currently on screen**; pass `{}` for the base/flat context explicitly. |
 | `getStackSize(node)` / `getMaxVisible()` | The stack size for the instance on screen (resolved against the current context); the per-node drawn cap (default 3, via `animation: { maxVisible }`). |
 | `getStackIndex(node)` | The current front-instance index (0-based). |
 | `setStackIndex(node, index)` / `moveToFront(node, instanceIndex)` / `moveToBack(node, instanceIndex)` | Reorder the node's instances (no animation): jump an instance to the front, or send it to the back. |
@@ -197,11 +197,13 @@ correct and needs no stackability check on your side.
 declared with the context argument, e.g. `setStackSize('MI_Activity', 3, { Process_1: 1 })`,
 and resolve automatically as you scroll the outer stack.
 
-**Implicit process box.** A bare `bpmn:Process` with no pool has no shape to stack.
-`setStackSize(processId, n > 1)` draws a **pool-style box** (outer rect + left banner with
-the process name) around its flow nodes and stacks that; `setStackSize(processId, 1)`
-removes it. `getProcessBox()` returns its id. The box behaves like a sub-process — it
-carries tokens at the process and tokens in its scope, and supports selection.
+**Implicit process box.** A bare `bpmn:Process` with no pool has no shape of its own, so
+the box *is* its first instance. `setStackSize(processId, n >= 1)` draws a **pool-style
+box** (outer rect + left banner with the process name) around its flow nodes — at `n = 1`
+just the box, at `n > 1` the box plus `n - 1` offset copies — and `setStackSize(processId,
+0)` (or `null`) removes it. `getProcessBox()` returns its id. The box behaves like a
+sub-process — it carries tokens at the process and tokens in its scope, and supports
+selection.
 
 ## License
 
