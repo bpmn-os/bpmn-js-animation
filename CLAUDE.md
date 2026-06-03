@@ -115,7 +115,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     resolution rule (`_drawTokenDots` draws every rule-visible token of the node + descendants that are
     **co-rendered on the same plane** (`_coRendered`) — a collapsed sub-process's drill-plane children are
     excluded from its collapsed-view snapshot). Fixed
-    `STACK_SCROLL_DURATION` (600ms) — UI feedback, independent of `animationDuration`. `moveToFront`/`moveToBack(
+    `STACK_SCROLL_DURATION` (600ms) — UI feedback, independent of `animationDuration`. **When drilled *into* the
+    node's own plane** (its shape sits on a different plane than the active root, so the arc would play
+    off-screen), `scrollStack` **swaps instantly** instead — rotate `stackOrder` + `_renderStackSubtree`, no
+    overlay-hide — otherwise the on-plane token overlays would just vanish for 600ms and snap back. `moveToFront`/`moveToBack(
     node, instanceIndex)` and `setStackIndex(node, index)` reorder the same `stackOrder` (no animation);
     `getStackIndex` = `stackOrder[0]`. With-content clones deep-clone the sibling `.djs-children` (compensated
     `translate(-x,-y)`; `.djs-hit`/outlines stripped) + inline arrowhead `<marker>`s with fresh `bts-marker-N`

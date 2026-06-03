@@ -1527,6 +1527,33 @@ describe('animation — collapsed sub-process (drill plane)', function() {
   });
 
 
+  it('scrolling from inside the plane swaps instantly (no off-screen gesture)', async function() {
+    const animation = get('animation');
+    const canvas = get('canvas');
+    const elementRegistry = get('elementRegistry');
+
+    animation.setStackSize('Collapsed_1', 2);
+    animation.createToken('Inner_1', 'a', 'tomato', { position: 'center-middle' }, { Collapsed_1: 0 });
+    animation.createToken('Inner_1', 'b', 'steelblue', { position: 'top-left' }, { Collapsed_1: 1 });
+    animation.setAnimationDuration(300);
+
+    // drill into the sub-process's own plane: its collapsed shape (where the arc would
+    // play) is now off-screen, so the scroll must update synchronously rather than hide the
+    // on-plane token overlays for the gesture duration
+    canvas.setRootElement(elementRegistry.get('Collapsed_1_plane'));
+
+    const scrolling = animation.scrollStack('Collapsed_1', 'forward');
+
+    // synchronously (before the promise resolves) the front has stepped and the new
+    // instance's token is already shown — not hidden waiting on a 600ms arc
+    expect(animation.getStackIndex('Collapsed_1'), 'front stepped instantly').to.equal(1);
+    const dot = document.querySelector('.bts-token-count[data-node-id="Inner_1"]');
+    expect(dot && dot.style.display !== 'none', 'token shown immediately').to.be.true;
+
+    await scrolling;
+  });
+
+
   it('a collapsed scroll snapshot excludes drill-plane child dots (keeps the at-node dot)', async function() {
     const animation = get('animation');
 
