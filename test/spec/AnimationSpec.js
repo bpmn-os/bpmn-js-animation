@@ -11,6 +11,7 @@ import {
 import { getRandomColor } from '../../lib/index.js';
 
 import diagramXML from '../diagram.bpmn';
+import collapsedXML from '../collapsed.bpmn';
 
 function dotAt(node) {
   return document.querySelector(`.bts-token-count[data-node-id="${node}"]`);
@@ -160,7 +161,7 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
-        tokens.setState('Gateway_1', 'A', { position: 'center-right' }, 'Flow_3');
+        tokens.setState('Gateway_1', 'A', { position: 'center-right' }, { sequenceFlow: 'Flow_3' });
 
         const t = tok('Gateway_1', 'A');
 
@@ -311,8 +312,8 @@ describe('animation', function() {
 
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
 
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_3');
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_4');
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_3' });
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_4' });
 
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(1);
     });
@@ -324,7 +325,7 @@ describe('animation', function() {
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
 
-      tokens.removeToken('Gateway_1', 'A', 'Flow_3');
+      tokens.removeToken('Gateway_1', 'A', { sequenceFlow: 'Flow_3' });
 
       const at = tokens.getTokens(t => t.label === 'A');
 
@@ -516,9 +517,8 @@ describe('animation', function() {
   });
 
 
-  describe('token order (3b)', function() {
+  describe('token list', function() {
 
-    // dots at a node, in DOM order (= global order)
     function labelsAt(node) {
       return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
     }
@@ -534,77 +534,13 @@ describe('animation', function() {
     });
 
 
-    it('renders a cluster in global order', function() {
+    it('renders every token of a non-stacked cluster', function() {
       const tokens = get('animation');
 
       tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
       tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
 
-      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
-    });
-
-
-    it('moveToFront makes a token first (in getTokens and the render)', function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      const b = tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
-
-      tokens.moveToFront(b);
-
-      expect(tokens.getTokens().map(t => t.label)).to.eql([ 'B', 'A' ]);
-      expect(labelsAt('Task_1')).to.eql([ 'B', 'A' ]);
-    });
-
-
-    it('moveToBack makes a token last', function() {
-      const tokens = get('animation');
-
-      const a = tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
-
-      tokens.moveToBack(a);
-
-      expect(labelsAt('Task_1')).to.eql([ 'B', 'A' ]);
-    });
-
-
-    it('order is stable across setState (token keeps its slot)', function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
-
-      // re-state A — it should keep its slot, not jump to the back
-      tokens.setState('Task_1', 'A', { bounce: true });
-
-      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
-    });
-
-
-    it('order is stable across a sendToken move (branch inherits the slot)', async function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      tokens.createToken('Gateway_1', 'B', 'steelblue', { position: 'center-middle' });
-      tokens.createToken('Task_1', 'C', 'seagreen', { position: 'center-middle' });
-
-      // move B forward; it should keep its middle slot in the global order
-      await tokens.sendToken([ transition('Gateway_1', 'B', 'Flow_3', { position: 'center-middle' }) ]);
-
-      expect(tokens.getTokens().map(t => t.label)).to.eql([ 'A', 'B', 'C' ]);
-    });
-
-
-    it('a stale/unknown token reference is a no-op', function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
-
-      tokens.moveToFront({ node: 'Task_1', label: 'ghost' }); // not in _order
-
-      expect(labelsAt('Task_1')).to.eql([ 'A', 'B' ]);
+      expect(labelsAt('Task_1').sort()).to.eql([ 'A', 'B' ]);
     });
 
   });
@@ -709,10 +645,10 @@ describe('animation', function() {
       // one selected + one not, both heading to a shared anchor
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
-      tokens.selectToken('Gateway_1', 'A', 'Flow_3');
+      tokens.selectToken('Gateway_1', 'A', { sequenceFlow: 'Flow_3' });
 
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_3');
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, 'Flow_4');
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_3' });
+      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_4' });
 
       const merged = tokens.getTokens(t => t.label === 'A');
       expect(merged).to.have.length(1);
@@ -994,22 +930,21 @@ describe('animation', function() {
     });
 
 
-    describe('top token (3a)', function() {
+    describe('front-instance tokens (3a)', function() {
 
       function labelsAt(node) {
         return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
       }
 
-      it('a stacked node shows only the first token by order', function() {
+      it('shows only the front instance\'s tokens', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
-        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' });
-
         tokens.setStackSize('Task_1', 3);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 1 });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' }, { Task_1: 2 });
 
-        expect(labelsAt('Task_1')).to.eql([ 'A' ]); // the top stack's token only
+        expect(labelsAt('Task_1')).to.eql([ 'A' ]); // front = instance 0
       });
 
 
@@ -1023,42 +958,52 @@ describe('animation', function() {
       });
 
 
-      it('moveToFront swaps which token the stacked node shows', function() {
+      it('shows several tokens of the front instance (no 1:1 assumption)', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        const c = tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' });
+        tokens.setStackSize('Task_1', 2);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'X', 'seagreen', { position: 'center-middle' }, { Task_1: 1 });
+
+        expect(labelsAt('Task_1').sort()).to.eql([ 'A', 'B' ]); // both of instance 0; X hidden
+      });
+
+
+      it('moveToFront swaps which instance is shown', function() {
+        const tokens = get('animation');
+
         tokens.setStackSize('Task_1', 3);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' }, { Task_1: 2 });
 
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
 
-        tokens.moveToFront(c);
+        tokens.moveToFront('Task_1', 2);
         expect(labelsAt('Task_1')).to.eql([ 'C' ]);
       });
 
 
-      it('shows the top token at its own anchor', function() {
+      it('shows a front-instance token at its own anchor', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' });
         tokens.setStackSize('Task_1', 3);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' }, { Task_1: 0 });
 
         expect(dotAt('Task_1').dataset.position).to.equal('top-left');
       });
 
 
-      it('collapses to the top on stacking and expands back when unstacked', function() {
+      it('hides other instances when stacked, shows all when unstacked', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
-        expect(labelsAt('Task_1')).to.have.length(2);
-
         tokens.setStackSize('Task_1', 2);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 1 });
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
 
-        tokens.setStackSize('Task_1', 1); // unstacked -> all again
-        expect(labelsAt('Task_1')).to.have.length(2);
+        tokens.setStackSize('Task_1', 1); // unstacked -> no instance filtering
+        expect(labelsAt('Task_1').sort()).to.eql([ 'A', 'B' ]);
       });
 
     });
@@ -1128,29 +1073,49 @@ describe('animation', function() {
       });
 
 
-      it('commits the instance\'s nested stack sizes (from getInstance) and lands on it', async function() {
+      it('resolves a nested stack size per outer instance (no callback)', async function() {
         const tokens = get('animation');
         tokens.setStackSize('SubProcess_1', 2);
+        tokens.setStackSize('SubTask_2', 3, { SubProcess_1: 1 }); // 3 only under instance 1
+        // (instance 0 is the base context — left unset here, so no nested stack there)
 
-        await tokens.scrollStack('SubProcess_1', 'forward',
-          () => ({ stacks: [ { node: 'SubTask_2', stackSize: 3 } ] }));
+        expect(tokens.getStackSize('SubTask_2')).to.equal(0); // front = instance 0
 
-        // the next instance's child stack size is committed to the real diagram
+        await tokens.scrollStack('SubProcess_1', 'forward'); // -> instance 1
         expect(tokens.getStackSize('SubTask_2')).to.equal(3);
-        // and the real node is back
         expect(frontVisual('SubProcess_1').style.display).to.equal('');
+
+        await tokens.scrollStack('SubProcess_1', 'backward'); // -> instance 0
+        expect(tokens.getStackSize('SubTask_2')).to.equal(0);
       });
 
 
-      it('an empty instance clears the container\'s nested stacks', async function() {
+      it('a base-context nested size does not leak to other outer instances', async function() {
+        const tokens = get('animation');
+        // size set on the inner node while the outer is unstacked -> base context
+        tokens.setStackSize('SubTask_2', 2);
+        tokens.setStackSize('SubProcess_1', 2);
+
+        expect(tokens.getStackSize('SubTask_2')).to.equal(2); // outer instance 0
+
+        await tokens.scrollStack('SubProcess_1', 'forward'); // -> outer instance 1
+        expect(tokens.getStackSize('SubTask_2')).to.equal(0); // independent, not inherited
+
+        await tokens.scrollStack('SubProcess_1', 'backward');
+        expect(tokens.getStackSize('SubTask_2')).to.equal(2);
+      });
+
+
+      it('setStackSize with an omitted context targets the instance on screen', async function() {
         const tokens = get('animation');
         tokens.setStackSize('SubProcess_1', 2);
-        tokens.setStackSize('SubTask_2', 3); // a stacked child
 
-        await tokens.scrollStack('SubProcess_1', 'forward', () => ({})); // empty instance
+        await tokens.scrollStack('SubProcess_1', 'forward'); // -> outer instance 1
+        tokens.setStackSize('SubTask_2', 3); // omitted ctx -> { SubProcess_1: 1 }
+        expect(tokens.getStackSize('SubTask_2')).to.equal(3);
 
-        // the next instance has no nested stacks
-        expect(tokens.getStackSize('SubTask_2')).to.equal(0);
+        await tokens.scrollStack('SubProcess_1', 'backward'); // -> outer instance 0
+        expect(tokens.getStackSize('SubTask_2')).to.equal(0); // nothing set there
       });
 
 
@@ -1225,11 +1190,11 @@ describe('animation', function() {
         });
 
 
-        it('steps the displayed top token forward and backward', async function() {
+        it('steps the displayed instance forward and backward', async function() {
           const tokens = get('animation');
-          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
           tokens.setStackSize('Task_1', 2);
+          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' }, { Task_1: 1 });
 
           expect(dotAt('Task_1').dataset.label).to.equal('A');
 
@@ -1243,14 +1208,16 @@ describe('animation', function() {
 
         it('hides the at-node badge during the gesture, restores after', async function() {
           const tokens = get('animation');
-          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-          tokens.setStackSize('Task_1', 3);
+          tokens.setStackSize('Task_1', 2);
+          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
+          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' }, { Task_1: 1 });
 
-          const p = tokens.scrollStack('Task_1');
+          const p = tokens.scrollStack('Task_1', 'forward'); // -> instance 1 (B)
           expect(badge('Task_1').style.display).to.equal('none');
 
           await p;
           expect(badge('Task_1').style.display).to.equal('');
+          expect(dotAt('Task_1').dataset.label).to.equal('B');
         });
 
 
@@ -1274,8 +1241,6 @@ describe('animation', function() {
         function labelsAt(node) {
           return dots().filter(d => d.dataset.nodeId === node).map(d => d.dataset.label);
         }
-
-        const refs = (...labels) => ({ tokens: labels.map(label => ({ node: 'SubTask_1', label })) });
 
         it('advances the stack index forward and backward', async function() {
           const tokens = get('animation');
@@ -1304,57 +1269,26 @@ describe('animation', function() {
         });
 
 
-        it('calls getInstance with the node and the ancestor indices (new index)', async function() {
+        it('shows only the front instance\'s scope tokens (by stackIndices)', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
+          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' }, { SubProcess_1: 1 });
 
-          let received;
-          await tokens.scrollStack('SubProcess_1', 'forward', (node, indices) => {
-            received = { node, indices };
-            return {};
-          });
+          expect(labelsAt('SubTask_1')).to.eql([ 'a0' ]); // front = instance 0
 
-          expect(received.node).to.equal('SubProcess_1');
-          expect(received.indices).to.eql({ SubProcess_1: 1 });
-        });
-
-
-        it('toggles which scope tokens are shown (tokens persist)', async function() {
-          const tokens = get('animation');
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
-          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' });
-          tokens.setStackSize('SubProcess_1', 2);
-
-          // seed instance 0 -> only a0 shown
-          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
-          expect(labelsAt('SubTask_1')).to.eql([ 'a0' ]);
-
-          // scroll to instance 1 -> only a1 shown; both tokens still in the model
-          await tokens.scrollStack('SubProcess_1', 'forward', () => refs('a1'));
+          await tokens.scrollStack('SubProcess_1', 'forward');
           expect(labelsAt('SubTask_1')).to.eql([ 'a1' ]);
-          expect(tokens.getTokens()).to.have.length(2);
-        });
-
-
-        it('applies the instance\'s nested stack size and index', async function() {
-          const tokens = get('animation');
-          tokens.setStackSize('SubProcess_1', 2);
-
-          await tokens.scrollStack('SubProcess_1', 'forward',
-            () => ({ stacks: [ { node: 'SubTask_2', stackSize: 3, stackIndex: 2 } ] }));
-
-          expect(tokens.getStackSize('SubTask_2')).to.equal(3);
-          expect(tokens.getStackIndex('SubTask_2')).to.equal(2);
+          expect(tokens.getTokens()).to.have.length(2); // both persist in the model
         });
 
 
         it('rides a descendant scope token as a snapshot dot, gone after', async function() {
           const tokens = get('animation');
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
           tokens.setStackSize('SubProcess_1', 2);
-          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
 
-          const p = tokens.scrollStack('SubProcess_1', 'forward', () => refs('a0'));
+          const p = tokens.scrollStack('SubProcess_1', 'forward');
           expect(gfxOf('SubProcess_1').querySelector('.bts-stack-shape .bts-stack-token')).to.exist;
 
           await p;
@@ -1364,15 +1298,16 @@ describe('animation', function() {
 
         it('hides the descendant token overlay during the gesture', async function() {
           const tokens = get('animation');
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
           tokens.setStackSize('SubProcess_1', 2);
-          tokens.setStackIndex('SubProcess_1', 0, () => refs('a0'));
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
+          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' }, { SubProcess_1: 1 });
 
-          const p = tokens.scrollStack('SubProcess_1', 'forward', () => refs('a0'));
+          const p = tokens.scrollStack('SubProcess_1', 'forward'); // -> instance 1 (a1)
           expect(dotAt('SubTask_1').closest('.bts-token-count-parent').style.display).to.equal('none');
 
           await p;
           expect(dotAt('SubTask_1').closest('.bts-token-count-parent').style.display).to.equal('');
+          expect(dotAt('SubTask_1').dataset.label).to.equal('a1');
         });
 
       });
@@ -1560,6 +1495,50 @@ describe('animation', function() {
       expect(getRandomColor()).to.match(/^hsl\(\d+, \d+%, \d+%\)$/);
     });
 
+  });
+
+});
+
+
+// A collapsed sub-process drills into its own plane: its children's `parent` is a
+// separate `<id>_plane` root, not the stacked shape. Stacking the sub-process must still
+// govern those drilled-in children (ancestor walks cross the plane boundary).
+describe('animation — collapsed sub-process (drill plane)', function() {
+
+  beforeEach(bootstrap(collapsedXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+
+  it('hides a child token whose instance is not the front, across the plane boundary', async function() {
+    const animation = get('animation');
+
+    animation.setStackSize('Collapsed_1', 2);
+    animation.createToken('Inner_1', 'X', 'tomato', { position: 'center-middle' }); // instance 0
+
+    expect(dotAt('Inner_1'), 'instance 0 shown at front').to.exist;
+
+    await animation.scrollStack('Collapsed_1', 'forward'); // front -> instance 1
+
+    expect(dotAt('Inner_1'), 'instance 0 hidden when instance 1 is front').to.not.exist;
+
+    await animation.scrollStack('Collapsed_1', 'backward'); // back to instance 0
+
+    expect(dotAt('Inner_1'), 'instance 0 shown again').to.exist;
+  });
+
+
+  it('shows the front instance\'s own child token', function() {
+    const animation = get('animation');
+
+    animation.setStackSize('Collapsed_1', 2);
+    animation.createToken('Inner_1', 'Y', 'steelblue', { position: 'center-middle' }, { Collapsed_1: 1 });
+
+    // front is instance 0, token belongs to instance 1 -> hidden
+    expect(dotAt('Inner_1'), 'instance-1 token hidden at front 0').to.not.exist;
+
+    animation.setStackIndex('Collapsed_1', 1);
+
+    expect(dotAt('Inner_1'), 'instance-1 token shown once it is front').to.exist;
   });
 
 });

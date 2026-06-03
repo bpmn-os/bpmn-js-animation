@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_C"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_C" isExecutable="false">
+    <bpmn:subProcess id="Collapsed_1" name="Collapsed MI">
+      <bpmn:multiInstanceLoopCharacteristics />
+      <bpmn:task id="Inner_1" name="Inner A">
+        <bpmn:outgoing>InnerFlow_1</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:task id="Inner_2" name="Inner B">
+        <bpmn:incoming>InnerFlow_1</bpmn:incoming>
+      </bpmn:task>
+      <bpmn:sequenceFlow id="InnerFlow_1" sourceRef="Inner_1" targetRef="Inner_2" />
+    </bpmn:subProcess>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_C">
+    <bpmndi:BPMNPlane id="BPMNPlane_C" bpmnElement="Process_C">
+      <bpmndi:BPMNShape id="Collapsed_1_di" bpmnElement="Collapsed_1">
+        <dc:Bounds x="160" y="100" width="120" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Collapsed_1_diagram">
+    <bpmndi:BPMNPlane id="Collapsed_1_plane" bpmnElement="Collapsed_1">
+      <bpmndi:BPMNShape id="Inner_1_di" bpmnElement="Inner_1">
+        <dc:Bounds x="160" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_2_di" bpmnElement="Inner_2">
+        <dc:Bounds x="320" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="InnerFlow_1_di" bpmnElement="InnerFlow_1">
+        <di:waypoint x="260" y="140" />
+        <di:waypoint x="320" y="140" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -10,9 +10,10 @@
       <bpmn:outgoing>StartEvent_1-Task_1</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_1" />
     </bpmn:startEvent>
-    <bpmn:userTask id="Task_1" name="Task 1">
+    <bpmn:userTask id="Task_1" name="MI Task">
       <bpmn:incoming>StartEvent_1-Task_1</bpmn:incoming>
       <bpmn:outgoing>Task_1-Gateway_1</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics />
     </bpmn:userTask>
     <bpmn:parallelGateway id="Gateway_1">
       <bpmn:incoming>Task_1-Gateway_1</bpmn:incoming>
@@ -41,13 +42,28 @@
     <bpmn:sequenceFlow id="Gateway_1-Task_3" sourceRef="Gateway_1" targetRef="Task_3" />
     <bpmn:sequenceFlow id="Task_2-EndEvent_1" sourceRef="Task_2" targetRef="EndEvent_1" />
     <bpmn:sequenceFlow id="Task_3-EndEvent_2" sourceRef="Task_3" targetRef="EndEvent_2" />
-    <bpmn:subProcess id="SubProcess_1" name="Sub Process">
-      <bpmn:task id="SubTask_1" name="Sub A">
+    <bpmn:subProcess id="SubProcess_1" name="Event Sub-Process" triggeredByEvent="true">
+      <bpmn:startEvent id="SubStart_1" name="signal" isInterrupting="false">
+        <bpmn:outgoing>SubFlow_0</bpmn:outgoing>
+        <bpmn:signalEventDefinition id="SubSignalDef_1" />
+      </bpmn:startEvent>
+      <bpmn:subProcess id="SubTask_1" name="Sub A">
+        <bpmn:incoming>SubFlow_0</bpmn:incoming>
         <bpmn:outgoing>SubFlow_1</bpmn:outgoing>
-      </bpmn:task>
+        <bpmn:multiInstanceLoopCharacteristics />
+        <bpmn:task id="SubA_T1" name="A1">
+          <bpmn:outgoing>SubA_Flow</bpmn:outgoing>
+          <bpmn:multiInstanceLoopCharacteristics />
+        </bpmn:task>
+        <bpmn:task id="SubA_T2" name="A2">
+          <bpmn:incoming>SubA_Flow</bpmn:incoming>
+        </bpmn:task>
+        <bpmn:sequenceFlow id="SubA_Flow" sourceRef="SubA_T1" targetRef="SubA_T2" />
+      </bpmn:subProcess>
       <bpmn:task id="SubTask_2" name="Sub B">
         <bpmn:incoming>SubFlow_1</bpmn:incoming>
       </bpmn:task>
+      <bpmn:sequenceFlow id="SubFlow_0" sourceRef="SubStart_1" targetRef="SubTask_1" />
       <bpmn:sequenceFlow id="SubFlow_1" sourceRef="SubTask_1" targetRef="SubTask_2" />
     </bpmn:subProcess>
   </bpmn:process>
@@ -101,17 +117,41 @@
         <di:waypoint x="662" y="340" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="SubProcess_1_di" bpmnElement="SubProcess_1" isExpanded="true">
-        <dc:Bounds x="240" y="440" width="320" height="160" />
+        <dc:Bounds x="240" y="440" width="380" height="160" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubStart_1_di" bpmnElement="SubStart_1">
+        <dc:Bounds x="262" y="502" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="266" y="538" width="28" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SubTask_1_di" bpmnElement="SubTask_1">
-        <dc:Bounds x="280" y="480" width="100" height="80" />
+        <dc:Bounds x="340" y="480" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SubTask_2_di" bpmnElement="SubTask_2">
-        <dc:Bounds x="420" y="480" width="100" height="80" />
+        <dc:Bounds x="480" y="480" width="100" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SubFlow_0_di" bpmnElement="SubFlow_0">
+        <di:waypoint x="298" y="520" />
+        <di:waypoint x="340" y="520" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SubFlow_1_di" bpmnElement="SubFlow_1">
-        <di:waypoint x="380" y="520" />
-        <di:waypoint x="420" y="520" />
+        <di:waypoint x="440" y="520" />
+        <di:waypoint x="480" y="520" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="SubTask_1_diagram">
+    <bpmndi:BPMNPlane id="SubTask_1_plane" bpmnElement="SubTask_1">
+      <bpmndi:BPMNShape id="SubA_T1_di" bpmnElement="SubA_T1">
+        <dc:Bounds x="160" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubA_T2_di" bpmnElement="SubA_T2">
+        <dc:Bounds x="320" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SubA_Flow_di" bpmnElement="SubA_Flow">
+        <di:waypoint x="260" y="140" />
+        <di:waypoint x="320" y="140" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

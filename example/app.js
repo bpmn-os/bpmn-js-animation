@@ -4,6 +4,8 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
+import { is } from 'bpmn-js/lib/util/ModelUtil';
+
 import AnimationModule, { getRandomColor } from '../lib/index.js';
 import '../assets/token-animation.css';
 
@@ -178,7 +180,7 @@ async function main() {
     }
     const dir = e.originalEvent && e.originalEvent.shiftKey ? 'backward' : 'forward';
     log(`scrollStack(${el.id}, ${dir})`);
-    animation.scrollStack(el.id, dir, instanceModels.get(el.id));
+    animation.scrollStack(el.id, dir);
   });
 
   on('createToken', () => {
@@ -232,31 +234,6 @@ async function main() {
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
 
-  function currentTokenObj() {
-    if (!currentToken) {
-      return null;
-    }
-    return animation.getTokens(x => sameToken(x, currentToken.node, currentToken.label, currentToken.sequenceFlow))[0];
-  }
-
-  on('moveToFront', () => {
-    const t = currentTokenObj();
-    if (!t) {
-      return log('click a token first');
-    }
-    animation.moveToFront(t);
-    log(`moveToFront(${t.label}@${t.node})`);
-  });
-
-  on('moveToBack', () => {
-    const t = currentTokenObj();
-    if (!t) {
-      return log('click a token first');
-    }
-    animation.moveToBack(t);
-    log(`moveToBack(${t.label}@${t.node})`);
-  });
-
   on('setStackSize', () => {
     if (!currentNode) {
       return log('click a node first');
@@ -266,13 +243,11 @@ async function main() {
     log(`setStackSize(${currentNode}, ${size})`);
   });
 
-  // --- instance-stack scope demo (3e) -------------------------------------------------
-  // For a chosen container we build N instances, each with its own random scope tokens
-  // (on the container's children) and random nested stack sizes. All tokens are created
-  // up front (distinct labels); a per-container `getInstance` callback returns the active
-  // instance's token refs + nested stack sizes, and scrolling cycles through them.
-
-  const instanceModels = new Map(); // container id -> getInstance(node, indices)
+  // --- instance-stack demo -----------------------------------------------------------
+  // Stack a legitimately-stackable element (process / multi-instance activity /
+  // non-interrupting event sub-process) into N instances and give each instance its own
+  // tokens (tagged with `stackIndices`). Scrolling resolves which instance shows — no
+  // callback; the tokens carry their membership.
 
   const POSITIONS = [
     'top-left', 'top-middle', 'top-right',
@@ -282,10 +257,25 @@ async function main() {
   const rand = n => Math.floor(Math.random() * n);
   const pick = arr => arr[rand(arr.length)];
 
+  // a collapsed sub-process's children hang off a separate drill-plane root (id
+  // `<id>_plane`, businessObject = the sub-process). Map that root to the shape element
+  // on the parent plane so ancestor walks cross the boundary.
+  function shapeOf(el) {
+    const bo = el.businessObject;
+    if (bo && el.id !== bo.id) {
+      const shape = elementRegistry.get(bo.id);
+      if (shape) {
+        return shape;
+      }
+    }
+    return el;
+  }
+
   function isDescendant(childId, ancestorId) {
     let el = elementRegistry.get(childId);
     el = el && el.parent;
     while (el) {
+      el = shapeOf(el);
       if (el.id === ancestorId) {
         return true;
       }
@@ -294,58 +284,92 @@ async function main() {
     return false;
   }
 
+  // flow-node children of a node — bridging a collapsed sub-process (whose shape has no
+  // children) to its drill-plane root, where the real children live. This lets the demo
+  // drive stacks/tokens on drilled-in children through the ordinary API.
+  function childrenOf(nodeId) {
+    const el = elementRegistry.get(nodeId);
+    let kids = (el && el.children) || [];
+    if (!kids.length) {
+      const planeRoot = elementRegistry.get(nodeId + '_plane');
+      if (planeRoot) {
+        kids = planeRoot.children || [];
+      }
+    }
+    return kids.filter(c => !c.waypoints && c.businessObject);
+  }
+
+  // a node you may stack: the process, a multi-instance activity, or a non-interrupting
+  // event sub-process
+  function isStackable(el) {
+    if (!el || !el.businessObject) {
+      return false;
+    }
+    const bo = el.businessObject;
+    if (is(el, 'bpmn:Process')) {
+      return true;
+    }
+    if (bo.loopCharacteristics && bo.loopCharacteristics.$type === 'bpmn:MultiInstanceLoopCharacteristics') {
+      return true;
+    }
+    if (is(el, 'bpmn:SubProcess') && bo.triggeredByEvent) {
+      const start = (bo.flowElements || []).find(fe => fe.$type === 'bpmn:StartEvent');
+      return !!(start && start.isInterrupting === false);
+    }
+    return false;
+  }
+
   on('randomInstances', () => {
     // default to the (implicit) process when nothing is selected
     const root = viewer.get('canvas').getRootElement();
-    const target = currentNode || (root && root.type === 'bpmn:Process' ? root.id : null);
+    const target = currentNode || (root && is(root, 'bpmn:Process') ? root.id : null);
+    const el = target && elementRegistry.get(target);
 
-    if (!target) {
-      return log('click a container node first');
-    }
-
-    const el = elementRegistry.get(target);
-    const children = (el.children || []).filter(c => !c.waypoints && c.businessObject);
-
-    if (!children.length) {
-      return log(`${target} is not an expanded container`);
+    if (!isStackable(el)) {
+      return log('select a stackable node first: process / MI activity / non-interrupting event sub-process');
     }
 
     currentNode = target; // so the scroll buttons + readouts act on it
     renderReadouts();
 
-    // drop any existing scope tokens / stacks under this container, then rebuild
-    animation.getTokens(t => isDescendant(t.node, target))
-      .forEach(t => animation.removeToken(t.node, t.label, t.state.sequenceFlow));
-    children.forEach(c => animation.setStackSize(c.id, 0));
+    // drop any existing tokens + stacks at / under the target, then rebuild
+    animation.getTokens(t => t.node === target || isDescendant(t.node, target))
+      .forEach(t => animation.removeToken(t.node, t.label, { sequenceFlow: t.state.sequenceFlow, stackIndices: t.stackIndices }));
+    elementRegistry.filter(e => isDescendant(e.id, target)).forEach(e => animation.setStackSize(e.id, 0));
 
-    const count = 2 + rand(4); // 2..5 instances
-    const instances = [];
     let seq = 0;
 
-    for (let i = 0; i < count; i++) {
-      const tokens = [];
-      const stacks = [];
+    // recursively stack `node` (a stackable element) in the given ancestor `ctx`, giving
+    // each of its instances its own tokens and — for any stackable child — its own nested
+    // stack (a different size per outer instance, declared via the ctx)
+    const populate = (node, ctx) => {
+      const count = 2 + rand(3); // 2..4 instances
+      animation.setStackSize(node, count, ctx);
 
-      children.forEach(child => {
-        for (let j = 0, k = rand(3); j < k; j++) { // 0..2 tokens per child
-          const label = `i${i}.${++seq}`;
-          animation.createToken(child.id, label, getRandomColor(), { position: pick(POSITIONS) });
-          tokens.push({ node: child.id, label });
+      const children = childrenOf(node);
+
+      for (let i = 0; i < count; i++) {
+        const indices = Object.assign({}, ctx, { [node]: i });
+
+        // a token on the element itself (at-node / process-box / MI-activity token)
+        if (Math.random() < 0.6) {
+          animation.createToken(node, `t${++seq}`, getRandomColor(), { position: pick(POSITIONS) }, indices);
         }
-        if (Math.random() < 0.4) { // sometimes give the child its own nested stack
-          stacks.push({ node: child.id, stackSize: 2 + rand(3), stackIndex: 0 });
-        }
-      });
 
-      instances.push({ tokens, stacks });
-    }
+        children.forEach(child => {
+          if (isStackable(child)) {
+            populate(child.id, indices); // nested stack within this instance
+          } else {
+            for (let j = 0, k = rand(3); j < k; j++) { // 0..2 scope tokens
+              animation.createToken(child.id, `t${++seq}`, getRandomColor(), { position: pick(POSITIONS) }, indices);
+            }
+          }
+        });
+      }
+    };
 
-    const getInstance = (node, indices) => instances[indices[node] || 0];
-    instanceModels.set(target, getInstance);
-
-    animation.setStackSize(target, count);
-    animation.setStackIndex(target, 0, getInstance); // seed instance 0
-    log(`randomInstances(${target}): ${count} instances`);
+    populate(target, {});
+    log(`randomInstances(${target})`);
   });
 
   on('scrollBack', () => {
@@ -353,7 +377,7 @@ async function main() {
       return log('click a node first');
     }
     log(`scrollStack(${currentNode}, backward)`);
-    animation.scrollStack(currentNode, 'backward', instanceModels.get(currentNode));
+    animation.scrollStack(currentNode, 'backward');
   });
 
   on('scrollFwd', () => {
@@ -361,7 +385,7 @@ async function main() {
       return log('click a node first');
     }
     log(`scrollStack(${currentNode}, forward)`);
-    animation.scrollStack(currentNode, 'forward', instanceModels.get(currentNode));
+    animation.scrollStack(currentNode, 'forward');
   });
 
   on('throwIcon', () => {
@@ -423,7 +447,6 @@ async function main() {
     animation.clear();
     animation.setFilter(null);
     selectedNodes.clear();
-    instanceModels.clear();
     filtering = false;
     document.querySelector('#filter').textContent = 'filter color';
     document.querySelector('#stackSize').value = 1;
