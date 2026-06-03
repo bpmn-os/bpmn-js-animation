@@ -148,12 +148,14 @@ async function main() {
   // click an element/token -> set it current + select it. Plain click selects only
   // that one (clears the rest); Shift-click adds to / toggles within the selection.
   eventBus.on('element.click', e => {
-    const el = e.element;
+    let el = e.element;
     if (!el || el.waypoints || !el.businessObject) {
       return;
     }
-    // clicking the empty background fires element.click with the root; for a pool-less
-    // diagram that root IS the bpmn:Process — select it so it can be stacked (T4)
+    // clicking the empty background fires element.click with the root: a pool-less
+    // diagram's root IS the bpmn:Process, and a drilled-into sub-process plane's root maps
+    // to its sub-process shape (shapeOf) — select either so it can be stacked/scrolled
+    el = shapeOf(el);
     if (el.type === 'bpmn:Process' || el.parent) {
       currentNode = el.id;
       renderReadouts();
@@ -169,12 +171,14 @@ async function main() {
 
   // double-click a stacked node to scroll it: forward, or backward with Shift held
   eventBus.on('element.dblclick', e => {
-    const el = e.element;
-    // any stacked node/connection-free shape — including the implicit process root
-    // (double-click the empty background) — scrolls; Shift reverses
+    let el = e.element;
+    // any stacked node/connection-free shape scrolls — including the implicit process
+    // root and a drilled-into sub-process plane (double-click the empty background, mapped
+    // to its sub-process shape via shapeOf); Shift reverses
     if (!el || el.waypoints || !el.businessObject) {
       return;
     }
+    el = shapeOf(el);
     if (animation.getStackSize(el.id) <= 1) {
       return; // only stacked nodes scroll
     }
