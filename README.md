@@ -180,9 +180,17 @@ await animation.scrollStack('SubProcess_1', 'forward'); // now shows instance 1'
 ```
 
 A token's instance membership is fixed (a move keeps it); only the node's display order
-changes when you scroll / reorder. `stackIndices` lists only the stacked nodes in the
+changes when you scroll / reorder. `stackIndices` need only list the stacked nodes in the
 token's own/ancestor chain (omit it entirely when nothing is stacked; an omitted stacked
 entry means instance 0 — which is also the base/default context).
+
+You may, however, pass a **complete** ancestor map if that's simpler — entries with index
+`0` (or `null`) are normalized away, so listing every ancestor with its current index and
+using `0`/`null` for the non-stacked ones yields exactly the same identity as the minimal
+form (and stays addressable by either). The only rule: never give a non-stacked ancestor a
+**positive** index — a node with no stack genuinely has no instance above `0` (its
+`getStackIndex` is `0`), so populating each ancestor with its real current index is always
+correct and needs no stackability check on your side.
 
 **Nested stacks.** A token deep inside lists every stacked ancestor, e.g.
 `{ Process_1: 2, MI_Activity: 1 }`. Nested stack *sizes* that differ per outer instance are

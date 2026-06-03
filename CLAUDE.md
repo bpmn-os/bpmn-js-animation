@@ -38,7 +38,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     is a 3×3 anchor (`{top|center|bottom}-{left|middle|right}`), `sequenceFlow` rests the dot where a
     flow meets the node, mutually exclusive; `bounce` is the "action needed" cue. **`stackIndices`**
     (T5) is the token's per-instance membership — a map `{ stackedNodeId: index }` over the stacked
-    nodes in its own/ancestor chain (omitted/`{}` when nothing is stacked; omitted entry ⇒ 0).
+    nodes in its own/ancestor chain (omitted/`{}` when nothing is stacked; omitted entry ⇒ 0). Need only
+    list stacked ancestors, but a **complete** ancestor map is fine too: `_contextKey` keeps only non-zero
+    entries, so `0`/`null` for the non-stacked ones normalize away to the same identity (a non-stacked
+    ancestor must never carry a *positive* index — its real `getStackIndex` is 0, so this is automatic).
   - **Identity = `(node, label, state.sequenceFlow, stackIndices)`** — key
     `` `node|label|sequenceFlow|A:2,B:1` `` (instance entries are non-zero, sorted; `_contextKey`).
     The rest flow lets same-label tokens **coexist** on distinct flows at one node (branches piling up
