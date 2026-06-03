@@ -802,6 +802,30 @@ describe('animation', function() {
     });
 
 
+    it('getStackIndices gives the membership for the instance on screen', function() {
+      const tokens = get('animation');
+
+      expect(tokens.getStackIndices('SubTask_1'), 'nothing stacked => {}').to.eql({});
+
+      tokens.setStackSize('SubProcess_1', 2);
+      tokens.setStackIndex('SubProcess_1', 1);
+
+      // a child of the stacked container picks up the container's front index
+      expect(tokens.getStackIndices('SubTask_1')).to.eql({ SubProcess_1: 1 });
+
+      // the stacked node itself is included too
+      tokens.setStackSize('SubTask_1', 2, { SubProcess_1: 1 });
+      tokens.setStackIndex('SubTask_1', 1);
+      expect(tokens.getStackIndices('SubTask_1')).to.eql({ SubProcess_1: 1, SubTask_1: 1 });
+
+      // creating with it lands the token on the visible instance
+      tokens.createToken('SubTask_1', 'V', 'tomato', { position: 'center-middle' }, tokens.getStackIndices('SubTask_1'));
+      expect(dotAt('SubTask_1')).to.exist;
+      tokens.setStackIndex('SubProcess_1', 0);
+      expect(dotAt('SubTask_1'), 'hidden once the outer instance changes').to.not.exist;
+    });
+
+
     it('size 1 is a single instance (no offset copies)', function() {
       const tokens = get('animation');
 

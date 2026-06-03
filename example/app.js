@@ -204,10 +204,13 @@ async function main() {
     const label = 'T' + (++counter);
     const color = getRandomColor();
     const state = buildState();
-    animation.createToken(currentNode, label, color, state);
-    currentToken = { node: currentNode, label, sequenceFlow: state.sequenceFlow || null };
+    // tag the token with the instance currently on screen, so it shows on a stacked node
+    // that's scrolled past instance 0 (otherwise it'd land on the hidden base instance)
+    const stackIndices = animation.getStackIndices(currentNode);
+    animation.createToken(currentNode, label, color, state, stackIndices);
+    currentToken = { node: currentNode, label, sequenceFlow: state.sequenceFlow || null, stackIndices };
     renderReadouts();
-    log(`createToken(${currentNode}, ${label}, ${color}, ${JSON.stringify(state)})`);
+    log(`createToken(${currentNode}, ${label}, ${color}, ${JSON.stringify(state)}, ${JSON.stringify(stackIndices)})`);
   });
 
   on('sendToken', () => {
@@ -220,9 +223,11 @@ async function main() {
     }
     const position = document.querySelector('#position').value;
     const bounce = document.querySelector('#bounce').checked;
-    // land at the chosen position, or (no position) rest on each travel flow
+    // land at the chosen position, or (no position) rest on each travel flow. Carry the
+    // source token's instance (a move never crosses instances) so the right one is consumed
+    const stackIndices = currentToken.stackIndices;
     const transitions = flows.map(sequenceFlow => ({
-      node: currentToken.node, label: currentToken.label, sequenceFlow,
+      node: currentToken.node, label: currentToken.label, sequenceFlow, stackIndices,
       state: position ? { position, bounce } : { sequenceFlow, bounce }
     }));
     const label = currentToken.label;
@@ -230,7 +235,7 @@ async function main() {
     animation.sendToken(transitions).then(ts => {
       // single move -> follow it; split -> selection is ambiguous, drop it
       currentToken = ts.length === 1
-        ? { node: ts[0].node, label, sequenceFlow: ts[0].state.sequenceFlow || null }
+        ? { node: ts[0].node, label, sequenceFlow: ts[0].state.sequenceFlow || null, stackIndices: ts[0].stackIndices }
         : null;
       renderReadouts();
       log('landed → ' + ts.map(t => t.node).join(', '));
@@ -242,8 +247,9 @@ async function main() {
       return log('click a token first');
     }
     const state = buildState();
-    const t = animation.setState(currentToken.node, currentToken.label, state, currentToken.sequenceFlow);
-    currentToken = { node: t.node, label: t.label, sequenceFlow: t.state.sequenceFlow || null };
+    const selector = { sequenceFlow: currentToken.sequenceFlow || undefined, stackIndices: currentToken.stackIndices };
+    const t = animation.setState(currentToken.node, currentToken.label, state, selector);
+    currentToken = { node: t.node, label: t.label, sequenceFlow: t.state.sequenceFlow || null, stackIndices: t.stackIndices };
     renderReadouts();
     log(`setState(${t.node}, ${t.label}, ${JSON.stringify(state)})`);
   });
@@ -422,47 +428,16 @@ async function main() {
     if (!currentToken) {
       return log('click a token first');
     }
-    animation.removeToken(currentToken.node, currentToken.label, currentToken.sequenceFlow);
+    animation.removeToken(currentToken.node, currentToken.label,
+      { sequenceFlow: currentToken.sequenceFlow || undefined, stackIndices: currentToken.stackIndices });
     log(`removeToken(${currentToken.node}, ${currentToken.label})`);
     currentToken = null;
     renderReadouts();
   });
 
-  let filtering = false;
-
-  on('filter', () => {
-    const btn = document.querySelector('#filter');
-
-    if (filtering) {
-      animation.setFilter(null);
-      filtering = false;
-      btn.textContent = 'filter color';
-      log('show all');
-      return;
-    }
-
-    const t = currentToken && animation.getTokens(x =>
-      x.node === currentToken.node &&
-      x.label === currentToken.label &&
-      (x.state.sequenceFlow || null) === (currentToken.sequenceFlow || null)
-    )[0];
-
-    if (!t) {
-      return log('select a token first');
-    }
-
-    animation.setFilter(x => x.color === t.color);
-    filtering = true;
-    btn.textContent = 'show all';
-    log('filter to color ' + t.color);
-  });
-
   on('clear', () => {
     animation.clear();
-    animation.setFilter(null);
     selectedNodes.clear();
-    filtering = false;
-    document.querySelector('#filter').textContent = 'filter color';
     document.querySelector('#stackSize').value = 1;
     currentToken = null;
     currentNode = null;

@@ -58,7 +58,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `selectToken(node,label,selector?)` / `deselectToken(…)` — `selector` = `{ sequenceFlow?,
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStackSize(node,size,ancestorStackIndices?)`,
-    `getStackSize(node) → number`, `getStackIndex(node) → number`, `setStackIndex(node,index)`,
+    `getStackSize(node) → number`, `getStackIndex(node) → number`, `getStackIndices(node) → {id:index}` (the
+    membership for the on-screen instance — node's own + stacked ancestors' front indices), `setStackIndex(node,index)`,
     `moveToFront(node,instanceIndex)` / `moveToBack(node,instanceIndex)`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (insertion order),
