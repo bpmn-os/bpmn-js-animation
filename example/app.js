@@ -53,18 +53,23 @@ async function main() {
 
   // the single "location" dropdown = the 9 anchor positions + the current node's connected
   // sequence flows (added dynamically). Picking a flow puts the token *on* that flow.
+  // the 9 named presets map to { left, top } fractions (0 = left/top edge, 1 = right/bottom)
+  // left/top are fractions of the shape; voffset is a constant px nudge. above-* sit 20px
+  // above the top edge, below-* sit 20px below the bottom edge.
   const POSITIONS = [
-    'top-left', 'top-middle', 'top-right',
-    'center-left', 'center-middle', 'center-right',
-    'bottom-left', 'bottom-middle', 'bottom-right'
+    { label: 'above-left', left: 0, top: 0, voffset: -20 }, { label: 'above-middle', left: 0.5, top: 0, voffset: -20 }, { label: 'above-right', left: 1, top: 0, voffset: -20 },
+    { label: 'top-left', left: 0, top: 0 }, { label: 'top-middle', left: 0.5, top: 0 }, { label: 'top-right', left: 1, top: 0 },
+    { label: 'center-left', left: 0, top: 0.5 }, { label: 'center-middle', left: 0.5, top: 0.5 }, { label: 'center-right', left: 1, top: 0.5 },
+    { label: 'bottom-left', left: 0, top: 1 }, { label: 'bottom-middle', left: 0.5, top: 1 }, { label: 'bottom-right', left: 1, top: 1 },
+    { label: 'below-left', left: 0, top: 1, voffset: 20 }, { label: 'below-middle', left: 0.5, top: 1, voffset: 20 }, { label: 'below-right', left: 1, top: 1, voffset: 20 }
   ];
-  const POSITION_SET = new Set(POSITIONS);
+  const POSITION_BY_LABEL = new Map(POSITIONS.map(p => [ p.label, p ]));
 
   function refreshLocations(node) {
     const sel = document.querySelector('#location');
     const prev = sel.value;
     sel.innerHTML = '';
-    POSITIONS.forEach(p => sel.add(new Option(p, p)));
+    POSITIONS.forEach(p => sel.add(new Option(p.label, p.label)));
 
     const el = node && elementRegistry.get(node);
     const flows = el ? [ ...(el.incoming || []), ...(el.outgoing || []) ].filter(c => is(c, 'bpmn:SequenceFlow')) : [];
@@ -101,9 +106,10 @@ async function main() {
   function buildState() {
     const value = document.querySelector('#location').value;
     const state = { bounce: document.querySelector('#bounce').checked };
+    const preset = POSITION_BY_LABEL.get(value);
 
-    if (POSITION_SET.has(value)) {
-      state.position = value;
+    if (preset) {
+      state.position = { left: preset.left, top: preset.top, hoffset: preset.hoffset, voffset: preset.voffset };
     } else if (value) {
       state.sequenceFlow = value;
     }
@@ -178,6 +184,30 @@ async function main() {
     log(`tokens: [${animation.getTokens(x => x.selected).map(x => `${x.label}@${x.node}`).join(', ') || '—'}]`);
   }
 
+  // reflect the current token's state in the bounce + location controls (so editing
+  // continues from where the token is). Run after refreshLocations so the flow option exists.
+  function syncControlsToToken() {
+    if (!currentToken) {
+      return;
+    }
+    const t = animation.getTokens(x => sameToken(x, currentToken.node, currentToken.label, currentToken.sequenceFlow, currentToken.stackIndices))[0];
+    if (!t) {
+      return;
+    }
+    document.querySelector('#bounce').checked = !!t.state.bounce;
+    const sel = document.querySelector('#location');
+    if (t.state.sequenceFlow) {
+      sel.value = t.state.sequenceFlow;
+    } else if (t.state.position) {
+      const ps = t.state.position;
+      const p = POSITIONS.find(o =>
+        o.left === ps.left && o.top === ps.top && (o.hoffset || 0) === ps.hoffset && (o.voffset || 0) === ps.voffset);
+      if (p) {
+        sel.value = p.label;
+      }
+    }
+  }
+
   // click an element/token -> set it current + select it. Plain click selects only
   // that one (clears the rest); Shift-click adds to / toggles within the selection.
   eventBus.on('element.click', e => {
@@ -199,6 +229,7 @@ async function main() {
   eventBus.on('token.click', e => {
     currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null, stackIndices: e.stackIndices };
     renderReadouts();
+    syncControlsToToken(); // show the token's current bounce + location in the controls
     clickToken(e.node, e.label, e.sequenceFlow || null, e.stackIndices, !!(e.originalEvent && e.originalEvent.shiftKey));
   });
 
@@ -285,6 +316,14 @@ async function main() {
   const rand = n => Math.floor(Math.random() * n);
   const pick = arr => arr[rand(arr.length)];
 
+  // where a random token sits: a corner for a process/activity, centered for events/gateways
+  const CORNERS = [ { left: 0, top: 1 }, { left: 1, top: 0 }, { left: 0, top: 0 }, { left: 1, top: 1 } ];
+  function randomPosition(elId) {
+    const el = elementRegistry.get(elId);
+    const corner = el && (is(el, 'bpmn:Activity') || is(el, 'bpmn:Process'));
+    return corner ? pick(CORNERS) : { left: 0.5, top: 0.5 };
+  }
+
   // a collapsed sub-process's children hang off a separate drill-plane root (id
   // `<id>_plane`, businessObject = the sub-process). Map that root to the shape element
   // on the parent plane so ancestor walks cross the boundary.
@@ -324,7 +363,9 @@ async function main() {
         kids = planeRoot.children || [];
       }
     }
-    return kids.filter(c => !c.waypoints && c.businessObject);
+    // flow nodes only (excludes connections + data objects); also drop external labels,
+    // which share their target's businessObject so `is(label, 'bpmn:FlowNode')` is true
+    return kids.filter(c => is(c, 'bpmn:FlowNode') && !c.labelTarget);
   }
 
   // a node you may stack: the process, a multi-instance activity, or a non-interrupting
@@ -381,7 +422,7 @@ async function main() {
 
         // a token on the element itself (at-node / process-box / MI-activity token)
         if (Math.random() < 0.6) {
-          animation.createToken(node, `t${++seq}`, getRandomColor(), { position: pick(POSITIONS) }, indices);
+          animation.createToken(node, `t${++seq}`, getRandomColor(), { position: randomPosition(node) }, indices);
         }
 
         children.forEach(child => {
@@ -389,7 +430,7 @@ async function main() {
             populate(child.id, indices); // nested stack within this instance
           } else {
             for (let j = 0, k = rand(3); j < k; j++) { // 0..2 scope tokens
-              animation.createToken(child.id, `t${++seq}`, getRandomColor(), { position: pick(POSITIONS) }, indices);
+              animation.createToken(child.id, `t${++seq}`, getRandomColor(), { position: randomPosition(child.id) }, indices);
             }
           }
         });

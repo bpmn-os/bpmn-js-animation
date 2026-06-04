@@ -45,6 +45,13 @@
   animation-timing-function: ease;
 }
 
+/* a token resting on a sequence flow uses the smaller moving-token size (20px) */
+.bts-token-count.bts-on-flow {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+
 /* stack multiple instances resting on the same node */
 .bts-token-count + .bts-token-count {
   margin-left: -8px;

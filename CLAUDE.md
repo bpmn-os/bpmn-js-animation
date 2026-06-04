@@ -34,9 +34,11 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 
 - **`animation`** (`lib/Animation.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state, selected, stackIndices }`. `state = { position,
-    sequenceFlow, bounce }` is a pure visual descriptor (no lifecycle meaning baked in): `position`
-    is a 3×3 anchor (`{top|center|bottom}-{left|middle|right}`), `sequenceFlow` rests the dot where a
-    flow meets the node, mutually exclusive; `bounce` is the "action needed" cue. **`stackIndices`**
+    sequenceFlow, bounce }` is a pure visual descriptor (no lifecycle meaning baked in): `position` is a
+    point `{ left, top, hoffset, voffset }` on/around the shape — `left`/`top` are **fractions** (may exceed
+    0..1; default 0.5), `hoffset`/`voffset` add a **px** nudge (default 0): `x = left*w + hoffset` (`anchorPoint`)
+    — `sequenceFlow` rests the dot
+    where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue. **`stackIndices`**
     (T5) is the token's per-instance membership — a map `{ stackedNodeId: index }` over the stacked
     nodes in its own/ancestor chain (omitted/`{}` when nothing is stacked; omitted entry ⇒ 0). Need only
     list stacked ancestors, but a **complete** ancestor map is fine too: `_contextKey` keeps only non-zero
@@ -169,11 +171,12 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** the node's **rule-visible** tokens (`_isVisible` — filter + the instance rule) are
-    grouped into **location clusters** (by anchor `position` or rest `sequenceFlow`); each cluster is its
-    own overlay (`overlays.add`, `bts-token-count`) at the computed point (`_clusterPoint`: anchor fraction
-    of bounds, or the flow's node-end waypoint). Per dot: `background: color`, `title = label`,
+    grouped into **location clusters** — keyed by the **resolved point** (`anchorPoint`, rounded) so equal/
+    equivalent positions queue together, or by rest `sequenceFlow`; each cluster is its own overlay
+    (`overlays.add`, `bts-token-count`) at the computed point (`_clusterPoint`: `anchorPoint` of the position,
+    or the flow's node-end waypoint). Per dot: `background: color`, `title = label`,
     `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
-    `data-position`/`-sequence-flow`/`-bounce`/`-selected`. Capped per cluster at
+    `data-left`/`-top`/`-hoffset`/`-voffset`/`-sequence-flow`/`-bounce`/`-selected`. Capped per cluster at
     `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). Delegated click
     fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match

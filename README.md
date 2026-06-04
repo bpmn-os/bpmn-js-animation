@@ -35,7 +35,7 @@ animation.createToken('StartEvent_1', 'order-42', 'tomato');
 // to move it: put it on the outgoing flow, travel along it, then anchor it on the target
 animation.setState('StartEvent_1', 'order-42', { sequenceFlow: 'Flow_1' });          // step onto the flow
 await animation.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]); // travel
-animation.setState('Task_1', 'order-42', { position: 'center-middle' });             // anchor (e.g. "entered")
+animation.setState('Task_1', 'order-42', { position: { left: 0.5, top: 0.5 } });    // anchor (e.g. "entered")
 
 // split at a diverging gateway — the host puts a token on each outgoing flow and sends each
 animation.createToken('Gateway_1', 'order-42', 'tomato', { sequenceFlow: 'Flow_3' });
@@ -86,24 +86,30 @@ lifecycle semantics — *you* map your meaning onto positions.
 
 ```
 state = {
-  position: '{top|center|bottom}-{left|middle|right}' | null,  // a 3×3 anchor on/around the node
-  sequenceFlow: '<connected sequence flow id>'         | null,  // rest where that flow meets the node
-  bounce: boolean                                               // a "user action needed" cue
+  position: { left, top, hoffset, voffset } | null,  // a point on/around the shape
+  sequenceFlow: '<connected sequence flow id>' | null,  // rest where that flow meets the node
+  bounce: boolean                   // a "user action needed" cue
 }
 ```
+- `position.left` / `position.top` are **fractions** of the shape (`0` = left/top edge,
+  `1` = right/bottom; may go outside, e.g. `top: -0.1` sits above); default `0.5` (center).
+  `position.hoffset` / `position.voffset` add a **pixel** nudge on top (default `0`). So a
+  point is a proportional anchor plus a constant offset — mix freely:
+  `{ left: 0.5, top: 1, voffset: 20 }` is 20px below the bottom-center;
+  `{ left: 1, hoffset: -10 }` is 10px inside the right edge.
 - `position` and `sequenceFlow` are **mutually exclusive**; `bounce` is independent.
-- Default (when omitted): `{ position: 'bottom-left', bounce: true }` — the familiar
-  bottom-left bouncing token.
-- A typical **caller convention** for an activity: arrived → `top-left`, entered →
-  `center-middle`, completed → `bottom-right`; for events/gateways the icon is
-  centered, so use `center-right`; for a gateway *arrived*, rest on the incoming
-  flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is hard-coded.
+- Default (when omitted): `{ position: { left: 0.5, top: 0.5 }, bounce: true }` — a centered,
+  bouncing token.
+- A typical **caller convention** for an activity: arrived → `{ left: 0, top: 0 }`, entered
+  → `{ left: 0.5, top: 0.5 }`, completed → `{ left: 1, top: 1 }`; for a gateway *arrived*,
+  rest on the incoming flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is
+  hard-coded. Tokens that resolve to the **same point queue** at that spot.
 
 ## `animation` API
 
 | Method | Description |
 | --- | --- |
-| `createToken(node, label, color, state?, stackIndices?)` | Place a token (replaces one at the same identity). `state` defaults to bottom-left, bouncing. `stackIndices` (a map `{ stackedNodeId: index }`) sets which instance it belongs to — omit unless the node or an ancestor is stacked. Returns the token. |
+| `createToken(node, label, color, state?, stackIndices?)` | Place a token (replaces one at the same identity). `state` defaults to centered, bouncing. `stackIndices` (a map `{ stackedNodeId: index }`) sets which instance it belongs to — omit unless the node or an ancestor is stacked. Returns the token. |
 | `sendToken([{ node, label, sequenceFlow, stackIndices? }, …])` | Travel token(s) **already resting on a flow** along that flow to its far node, leaving them resting on the **same flow** there (no landing `state` — anchor afterwards with `setState`). The token must be on `sequenceFlow` first (`setState(..., { sequenceFlow })`); `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind), inferred from which end the token is at. A **split** is the host's job (create a token on each flow). A move keeps the token's instance (`stackIndices`); while on a flow its own node's stack index doesn't gate visibility, so it stays visible traveling into a stacked node. Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source; rejects if it isn't on the flow or several share it. |
 | `setState(node, label, state, selector?)` | Update state in place (partial merge). `selector` = `{ sequenceFlow?, stackIndices? }` picks which token when several rest at the node. |
 | `removeToken(node, label, selector?)` | Remove a token, cancelling any in-flight animation. |

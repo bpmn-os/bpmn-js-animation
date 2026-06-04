@@ -25,6 +25,14 @@ function transition(node, label, sequenceFlow, state) {
   return { node, label, sequenceFlow, state };
 }
 
+// the 9 former word anchors as { left, top } fractions (positions are now { left, top })
+const POS = {
+  'top-left': { left: 0, top: 0 }, 'top-middle': { left: 0.5, top: 0 }, 'top-right': { left: 1, top: 0 },
+  'center-left': { left: 0, top: 0.5 }, 'center-middle': { left: 0.5, top: 0.5 }, 'center-right': { left: 1, top: 0.5 },
+  'bottom-left': { left: 0, top: 1 }, 'bottom-middle': { left: 0.5, top: 1 }, 'bottom-right': { left: 1, top: 1 }
+};
+function pos(name) { return { ...POS[name], hoffset: 0, voffset: 0 }; }
+
 // new sendToken model: a token travels along the flow it ALREADY rests on. This helper
 // puts it on `flow` (setState), then sends it — returning the sendToken promise. It lands
 // resting on the same flow at the far node (anchor afterwards with setState).
@@ -96,24 +104,39 @@ describe('animation', function() {
 
   describe('state', function() {
 
-    it('defaults to bottom-left, bouncing', function() {
+    it('defaults to centered, bouncing', function() {
       get('animation').createToken('Task_1', 'A', 'tomato');
 
       const dot = dots()[0];
 
-      expect(dot.dataset.position).to.equal('bottom-left');
+      expect(dot.dataset.left).to.equal('0.5');
+      expect(dot.dataset.top).to.equal('0.5');
       expect(dot.dataset.bounce).to.equal('true');
       expect(dot.classList.contains('bts-bounce')).to.be.true;
     });
 
 
     it('honors an explicit position and bounce', function() {
-      get('animation').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: false });
+      get('animation').createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), bounce: false });
 
       const dot = dots()[0];
 
-      expect(dot.dataset.position).to.equal('center-middle');
+      expect(dot.dataset.left).to.equal('0.5');
+      expect(dot.dataset.top).to.equal('0.5');
       expect(dot.classList.contains('bts-bounce')).to.be.false;
+    });
+
+
+    it('accepts a pixel offset (hoffset/voffset) on top of the fraction', function() {
+      // a proportional anchor plus a constant px nudge (e.g. 20px below the bottom edge)
+      get('animation').createToken('Task_1', 'A', 'tomato', { position: { left: 0.5, top: 1, voffset: 20 } });
+
+      const dot = dots()[0];
+
+      expect(dot.dataset.left).to.equal('0.5');
+      expect(dot.dataset.top).to.equal('1');
+      expect(dot.dataset.voffset).to.equal('20');
+      expect(dotAt('Task_1')).to.exist;
     });
 
 
@@ -123,30 +146,42 @@ describe('animation', function() {
       const dot = dotAt('Gateway_1');
 
       expect(dot.dataset.sequenceFlow).to.equal('Flow_3');
-      expect(dot.dataset.position).to.equal('');
+      expect(dot.dataset.left).to.equal('');
     });
 
 
     it('renders distinct positions as separate overlays', function() {
       const tokens = get('animation');
 
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'bottom-right' });
+      tokens.createToken('Task_1', 'A', 'tomato', { position: pos('top-left') });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('bottom-right') });
 
       // two location clusters -> two overlay containers
       expect(document.querySelectorAll('.bts-token-count-parent')).to.have.length(2);
     });
 
 
+    it('queues tokens that resolve to the same point into one cluster', function() {
+      const tokens = get('animation');
+
+      // same resolved point (an explicit voffset:0 matches the default) -> one queue
+      tokens.createToken('Task_1', 'A', 'tomato', { position: { left: 0.5, top: 0.5 } });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: { left: 0.5, top: 0.5, voffset: 0 } });
+
+      expect(document.querySelectorAll('.bts-token-count-parent')).to.have.length(1);
+      expect(document.querySelectorAll('.bts-token-count-parent .bts-token-count')).to.have.length(2);
+    });
+
+
     it('rejects position and sequenceFlow together', function() {
-      expect(() => get('animation').createToken('Task_1', 'A', 'tomato', { position: 'center-middle', sequenceFlow: 'Flow_2' }))
+      expect(() => get('animation').createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), sequenceFlow: 'Flow_2' }))
         .to.throw(/mutually exclusive/);
     });
 
 
-    it('rejects an invalid position', function() {
+    it('rejects a word-string position (now { left, top })', function() {
       expect(() => get('animation').createToken('Task_1', 'A', 'tomato', { position: 'middle-center' }))
-        .to.throw(/invalid position/);
+        .to.throw(/object \{ left, top/);
     });
 
 
@@ -155,12 +190,12 @@ describe('animation', function() {
       it('toggles bounce without moving', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle', bounce: true });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), bounce: true });
         tokens.setState('Task_1', 'A', { bounce: false });
 
         const t = tok('Task_1', 'A');
 
-        expect(t.state.position).to.equal('center-middle');
+        expect(t.state.position).to.eql(pos('center-middle'));
         expect(t.state.bounce).to.equal(false);
         expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
       });
@@ -170,12 +205,12 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
-        tokens.setState('Gateway_1', 'A', { position: 'center-right' }, { sequenceFlow: 'Flow_3' });
+        tokens.setState('Gateway_1', 'A', { position: pos('center-right') }, { sequenceFlow: 'Flow_3' });
 
         const t = tok('Gateway_1', 'A');
 
         expect(t.state.sequenceFlow).to.equal(null);
-        expect(t.state.position).to.equal('center-right');
+        expect(t.state.position).to.eql(pos('center-right'));
       });
 
     });
@@ -213,8 +248,8 @@ describe('animation', function() {
       expect(landed.state.position).to.equal(null);
 
       // the host anchors it on the node afterwards
-      tokens.setState('Task_1', 'A', { position: 'center-middle', bounce: false }, { sequenceFlow: 'Flow_1' });
-      expect(tok('Task_1', 'A').state.position).to.equal('center-middle');
+      tokens.setState('Task_1', 'A', { position: pos('center-middle'), bounce: false }, { sequenceFlow: 'Flow_1' });
+      expect(tok('Task_1', 'A').state.position).to.eql(pos('center-middle'));
       expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
     });
 
@@ -329,7 +364,7 @@ describe('animation', function() {
       expect(dotAt('Task_1')).to.exist;
 
       // anchoring it joins the instance currently on screen
-      const t = tokens.setState('Task_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_1' });
+      const t = tokens.setState('Task_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_1' });
       expect(t.stackIndices).to.eql({ Task_1: 2 });
       expect(dotAt('Task_1'), 'still shown at front 2').to.exist;
 
@@ -370,8 +405,8 @@ describe('animation', function() {
 
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
 
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_3' });
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_4' });
+      tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_3' });
+      tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_4' });
 
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(1);
     });
@@ -625,8 +660,8 @@ describe('animation', function() {
     it('renders every token of a non-stacked cluster', function() {
       const tokens = get('animation');
 
-      tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-      tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' });
+      tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') });
+      tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('center-middle') });
 
       expect(labelsAt('Task_1').sort()).to.eql([ 'A', 'B' ]);
     });
@@ -738,8 +773,8 @@ describe('animation', function() {
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
       tokens.selectToken('Gateway_1', 'A', { sequenceFlow: 'Flow_3' });
 
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_3' });
-      tokens.setState('Gateway_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_4' });
+      tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_3' });
+      tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_4' });
 
       const merged = tokens.getTokens(t => t.label === 'A');
       expect(merged).to.have.length(1);
@@ -886,7 +921,7 @@ describe('animation', function() {
       expect(tokens.getStackIndices('SubTask_1')).to.eql({ SubProcess_1: 1, SubTask_1: 1 });
 
       // creating with it lands the token on the visible instance
-      tokens.createToken('SubTask_1', 'V', 'tomato', { position: 'center-middle' }, tokens.getStackIndices('SubTask_1'));
+      tokens.createToken('SubTask_1', 'V', 'tomato', { position: pos('center-middle') }, tokens.getStackIndices('SubTask_1'));
       expect(dotAt('SubTask_1')).to.exist;
       tokens.setStackIndex('SubProcess_1', 0);
       expect(dotAt('SubTask_1'), 'hidden once the outer instance changes').to.not.exist;
@@ -1069,9 +1104,9 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 3);
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 1 });
-        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' }, { Task_1: 2 });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('top-left') }, { Task_1: 1 });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: pos('bottom-right') }, { Task_1: 2 });
 
         expect(labelsAt('Task_1')).to.eql([ 'A' ]); // front = instance 0
       });
@@ -1080,8 +1115,8 @@ describe('animation', function() {
       it('a non-stacked node shows all tokens', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('top-left') });
 
         expect(labelsAt('Task_1')).to.have.members([ 'A', 'B' ]);
       });
@@ -1091,9 +1126,9 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 2);
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 0 });
-        tokens.createToken('Task_1', 'X', 'seagreen', { position: 'center-middle' }, { Task_1: 1 });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('top-left') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'X', 'seagreen', { position: pos('center-middle') }, { Task_1: 1 });
 
         expect(labelsAt('Task_1').sort()).to.eql([ 'A', 'B' ]); // both of instance 0; X hidden
       });
@@ -1103,8 +1138,8 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 3);
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-        tokens.createToken('Task_1', 'C', 'seagreen', { position: 'bottom-right' }, { Task_1: 2 });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: pos('bottom-right') }, { Task_1: 2 });
 
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
 
@@ -1117,9 +1152,10 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 3);
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'top-left' }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('top-left') }, { Task_1: 0 });
 
-        expect(dotAt('Task_1').dataset.position).to.equal('top-left');
+        expect(dotAt('Task_1').dataset.left).to.equal('0');
+        expect(dotAt('Task_1').dataset.top).to.equal('0');
       });
 
 
@@ -1127,8 +1163,8 @@ describe('animation', function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 2);
-        tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-        tokens.createToken('Task_1', 'B', 'steelblue', { position: 'top-left' }, { Task_1: 1 });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('top-left') }, { Task_1: 1 });
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
 
         tokens.setStackSize('Task_1', 1); // unstacked -> no instance filtering
@@ -1305,7 +1341,7 @@ describe('animation', function() {
 
         it('rides the at-node top token as a snapshot dot, gone after', async function() {
           const tokens = get('animation');
-          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' });
+          tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') });
           tokens.setStackSize('Task_1', 3);
 
           const p = tokens.scrollStack('Task_1');
@@ -1322,8 +1358,8 @@ describe('animation', function() {
         it('steps the displayed instance forward and backward', async function() {
           const tokens = get('animation');
           tokens.setStackSize('Task_1', 2);
-          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' }, { Task_1: 1 });
+          tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+          tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('center-middle') }, { Task_1: 1 });
 
           expect(dotAt('Task_1').dataset.label).to.equal('A');
 
@@ -1338,8 +1374,8 @@ describe('animation', function() {
         it('hides the at-node badge during the gesture, restores after', async function() {
           const tokens = get('animation');
           tokens.setStackSize('Task_1', 2);
-          tokens.createToken('Task_1', 'A', 'tomato', { position: 'center-middle' }, { Task_1: 0 });
-          tokens.createToken('Task_1', 'B', 'steelblue', { position: 'center-middle' }, { Task_1: 1 });
+          tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+          tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('center-middle') }, { Task_1: 1 });
 
           const p = tokens.scrollStack('Task_1', 'forward'); // -> instance 1 (B)
           expect(badge('Task_1').style.display).to.equal('none');
@@ -1401,8 +1437,8 @@ describe('animation', function() {
         it('shows only the front instance\'s scope tokens (by stackIndices)', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
-          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' }, { SubProcess_1: 1 });
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: pos('center-middle') }, { SubProcess_1: 0 });
+          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: pos('center-middle') }, { SubProcess_1: 1 });
 
           expect(labelsAt('SubTask_1')).to.eql([ 'a0' ]); // front = instance 0
 
@@ -1415,7 +1451,7 @@ describe('animation', function() {
         it('rides a descendant scope token as a snapshot dot, gone after', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: pos('center-middle') }, { SubProcess_1: 0 });
 
           const p = tokens.scrollStack('SubProcess_1', 'forward');
           expect(gfxOf('SubProcess_1').querySelector('.bts-stack-shape .bts-stack-token')).to.exist;
@@ -1428,8 +1464,8 @@ describe('animation', function() {
         it('hides the descendant token overlay during the gesture', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
-          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' }, { SubProcess_1: 0 });
-          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: 'center-middle' }, { SubProcess_1: 1 });
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { position: pos('center-middle') }, { SubProcess_1: 0 });
+          tokens.createToken('SubTask_1', 'a1', 'steelblue', { position: pos('center-middle') }, { SubProcess_1: 1 });
 
           const p = tokens.scrollStack('SubProcess_1', 'forward'); // -> instance 1 (a1)
           expect(dotAt('SubTask_1').closest('.bts-token-count-parent').style.display).to.equal('none');
@@ -1484,7 +1520,7 @@ describe('animation', function() {
       const tokens = get('animation');
 
       tokens.setStackSize('Process_1', 2);
-      tokens.createToken('Process_1', 'P', 'tomato', { position: 'center-middle' });
+      tokens.createToken('Process_1', 'P', 'tomato', { position: pos('center-middle') });
 
       expect(dotAt('Process_1')).to.exist;
     });
@@ -1493,7 +1529,7 @@ describe('animation', function() {
     it('scrolls the process box, flow nodes riding the snapshot', async function() {
       const tokens = get('animation');
 
-      tokens.createToken('SubTask_1', 'a0', 'tomato', { position: 'center-middle' });
+      tokens.createToken('SubTask_1', 'a0', 'tomato', { position: pos('center-middle') });
       tokens.setStackSize('Process_1', 2);
 
       const p = tokens.scrollStack('Process_1', 'forward', () => ({}));
@@ -1658,7 +1694,7 @@ describe('animation — collapsed sub-process (drill plane)', function() {
     const animation = get('animation');
 
     animation.setStackSize('Collapsed_1', 2);
-    animation.createToken('Inner_1', 'X', 'tomato', { position: 'center-middle' }); // instance 0
+    animation.createToken('Inner_1', 'X', 'tomato', { position: pos('center-middle') }); // instance 0
 
     expect(dotAt('Inner_1'), 'instance 0 shown at front').to.exist;
 
@@ -1678,8 +1714,8 @@ describe('animation — collapsed sub-process (drill plane)', function() {
     const elementRegistry = get('elementRegistry');
 
     animation.setStackSize('Collapsed_1', 2);
-    animation.createToken('Inner_1', 'a', 'tomato', { position: 'center-middle' }, { Collapsed_1: 0 });
-    animation.createToken('Inner_1', 'b', 'steelblue', { position: 'top-left' }, { Collapsed_1: 1 });
+    animation.createToken('Inner_1', 'a', 'tomato', { position: pos('center-middle') }, { Collapsed_1: 0 });
+    animation.createToken('Inner_1', 'b', 'steelblue', { position: pos('top-left') }, { Collapsed_1: 1 });
     animation.setAnimationDuration(300);
 
     // drill into the sub-process's own plane: its collapsed shape (where the arc would
@@ -1703,8 +1739,8 @@ describe('animation — collapsed sub-process (drill plane)', function() {
     const animation = get('animation');
 
     animation.setStackSize('Collapsed_1', 2);
-    animation.createToken('Collapsed_1', 'n', 'tomato', { position: 'center-middle' }, { Collapsed_1: 0 });
-    animation.createToken('Inner_1', 'c', 'steelblue', { position: 'center-middle' }, { Collapsed_1: 0 });
+    animation.createToken('Collapsed_1', 'n', 'tomato', { position: pos('center-middle') }, { Collapsed_1: 0 });
+    animation.createToken('Inner_1', 'c', 'steelblue', { position: pos('center-middle') }, { Collapsed_1: 0 });
     animation.setAnimationDuration(300);
 
     const scrolling = animation.scrollStack('Collapsed_1', 'forward'); // collapsed view, on the parent plane
@@ -1720,7 +1756,7 @@ describe('animation — collapsed sub-process (drill plane)', function() {
     const animation = get('animation');
 
     animation.setStackSize('Collapsed_1', 2);
-    animation.createToken('Inner_1', 'Y', 'steelblue', { position: 'center-middle' }, { Collapsed_1: 1 });
+    animation.createToken('Inner_1', 'Y', 'steelblue', { position: pos('center-middle') }, { Collapsed_1: 1 });
 
     // front is instance 0, token belongs to instance 1 -> hidden
     expect(dotAt('Inner_1'), 'instance-1 token hidden at front 0').to.not.exist;
