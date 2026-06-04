@@ -110,8 +110,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     token", no `_scopeHidden`, no `getInstance`. Non-stacked / `size≤1` nodes aren't checked → render as before.
     **Exception: a token resting on a sequence flow ignores its own node's stack index** (only ancestors gate
     it) — a flow is drawn to the stack as a whole, so a token in transit shows whatever instance is front; the
-    host commits it into an instance afterwards. Such flow tokens are also **skipped by the scroll snapshot**
-    (`_drawTokenDots`) and stay put through a `scrollStack` gesture (their flow-cluster overlay isn't hidden).
+    host commits it into an instance afterwards. On a `scrollStack`, the **scrolled node's own** flow tokens are
+    skipped by the snapshot (`_drawTokenDots`) and stay put (their flow-cluster overlay isn't hidden), but
+    **descendant** flow tokens (e.g. on a sub-process's internal flows) **do** ride the snapshot — they're
+    instance-specific via the scrolled node as an ancestor.
   - **Stack `+k` marker:** when the true size exceeds the drawn cap, `_drawStackMarker` adds `k = size −
     (maxVisible+1)` hidden instances as a diagram-js overlay (`_stackOverlays`): plain bold black text
     (`.bts-stack-count`, 12px Arial, no badge circle), on the right at ¾ height, pushed past `_stackExtent`. The

@@ -1461,6 +1461,20 @@ describe('animation', function() {
         });
 
 
+        it('rides a descendant flow-resting token as a snapshot dot', async function() {
+          const tokens = get('animation');
+          tokens.setStackSize('SubProcess_1', 2);
+          // a token on a sub-process internal flow is instance-specific via SubProcess_1,
+          // so it must ride the container's scroll snapshot (unlike the scrolled node's own flows)
+          tokens.createToken('SubTask_1', 'a0', 'tomato', { sequenceFlow: 'SubFlow_1' }, { SubProcess_1: 0 });
+
+          const p = tokens.scrollStack('SubProcess_1', 'forward');
+          expect(gfxOf('SubProcess_1').querySelector('.bts-stack-shape .bts-stack-token')).to.exist;
+
+          await p;
+        });
+
+
         it('hides the descendant token overlay during the gesture', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 2);
