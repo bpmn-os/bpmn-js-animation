@@ -72,7 +72,12 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in `_renderNode`.
     `setState`/`removeToken`/`selectToken`/`deselectToken` take a trailing `sequenceFlow` to
     disambiguate; `setState` is a **partial merge** and rekeys (merging) when it changes the
-    rest flow/position — that's how a join completes.
+    rest flow/position — that's how a join completes. Crossing the **flow↔anchor** boundary
+    adjusts the token's own-node stack index (anchoring a flow token commits it into the
+    current front instance: `stackIndices[node] = getStackIndex(node)`; stepping onto a flow
+    drops it). When the rest point moves and `animationDuration > 0`, the dot **glides** to
+    the new point (reusing `_move`, over `_duration/3`) instead of jumping; the model updates
+    synchronously (glide is cosmetic).
   - **Selection** (`selected`, a **carried** token field like `color` — *not* in `state`):
     `selectToken`/`deselectToken` toggle a blue ring on the resting dot (`.bts-selected`,
     `data-selected`). It **carries across a move** and **OR-merges on a join** (the merged
