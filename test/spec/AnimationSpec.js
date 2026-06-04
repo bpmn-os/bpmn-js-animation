@@ -213,6 +213,31 @@ describe('animation', function() {
         expect(t.state.position).to.eql(pos('center-right'));
       });
 
+
+      it('glides the dot to the new point (then rests there); instant when nothing moves', async function() {
+        cleanup();
+        await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+        const tokens = get('animation');
+        const moving = () => document.querySelector('.bts-animation-tokens .bts-token');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') });
+
+        // a position change animates: the badge is gone, a moving dot is in flight
+        tokens.setState('Task_1', 'A', { position: pos('top-left') });
+        expect(moving(), 'glide in flight').to.exist;
+        expect(dotAt('Task_1'), 'badge hidden during glide').to.not.exist;
+
+        await new Promise(r => setTimeout(r, 80));
+        expect(moving(), 'glide done').to.not.exist;
+        expect(dotAt('Task_1'), 'rests at the new point').to.exist;
+
+        // a bounce-only change does not move -> no glide, applied synchronously
+        tokens.setState('Task_1', 'A', { bounce: false });
+        expect(moving()).to.not.exist;
+        expect(dotAt('Task_1')).to.exist;
+      });
+
     });
 
   });
