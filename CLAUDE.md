@@ -174,8 +174,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     grouped into **location clusters** — keyed by the **resolved point** (`anchorPoint`, rounded) so equal/
     equivalent positions queue together, or by rest `sequenceFlow`; each cluster is its own overlay
     (`overlays.add`, `bts-token-count`) at the computed point (`_clusterPoint`: `anchorPoint` of the position,
-    or the flow's node-end waypoint). Per dot: `background: color`, `title = label`,
-    `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
+    or the flow's node-end waypoint). **Dot size:** the default is small (20px, the moving-token size — so it
+    doesn't cover an event/gateway symbol); an **anchored** token on a `bpmn:Activity`/`bpmn:Process` gets the
+    larger 25px badge (`.bts-on-activity`, set per cluster via `big`). Per dot: `background: color`, `title =
+    label`, `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
     `data-left`/`-top`/`-hoffset`/`-voffset`/`-sequence-flow`/`-bounce`/`-selected`. Capped per cluster at
     `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). Delegated click
     fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
@@ -206,7 +208,7 @@ The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) d
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
-`.bts-selected` / `.bts-node-outline` / `.bts-stack-*` styles.
+`.bts-selected` / `.bts-on-activity` / `.bts-node-outline` / `.bts-stack-*` styles.
 
 ## Testing
 
