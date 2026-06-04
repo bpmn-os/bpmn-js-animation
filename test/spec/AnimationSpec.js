@@ -25,6 +25,15 @@ function transition(node, label, sequenceFlow, state) {
   return { node, label, sequenceFlow, state };
 }
 
+// new sendToken model: a token travels along the flow it ALREADY rests on. This helper
+// puts it on `flow` (setState), then sends it — returning the sendToken promise. It lands
+// resting on the same flow at the far node (anchor afterwards with setState).
+function move(node, label, flow, selector) {
+  const a = get('animation');
+  a.setState(node, label, { sequenceFlow: flow }, selector);
+  return a.sendToken([ { node, label, sequenceFlow: flow, stackIndices: selector && selector.stackIndices } ]);
+}
+
 
 describe('animation', function() {
 
@@ -176,12 +185,12 @@ describe('animation', function() {
 
   describe('sendToken', function() {
 
-    it('moves a token along a single flow', async function() {
+    it('travels a token along the flow it rests on to the far node', async function() {
       const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
-      const result = await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      const result = await move('StartEvent_1', 'A', 'Flow_1');
 
       expect(result.map(t => t.node)).to.eql([ 'Task_1' ]);
       expect(tok('Task_1', 'A')).to.exist;
@@ -191,30 +200,51 @@ describe('animation', function() {
     });
 
 
-    it('lands in the given state', async function() {
+    it('lands resting on the same flow (host anchors it with setState)', async function() {
       const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
-      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1', { position: 'center-middle', bounce: false }) ]);
+      await move('StartEvent_1', 'A', 'Flow_1');
 
+      // still on the flow — state unchanged but at the far node
+      const landed = tok('Task_1', 'A');
+      expect(landed.state.sequenceFlow).to.equal('Flow_1');
+      expect(landed.state.position).to.equal(null);
+
+      // the host anchors it on the node afterwards
+      tokens.setState('Task_1', 'A', { position: 'center-middle', bounce: false }, { sequenceFlow: 'Flow_1' });
       expect(tok('Task_1', 'A').state.position).to.equal('center-middle');
       expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
     });
 
 
-    it('splits a token across several flows', async function() {
+    it('requires the token to be on the flow first', async function() {
       const tokens = get('animation');
 
-      tokens.createToken('Gateway_1', 'A', 'tomato');
+      tokens.createToken('StartEvent_1', 'A', 'tomato'); // anchored, not on a flow
 
-      const result = await tokens.sendToken([
-        transition('Gateway_1', 'A', 'Flow_3'),
-        transition('Gateway_1', 'A', 'Flow_4')
+      let err;
+      await tokens.sendToken([ { node: 'StartEvent_1', label: 'A', sequenceFlow: 'Flow_1' } ]).catch(e => (err = e));
+
+      expect(err).to.exist;
+      expect(err.message).to.match(/resting on/);
+    });
+
+
+    it('a split is the host sending a token on each flow', async function() {
+      const tokens = get('animation');
+
+      // the host models a split: a token on each outgoing flow, sent independently
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+
+      await Promise.all([
+        tokens.sendToken([ { node: 'Gateway_1', label: 'A', sequenceFlow: 'Flow_3' } ]),
+        tokens.sendToken([ { node: 'Gateway_1', label: 'A', sequenceFlow: 'Flow_4' } ])
       ]);
 
-      expect(result.map(t => t.node).sort()).to.eql([ 'Task_2', 'Task_3' ]);
-      expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
+      expect(tokens.getTokens(t => t.label === 'A').map(t => t.node).sort()).to.eql([ 'Task_2', 'Task_3' ]);
       expect(dotAt('Task_2')).to.exist;
       expect(dotAt('Task_3')).to.exist;
     });
@@ -224,7 +254,7 @@ describe('animation', function() {
       const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'rgb(1, 2, 3)');
-      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      await move('StartEvent_1', 'A', 'Flow_1');
 
       expect(tok('Task_1', 'A').color).to.equal('rgb(1, 2, 3)');
       expect(dotAt('Task_1').getAttribute('style')).to.contain('rgb(1, 2, 3)');
@@ -240,14 +270,17 @@ describe('animation', function() {
       const tokens = get('animation');
 
       tokens.createToken('StartEvent_1', 'A', 'tomato');
+      tokens.setState('StartEvent_1', 'A', { sequenceFlow: 'Flow_1' });
 
-      const p1 = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
-      const p2 = tokens.sendToken([ transition('Task_1', 'A', 'Flow_2') ]);
+      const p1 = tokens.sendToken([ { node: 'StartEvent_1', label: 'A', sequenceFlow: 'Flow_1' } ]);
+      // continue from the (optimistic) destination: put it on the next flow and send
+      tokens.setState('Task_1', 'A', { sequenceFlow: 'Flow_2' }, { sequenceFlow: 'Flow_1' });
+      const p2 = tokens.sendToken([ { node: 'Task_1', label: 'A', sequenceFlow: 'Flow_2' } ]);
 
       const [ landed1 ] = await Promise.all([ p1, p2 ]);
 
       expect(landed1[0].node).to.equal('Task_1');  // p1 was settled at its target
-      expect(tok('Gateway_1', 'A')).to.exist;       // p2 landed
+      expect(tok('Gateway_1', 'A')).to.exist;       // p2 landed (Flow_2: Task_1 -> Gateway_1)
       expect(tok('Task_1', 'A')).to.not.exist;
       expect(dots()).to.have.length(1);
     });
@@ -258,8 +291,8 @@ describe('animation', function() {
 
       tokens.createToken('Task_1', 'A', 'tomato');
 
-      // Flow_1 is StartEvent_1 -> Task_1; sending from Task_1 along it rewinds
-      const result = await tokens.sendToken([ transition('Task_1', 'A', 'Flow_1') ]);
+      // Flow_1 is StartEvent_1 -> Task_1; resting on it at Task_1 and sending rewinds
+      const result = await move('Task_1', 'A', 'Flow_1');
 
       expect(result.map(t => t.node)).to.eql([ 'StartEvent_1' ]);
       expect(tok('StartEvent_1', 'A')).to.exist;
@@ -270,10 +303,11 @@ describe('animation', function() {
     it('rejects a flow not connected to the node', async function() {
       const tokens = get('animation');
 
-      tokens.createToken('StartEvent_1', 'A', 'tomato');
+      // rest on a flow that isn't connected to the node, then try to send
+      tokens.createToken('StartEvent_1', 'A', 'tomato', { sequenceFlow: 'Flow_2' });
 
       let err;
-      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_2') ]).catch(e => (err = e));
+      await tokens.sendToken([ { node: 'StartEvent_1', label: 'A', sequenceFlow: 'Flow_2' } ]).catch(e => (err = e));
 
       expect(err).to.exist;
       expect(err.message).to.match(/is not connected to/);
@@ -284,6 +318,30 @@ describe('animation', function() {
 
   describe('identity (rest sequenceFlow)', function() {
 
+    it('anchoring a flow token commits it into the node\'s visible instance (setState)', function() {
+      const tokens = get('animation');
+
+      tokens.setStackSize('Task_1', 3);
+      tokens.setStackIndex('Task_1', 2);                       // visible front = instance 2
+
+      // a token on the node's incoming flow is instance-agnostic -> visible at any front
+      tokens.createToken('Task_1', 'A', 'tomato', { sequenceFlow: 'Flow_1' });
+      expect(dotAt('Task_1')).to.exist;
+
+      // anchoring it joins the instance currently on screen
+      const t = tokens.setState('Task_1', 'A', { position: 'center-middle' }, { sequenceFlow: 'Flow_1' });
+      expect(t.stackIndices).to.eql({ Task_1: 2 });
+      expect(dotAt('Task_1'), 'still shown at front 2').to.exist;
+
+      tokens.setStackIndex('Task_1', 0);
+      expect(dotAt('Task_1'), 'hidden at front 0 — it belongs to instance 2').to.not.exist;
+
+      // stepping back onto a flow drops the own-node index
+      const t2 = tokens.setState('Task_1', 'A', { sequenceFlow: 'Flow_2' }, { stackIndices: { Task_1: 2 } });
+      expect(t2.stackIndices).to.eql({});
+    });
+
+
     it('lets same-label tokens coexist on different flows at one node', async function() {
       const tokens = get('animation');
 
@@ -291,9 +349,9 @@ describe('animation', function() {
       tokens.createToken('Task_3', 'A', 'tomato');
 
       // both arrive at the gateway resting on their own incoming flow
-      await tokens.sendToken([
-        transition('Task_2', 'A', 'Flow_3', { sequenceFlow: 'Flow_3' }),
-        transition('Task_3', 'A', 'Flow_4', { sequenceFlow: 'Flow_4' })
+      await Promise.all([
+        move('Task_2', 'A', 'Flow_3'),
+        move('Task_3', 'A', 'Flow_4')
       ]);
 
       const at = tokens.getTokens(t => t.node === 'Gateway_1' && t.label === 'A');
@@ -334,17 +392,23 @@ describe('animation', function() {
     });
 
 
-    it('rejects sendToken when the source is ambiguous', async function() {
+    it('rejects sendToken when several tokens share the same flow (disambiguate with stackIndices)', async function() {
       const tokens = get('animation');
 
-      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
-      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+      // two same-label tokens resting on the SAME flow, distinct instances
+      tokens.setStackSize('Task_1', 2);
+      tokens.createToken('Task_1', 'A', 'tomato', { sequenceFlow: 'Flow_2' }, { Task_1: 0 });
+      tokens.createToken('Task_1', 'A', 'tomato', { sequenceFlow: 'Flow_2' }, { Task_1: 1 });
 
       let err;
-      await tokens.sendToken([ transition('Gateway_1', 'A', 'Flow_3') ]).catch(e => (err = e));
+      await tokens.sendToken([ { node: 'Task_1', label: 'A', sequenceFlow: 'Flow_2' } ]).catch(e => (err = e));
 
       expect(err).to.exist;
       expect(err.message).to.match(/multiple tokens/);
+
+      // disambiguating by instance succeeds
+      const res = await tokens.sendToken([ { node: 'Task_1', label: 'A', sequenceFlow: 'Flow_2', stackIndices: { Task_1: 0 } } ]);
+      expect(res).to.have.length(1);
     });
 
   });
@@ -610,7 +674,7 @@ describe('animation', function() {
       tokens.createToken('StartEvent_1', 'A', 'tomato');
       tokens.selectToken('StartEvent_1', 'A');
 
-      await tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      await move('StartEvent_1', 'A', 'Flow_1');
 
       expect(tok('Task_1', 'A').selected).to.be.true;
       expect(dotAt('Task_1').classList.contains('bts-selected')).to.be.true;
@@ -626,7 +690,7 @@ describe('animation', function() {
       tokens.selectToken('StartEvent_1', 'A');
 
       // _move appends the moving graphic synchronously, so the ring is present in flight
-      const p = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      const p = move('StartEvent_1', 'A', 'Flow_1');
       expect(document.querySelector('.bts-token .bts-token-ring')).to.exist;
 
       await p;
@@ -640,7 +704,7 @@ describe('animation', function() {
       const tokens = get('animation');
       tokens.createToken('StartEvent_1', 'A', 'tomato');
 
-      const p = tokens.sendToken([ transition('StartEvent_1', 'A', 'Flow_1') ]);
+      const p = move('StartEvent_1', 'A', 'Flow_1');
       expect(document.querySelector('.bts-token .bts-token-ring')).to.not.exist;
 
       await p;
@@ -650,12 +714,15 @@ describe('animation', function() {
     it('copies the selection to every branch on a split', async function() {
       const tokens = get('animation');
 
-      tokens.createToken('Gateway_1', 'A', 'tomato');
-      tokens.selectToken('Gateway_1', 'A');
+      // a split is per-flow tokens; selection is carried on each
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
+      tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
+      tokens.selectToken('Gateway_1', 'A', { sequenceFlow: 'Flow_3' });
+      tokens.selectToken('Gateway_1', 'A', { sequenceFlow: 'Flow_4' });
 
-      await tokens.sendToken([
-        transition('Gateway_1', 'A', 'Flow_3'),
-        transition('Gateway_1', 'A', 'Flow_4')
+      await Promise.all([
+        tokens.sendToken([ { node: 'Gateway_1', label: 'A', sequenceFlow: 'Flow_3' } ]),
+        tokens.sendToken([ { node: 'Gateway_1', label: 'A', sequenceFlow: 'Flow_4' } ])
       ]);
 
       expect(tok('Task_2', 'A').selected).to.be.true;

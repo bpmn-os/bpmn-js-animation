@@ -38,34 +38,21 @@
         <span class="readout">node: <b id="cur-node">—</b></span>
         <span class="readout">token: <b id="cur-token">—</b></span>
         <span class="sep"></span>
-        <label>position
-          <select id="position">
-            <option value="">(none)</option>
-            <option>top-left</option>
-            <option>top-middle</option>
-            <option>top-right</option>
-            <option>center-left</option>
-            <option>center-middle</option>
-            <option>center-right</option>
-            <option>bottom-left</option>
-            <option>bottom-middle</option>
-            <option>bottom-right</option>
-          </select>
-        </label>
-        <span class="sep"></span>
         <label><input type="checkbox" id="bounce" /> bounce</label>
         <span class="sep"></span>
-        <label>sequenceFlow <select id="sequenceFlow" multiple size="3"></select></label>
+        <label>location
+          <select id="location"><!-- 9 anchor positions + the current node's connected flows (populated dynamically) --></select>
+        </label>
+        <span class="sep"></span>
+        <button id="setState">setState</button>
       </div>
       <div class="row">
         <button id="createToken">createToken</button>
         <button id="sendToken">sendToken</button>
-        <button id="setState">setState</button>
         <button id="removeToken">removeToken</button>
         <span class="sep"></span>
-        <button id="throwIcon">throwIcon</button>
-        <button id="catchIcon">catchIcon</button>
         <button id="clear">clear</button>
+        <button id="randomInstances" title="populate the selected container with random per-instance scope tokens + nested stacks">random instances</button>
       </div>
       <div class="row">
         <label>stack size <input type="number" id="stackSize" min="1" value="1" style="width: 48px" /></label>
@@ -73,7 +60,8 @@
         <button id="scrollBack">scroll ◀</button>
         <button id="scrollFwd">scroll ▶</button>
         <span class="sep"></span>
-        <button id="randomInstances" title="populate the selected container with random per-instance scope tokens + nested stacks">random instances</button>
+        <button id="throwIcon">throwIcon</button>
+        <button id="catchIcon">catchIcon</button>
       </div>
     </div>
     <div id="main">

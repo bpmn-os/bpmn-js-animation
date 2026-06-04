@@ -32,17 +32,20 @@ const animation = viewer.get('animation');
 // create a token (a colored dot resting on a node)
 animation.createToken('StartEvent_1', 'order-42', 'tomato');
 
-// move it along a sequence flow (animates, then rests at the flow's target)
-await animation.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]);
+// to move it: put it on the outgoing flow, travel along it, then anchor it on the target
+animation.setState('StartEvent_1', 'order-42', { sequenceFlow: 'Flow_1' });          // step onto the flow
+await animation.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]); // travel
+animation.setState('Task_1', 'order-42', { position: 'center-middle' });             // anchor (e.g. "entered")
 
-// split at a diverging gateway — same source, several flows; one copy per flow
-await animation.sendToken([
-  { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_3' },
-  { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_4' }
+// split at a diverging gateway — the host puts a token on each outgoing flow and sends each
+animation.createToken('Gateway_1', 'order-42', 'tomato', { sequenceFlow: 'Flow_3' });
+animation.createToken('Gateway_1', 'order-99', 'tomato', { sequenceFlow: 'Flow_4' });
+await Promise.all([
+  animation.sendToken([ { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_3' } ]),
+  animation.sendToken([ { node: 'Gateway_1', label: 'order-99', sequenceFlow: 'Flow_4' } ])
 ]);
 
 // advance its lifecycle in place — position + bounce are your call (see below)
-animation.setState('Task_1', 'order-42', { position: 'center-middle' });  // "entered"
 animation.setState('Task_1', 'order-42', { bounce: true });               // needs user action
 
 // react to clicks — the host app decides what to show
@@ -65,7 +68,7 @@ animation.removeToken('Task_1', 'order-42');
   them to a shared anchor (or remove the extras) to **merge**.
 - **`color` is required** and may be **any CSS color** — name (`tomato`), hex
   (`#3399ff`), `rgb()/rgba()`, `hsl()/hsla()`. Applied directly, no parsing; a token
-  carries its color, so `sendToken` keeps it and split copies inherit it.
+  carries its color, so a move keeps it.
 - Need a color? Use the **`getRandomColor()`** named export: mint one per identity
   and reuse it so related tokens stay consistent. The package never assigns colors.
 
@@ -101,10 +104,10 @@ state = {
 | Method | Description |
 | --- | --- |
 | `createToken(node, label, color, state?, stackIndices?)` | Place a token (replaces one at the same identity). `state` defaults to bottom-left, bouncing. `stackIndices` (a map `{ stackedNodeId: index }`) sets which instance it belongs to — omit unless the node or an ancestor is stacked. Returns the token. |
-| `sendToken([{ node, label, sequenceFlow, state?, stackIndices? }, …])` | Animate token(s) along flow(s) and land in `state`. Same-source entries = **split**; `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind). A move keeps the token's instance (`stackIndices`). Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source; rejects if a source is ambiguous. |
+| `sendToken([{ node, label, sequenceFlow, stackIndices? }, …])` | Travel token(s) **already resting on a flow** along that flow to its far node, leaving them resting on the **same flow** there (no landing `state` — anchor afterwards with `setState`). The token must be on `sequenceFlow` first (`setState(..., { sequenceFlow })`); `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind), inferred from which end the token is at. A **split** is the host's job (create a token on each flow). A move keeps the token's instance (`stackIndices`); while on a flow its own node's stack index doesn't gate visibility, so it stays visible traveling into a stacked node. Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source; rejects if it isn't on the flow or several share it. |
 | `setState(node, label, state, selector?)` | Update state in place (partial merge). `selector` = `{ sequenceFlow?, stackIndices? }` picks which token when several rest at the node. |
 | `removeToken(node, label, selector?)` | Remove a token, cancelling any in-flight animation. |
-| `selectToken(node, label, selector?)` / `deselectToken(…)` | Toggle a blue ring on a resting token. Selection is **carried**: it survives a move, is copied to each split branch, and OR-merges on a join. |
+| `selectToken(node, label, selector?)` / `deselectToken(…)` | Toggle a blue ring on a resting token. Selection is **carried**: it survives a move and OR-merges on a join (when tokens collapse to one identity). |
 | `getSelectedTokens()` | The selected tokens (`Token[]`). |
 | `setNodeSelected(node, selected?)` / `getSelectedNodes()` | Draw a modeller-style blue boundary on an element (stack-aware); list selected node ids. |
 | `throwIcon(node)` | Play the element's own **icon** (event/task-type icon) as a **throw**: fly it diagonally up-right and fade out. Native color, shared duration. `→ Promise`; no-op if the element has no icon. |

@@ -48,13 +48,38 @@ async function main() {
   window.viewer = viewer;
   window.animation = animation;
 
-  // populate the flow selectors from the diagram
-  const flowIds = elementRegistry.filter(e => e.type === 'bpmn:SequenceFlow').map(e => e.id);
-  const flowsSelect = document.querySelector('#sequenceFlow');
-  flowIds.forEach(id => flowsSelect.add(new Option(id, id)));
-
   // the stack caps its drawn shapes at maxVisible copies -> maxVisible + 1 shapes total
   document.querySelector('#stackSize').max = animation.getMaxVisible() + 1;
+
+  // the single "location" dropdown = the 9 anchor positions + the current node's connected
+  // sequence flows (added dynamically). Picking a flow puts the token *on* that flow.
+  const POSITIONS = [
+    'top-left', 'top-middle', 'top-right',
+    'center-left', 'center-middle', 'center-right',
+    'bottom-left', 'bottom-middle', 'bottom-right'
+  ];
+  const POSITION_SET = new Set(POSITIONS);
+
+  function refreshLocations(node) {
+    const sel = document.querySelector('#location');
+    const prev = sel.value;
+    sel.innerHTML = '';
+    POSITIONS.forEach(p => sel.add(new Option(p, p)));
+
+    const el = node && elementRegistry.get(node);
+    const flows = el ? [ ...(el.incoming || []), ...(el.outgoing || []) ].filter(c => is(c, 'bpmn:SequenceFlow')) : [];
+    if (flows.length) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'on sequence flow';
+      flows.forEach(f => grp.appendChild(new Option(f.id, f.id)));
+      sel.appendChild(grp);
+    }
+
+    if (Array.from(sel.options).some(o => o.value === prev)) {
+      sel.value = prev;
+    }
+  }
+  refreshLocations(null);
 
   let currentNode = null;
   let currentToken = null; // { node, label, sequenceFlow }
@@ -67,22 +92,20 @@ async function main() {
     document.querySelector('#cur-token').textContent = currentToken
       ? `${currentToken.label}@${currentToken.node}${currentToken.sequenceFlow ? ' on ' + currentToken.sequenceFlow : ''}`
       : '—';
+    // offer the flows of whatever node is in focus (token's node, else the selected node)
+    refreshLocations(currentToken ? currentToken.node : currentNode);
   }
 
-  function selectedFlows() {
-    return Array.from(document.querySelector('#sequenceFlow').selectedOptions).map(o => o.value);
-  }
-
-  // state for createToken / setState: position wins; else rest on the first selected flow
+  // state for createToken / setState from the location dropdown: an anchor position, or
+  // (when a connected flow is picked) resting on that sequence flow
   function buildState() {
-    const position = document.querySelector('#position').value;
-    const flows = selectedFlows();
+    const value = document.querySelector('#location').value;
     const state = { bounce: document.querySelector('#bounce').checked };
 
-    if (position) {
-      state.position = position;
-    } else if (flows.length) {
-      state.sequenceFlow = flows[0];
+    if (POSITION_SET.has(value)) {
+      state.position = value;
+    } else if (value) {
+      state.sequenceFlow = value;
     }
 
     return state;
@@ -217,28 +240,18 @@ async function main() {
     if (!currentToken) {
       return log('click a token first');
     }
-    const flows = selectedFlows();
-    if (!flows.length) {
-      return log('select sequenceFlow(s) to travel along');
+    // the token must already rest on a flow — put it there with setState (select a flow,
+    // then setState); sendToken just travels along that flow to the far node
+    if (!currentToken.sequenceFlow) {
+      return log('put the token on a sequenceFlow first (select a flow, then setState)');
     }
-    const position = document.querySelector('#position').value;
-    const bounce = document.querySelector('#bounce').checked;
-    // land at the chosen position, or (no position) rest on each travel flow. Carry the
-    // source token's instance (a move never crosses instances) so the right one is consumed
-    const stackIndices = currentToken.stackIndices;
-    const transitions = flows.map(sequenceFlow => ({
-      node: currentToken.node, label: currentToken.label, sequenceFlow, stackIndices,
-      state: position ? { position, bounce } : { sequenceFlow, bounce }
-    }));
-    const label = currentToken.label;
-    log(`sendToken(${JSON.stringify(transitions.map(t => ({ node: t.node, label, sequenceFlow: t.sequenceFlow })))})`);
-    animation.sendToken(transitions).then(ts => {
-      // single move -> follow it; split -> selection is ambiguous, drop it
-      currentToken = ts.length === 1
-        ? { node: ts[0].node, label, sequenceFlow: ts[0].state.sequenceFlow || null, stackIndices: ts[0].stackIndices }
-        : null;
+    const { node, label, sequenceFlow, stackIndices } = currentToken;
+    log(`sendToken(${node}, ${label}, on ${sequenceFlow})`);
+    animation.sendToken([ { node, label, sequenceFlow, stackIndices } ]).then(ts => {
+      const t = ts[0];
+      currentToken = { node: t.node, label, sequenceFlow: t.state.sequenceFlow || null, stackIndices: t.stackIndices };
       renderReadouts();
-      log('landed → ' + ts.map(t => t.node).join(', '));
+      log(`traveled → ${t.node} (still on ${sequenceFlow}; setState to anchor it)`);
     }).catch(err => log('ERROR: ' + err.message));
   });
 
@@ -269,11 +282,6 @@ async function main() {
   // tokens (tagged with `stackIndices`). Scrolling resolves which instance shows — no
   // callback; the tokens carry their membership.
 
-  const POSITIONS = [
-    'top-left', 'top-middle', 'top-right',
-    'center-left', 'center-middle', 'center-right',
-    'bottom-left', 'bottom-middle', 'bottom-right'
-  ];
   const rand = n => Math.floor(Math.random() * n);
   const pick = arr => arr[rand(arr.length)];
 

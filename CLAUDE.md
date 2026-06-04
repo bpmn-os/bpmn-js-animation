@@ -53,7 +53,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     (`node -> Map<contextKey, size>`) and `_stackOrder` (`node -> Map<contextKey, number[]>` — instance
     indices, front first), both resolved against the current ancestor context (`_currentContext`).
   - **API:** `createToken(node,label,color,state?,stackIndices?)`,
-    `sendToken([{node,label,sequenceFlow,state?,stackIndices?},…]) → Promise<Token[]>`,
+    `sendToken([{node,label,sequenceFlow,stackIndices?},…]) → Promise<Token[]>` (token must already rest on
+    `sequenceFlow`; travels to the far node, stays on the flow),
     `setState(node,label,state,selector?)`, `removeToken(node,label,selector?)`,
     `selectToken(node,label,selector?)` / `deselectToken(…)` — `selector` = `{ sequenceFlow?,
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
@@ -72,9 +73,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     rest flow/position — that's how a join completes.
   - **Selection** (`selected`, a **carried** token field like `color` — *not* in `state`):
     `selectToken`/`deselectToken` toggle a blue ring on the resting dot (`.bts-selected`,
-    `data-selected`). It **carries across a move**, is **copied to every branch on a split**,
-    and **OR-merges on a join** (merged token stays selected if any input was — done where
-    identities collapse in `setState` and `sendToken`; `color` is left last-writer-wins).
+    `data-selected`). It **carries across a move** and **OR-merges on a join** (the merged
+    token stays selected if any input was — done where identities collapse in `setState`;
+    `color` is left last-writer-wins).
     `setNodeSelected(node,selected?)` draws the **modeller-style blue boundary** on an element
     by appending our own `.bts-node-outline` rect (5px offset, rounded) into its `getGraphics`
     and adding a `bts-selected` marker class — we *don't* rely on diagram-js's Outline module
@@ -105,6 +106,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     for every stacked node `A` in its `node`+ancestors, `(stackIndices[A] ?? 0) === getStackIndex(A)`. So a
     stacked node renders its **current front instance's** tokens (at the node *and* in scope) — no "show first
     token", no `_scopeHidden`, no `getInstance`. Non-stacked / `size≤1` nodes aren't checked → render as before.
+    **Exception: a token resting on a sequence flow ignores its own node's stack index** (only ancestors gate
+    it) — a flow is drawn to the stack as a whole, so a token in transit shows whatever instance is front; the
+    host commits it into an instance afterwards. Such flow tokens are also **skipped by the scroll snapshot**
+    (`_drawTokenDots`) and stay put through a `scrollStack` gesture (their flow-cluster overlay isn't hidden).
   - **Stack `+k` marker:** when the true size exceeds the drawn cap, `_drawStackMarker` adds `k = size −
     (maxVisible+1)` hidden instances as a diagram-js overlay (`_stackOverlays`): plain bold black text
     (`.bts-stack-count`, 12px Arial, no badge circle), on the right at ¾ height, pushed past `_stackExtent`. The
@@ -150,14 +155,17 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     from up-left + fades in (`.bts-icon-receive`). **Direction is the caller's choice — the node
     API reads no BPMN semantics** (it does not guess throw/catch from element type). Native color,
     shared `animationDuration`; no-op if no icon; resolves on `animationend` (timeout fallback).
-  - **`sendToken(transitions)`**: resolve all first (invalid → reject, no side effects),
-    group by source token (looked up by `(node,label)`, **rejects if ambiguous**), consume
-    once and fork one **branch** per flow. `_resolveFlow` handles outgoing=forward /
-    incoming=reverse (reversed waypoints); the animator gets `{ waypoints }` so direction
-    is just the order. Branches keep the source's `color`/`label`/`selected`/**`stackIndices`** (a move
-    never crosses instances) and take their entry's landing `state`. Identity committed **optimistically
-    at depart**; resting badge added on landing. (Leaving a stacked node entirely is host-managed: delete
-    the instance's tokens, `setStackSize(node,1)`, create a fresh token.)
+  - **`sendToken(transitions)`** — `{node,label,sequenceFlow,stackIndices?}`: travel a token **that already
+    rests on `sequenceFlow`** along it to the far node, leaving it **resting on the same flow** there (no
+    landing `state`; the host anchors it afterwards via `setState`). Resolve all first (invalid → reject, no
+    side effects): find the token at `(node,label)` **on that flow** (disambiguated by `stackIndices`), reject
+    if absent ("setState it onto the flow first") or several share it. `_resolveFlow` handles outgoing=forward /
+    incoming=reverse (reversed waypoints); the animator gets `{ waypoints }` so direction is just the order.
+    The landed token keeps the source's `color`/`label`/`selected`/**`stackIndices`** (a move never crosses
+    instances) and its `state` (same `sequenceFlow`). Identity committed **optimistically at depart**. **No
+    split** — the host creates a token on each flow. (Entering a specific instance of a stacked target / leaving
+    a stack is host-managed: `removeToken` + `createToken` per instance, or `setState` with the full
+    `stackIndices`.)
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** the node's **rule-visible** tokens (`_isVisible` — filter + the instance rule) are
@@ -167,7 +175,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `.bts-bounce` when `bounce`, `.bts-selected` when `selected`,
     `data-position`/`-sequence-flow`/`-bounce`/`-selected`. Capped per cluster at
     `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). Delegated click
-    fires `token.click {node,label,sequenceFlow}` or `token.overflow.click {node,hidden}`. A **stacked**
+    fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match
     the front), in insertion order — no special branch.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `Animation.js`, below a
@@ -184,8 +192,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   instance membership is **fixed** (a move keeps it); display order lives per-node in `_stackOrder`.
 - **`state` is visual-only.** The library bakes in no lifecycle meaning (arrived/
   entered/completed and the event/gateway placement rules are caller convention).
-- **Color is caller-supplied and carried** by the token; splits inherit it. **`selected`
-  is carried the same way** (copied on split, OR-merged on join).
+- **Color is caller-supplied and carried** by the token; a move keeps it. **`selected`
+  is carried the same way** (kept across a move, OR-merged on a join).
 - **Engine-free.** Do not reintroduce a simulator dependency. The `animation` service
   resets on `diagram.clear`/`diagram.destroy`.
 
