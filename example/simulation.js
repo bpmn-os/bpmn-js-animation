@@ -73,14 +73,14 @@ function render() {
     button(actions, 'createToken', () => {
       const l = 'I' + (++counter);
       setLabel(l);
-      run(() => sim.createToken(el.id, l), `createToken(${el.id}, ${l})`);
+      run(() => sim.createToken({ node: el.id, label: l }), `createToken(${el.id}, ${l})`);
     });
   }
 
   // createToken — child of the scope's token, at a start event
   if (is(el, 'bpmn:StartEvent')) {
     button(actions, 'createToken (at start)', () =>
-      run(() => sim.createToken(el.id, label()), `createToken(${el.id}, ${label()})`));
+      run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
   }
 
   // advance — when a token of the current instance rests on this activity/container
@@ -89,7 +89,7 @@ function render() {
     const pos = select(actions, [ 'ready', 'entry', 'busy', 'completed', 'exit' ], 'busy');
     const bounce = checkbox(actions, 'bounce');
     button(actions, 'advance', () => {
-      sim.advanceToken(el.id, label(), pos.value, bounce.checked)
+      sim.advanceToken({ node: el.id, label: label(), position: pos.value, bounce: bounce.checked })
         .then(() => log(`advanceToken(${el.id}, ${label()}, ${pos.value})`))
         .catch(err => log('ERROR: ' + err.message));
     });
@@ -98,7 +98,7 @@ function render() {
   // forward — when a sequence flow is selected and a token rests on its source
   if (is(el, 'bpmn:SequenceFlow') && el.source && sim.getEntry(el.source.id, label())) {
     button(actions, `forward → ${el.target ? el.target.id : '?'}`, () => {
-      sim.forwardToken(el.source.id, label(), el.id)
+      sim.forwardToken({ node: el.source.id, label: label(), sequenceFlow: el.id })
         .then(() => log(`forwardToken(${el.source.id}, ${label()}, ${el.id})`))
         .catch(err => log('ERROR: ' + err.message));
     });
