@@ -180,7 +180,7 @@ describe('SimulationAPI', function() {
   });
 
 
-  describe('forwardToken', function() {
+  describe('advanceToken — along a flow', function() {
 
     beforeEach(bootstrap(miTaskXML, { animation: { animationDuration: 0 } }));
     afterEach(cleanup);
@@ -193,7 +193,7 @@ describe('SimulationAPI', function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
       const start = sim().createToken({ node: 'StartEvent_1', label: 'I1' });
 
-      const landed = await sim().forwardToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
+      const landed = await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
 
       expect(sim().getEntry('StartEvent_1', 'I1')).to.be.undefined;
 
@@ -214,13 +214,13 @@ describe('SimulationAPI', function() {
     it('rejects a non-flow node', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       let err;
-      try { await sim().forwardToken({ node: PROCESS, label: 'I1', sequenceFlow: 'Flow_13p16ha' }); } catch (e) { err = e; }
+      try { await sim().advanceToken({ node: PROCESS, label: 'I1', sequenceFlow: 'Flow_13p16ha' }); } catch (e) { err = e; }
       expect(err.message).to.match(/not a flow node/);
     });
 
     it('rejects when there is no token at the node', async function() {
       let err;
-      try { await sim().forwardToken({ node: 'MultiInstanceActivity_1', label: 'X', sequenceFlow: 'Flow_13p16ha' }); } catch (e) { err = e; }
+      try { await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'X', sequenceFlow: 'Flow_13p16ha' }); } catch (e) { err = e; }
       expect(err.message).to.match(/no token/);
     });
 
@@ -228,7 +228,7 @@ describe('SimulationAPI', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: 'StartEvent_1', label: 'I1' });
       let err;
-      try { await sim().forwardToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' }); } catch (e) { err = e; }
+      try { await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' }); } catch (e) { err = e; }
       expect(err.message).to.match(/not connected/);
     });
 
@@ -318,8 +318,8 @@ describe('SimulationAPI', function() {
     async function toEndEventOnFlow() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: 'StartEvent_1', label: 'I1' });
-      await sim().forwardToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
-      await sim().forwardToken({ node: 'MultiInstanceActivity_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
+      await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' });
     }
 
     it('anchors a flow-resting token at the event center (no position needed)', async function() {

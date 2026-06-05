@@ -83,7 +83,9 @@ function render() {
   // advance — drives the SELECTED token (blue ring), independent of node selection: a center
   // node (event, or a pass-through gateway) anchors at center; an activity takes a sweep position
   const token = selectedToken();
-  if (token) {
+  // when a sequence flow is selected the only advance offered is *along that flow* (below);
+  // suppress the at-node center/sweep advance so the two forms don't both appear
+  if (token && !(el && is(el, 'bpmn:SequenceFlow'))) {
     const tEl = svc('elementRegistry').get(token.node);
     const tag = `${token.label}@${token.node}`;
     const advance = args => () =>
@@ -102,7 +104,7 @@ function render() {
     }
   }
 
-  // node-driven actions (createToken, forward) need a selected node
+  // node-driven actions (createToken, advance-along-flow) need a selected node
   if (!el) {
     return;
   }
@@ -122,11 +124,11 @@ function render() {
       run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
   }
 
-  // forward — when a sequence flow is selected and a token rests on its source
+  // advance along a flow — when a sequence flow is selected and a token rests on its source
   if (is(el, 'bpmn:SequenceFlow') && el.source && sim.getEntry(el.source.id, label())) {
-    button(actions, `forward → ${el.target ? el.target.id : '?'}`, () => {
-      sim.forwardToken({ node: el.source.id, label: label(), sequenceFlow: el.id })
-        .then(() => log(`forwardToken(${el.source.id}, ${label()}, ${el.id})`))
+    button(actions, `advance → ${el.target ? el.target.id : '?'}`, () => {
+      sim.advanceToken({ node: el.source.id, label: label(), sequenceFlow: el.id })
+        .then(() => log(`advanceToken(${el.source.id}, ${label()}, ${el.id})`))
         .then(render) // the selected token moved → refresh the advance bar for its new node
         .catch(err => log('ERROR: ' + err.message));
     });
