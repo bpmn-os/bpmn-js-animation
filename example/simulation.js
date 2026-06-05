@@ -35,18 +35,20 @@ let outlined = null; // node currently showing our (stack-aware) selection outli
 const label = () => $('#label').value.trim();
 const setLabel = l => { $('#label').value = l; };
 
-// --- selection: documented diagram-js `selection` service for the model, our own
-//     stack-aware `setNodeSelected` for the visual (diagram-js's outline isn't
-//     stack-aware — see .djs-outline hidden in simulation.html) ----------------------
+// --- selection: the documented diagram-js `selection` service drives everything;
+//     real shapes get the native (stack-aware via our OutlineProvider) outline. The
+//     implicit process box is the one exception — the root isn't a selectable shape, so
+//     we select it on background click and draw our own outline via `setNodeSelected`. ---
 
 const selected = () => svc('selection').get()[0] || null;
 
 function applyOutline(el) {
-  const id = el && el.id;
+  // only the implicit process box needs our own outline; real shapes use the native one
+  const id = el && is(el, 'bpmn:Process') ? el.id : null;
   if (outlined && outlined !== id) {
     svc('animation').setNodeSelected(outlined, false);
   }
-  outlined = id || null;
+  outlined = id;
   if (id) {
     svc('animation').setNodeSelected(id, true);
   }
@@ -152,6 +154,12 @@ viewer.get('eventBus').on('selection.changed', () => render());
 viewer.get('eventBus').on('token.click', e => {
   setLabel(e.label);
   svc('selection').select(elOf(e.node));
+});
+// the implicit process box is the root — not natively selectable; select it on bg click
+viewer.get('eventBus').on('element.click', e => {
+  if (is(e.element, 'bpmn:Process')) {
+    svc('selection').select(e.element);
+  }
 });
 
 $('#autoFocus').addEventListener('change', e => {
