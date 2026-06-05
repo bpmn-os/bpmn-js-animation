@@ -27,6 +27,7 @@ function log(msg) {
 }
 
 let counter = 0;
+let last = null; // the most recently created/advanced token: { node, label }
 
 function targets() {
   const elementRegistry = viewer.get('elementRegistry');
@@ -58,6 +59,7 @@ async function load(name) {
   viewer.get('canvas').zoom('fit-viewport', 'auto');
   viewer.get('simulation').autoFocus($('#autoFocus').checked);
   counter = 0;
+  last = null;
   $('#count').textContent = '0';
   refreshTargets();
   log(`loaded "${name}" — target: ${target()}`);
@@ -75,6 +77,7 @@ on('createToken', () => {
   const label = 'I' + (++counter);
   try {
     viewer.get('simulation').createToken(node, label);
+    last = { node, label };
     $('#count').textContent = String(counter);
     log(`createToken(${node}, ${label}) → ${viewer.get('animation').getStackSize(node)} instance(s)`);
   } catch (err) {
@@ -83,12 +86,24 @@ on('createToken', () => {
   }
 });
 
+on('advance', () => {
+  if (!last) {
+    return log('create a token first');
+  }
+  const position = $('#position').value;
+  const bounce = $('#bounce').checked;
+  viewer.get('simulation').advanceToken(last.node, last.label, position, bounce)
+    .then(() => log(`advanceToken(${last.node}, ${last.label}, ${position}${bounce ? ', bounce' : ''})`))
+    .catch(err => log('ERROR: ' + err.message));
+});
+
 on('scrollBack', () => viewer.get('animation').scrollStack(target(), 'backward'));
 on('scrollFwd', () => viewer.get('animation').scrollStack(target(), 'forward'));
 
 on('clear', () => {
   viewer.get('simulation').clear();
   counter = 0;
+  last = null;
   $('#count').textContent = '0';
   log('clear');
 });

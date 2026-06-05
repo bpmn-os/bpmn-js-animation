@@ -45,6 +45,18 @@
       <button id="createToken">createToken</button>
       <label><input type="checkbox" id="autoFocus" checked /> auto-focus</label>
       <span class="sep"></span>
+      <label>advance to
+        <select id="position">
+          <option value="ready">ready</option>
+          <option value="entry">entry</option>
+          <option value="busy" selected>busy</option>
+          <option value="completed">completed</option>
+          <option value="exit">exit</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="bounce" /> bounce</label>
+      <button id="advance">advance</button>
+      <span class="sep"></span>
       <button id="scrollBack">◀ scroll</button>
       <button id="scrollFwd">scroll ▶</button>
       <span class="sep"></span>

@@ -125,4 +125,74 @@ describe('SimulationAPI', function() {
 
   });
 
+
+  describe('advanceToken', function() {
+
+    // animationDuration: 0 ⇒ glides resolve synchronously (no real timers)
+    beforeEach(bootstrap(miTaskXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    it('advances a token to a named position', async function() {
+      sim().createToken(PROCESS, 'I1');
+      const token = await sim().advanceToken(PROCESS, 'I1', 'busy');
+
+      expect(token.state.position).to.include({ left: 0.5, top: 0, voffset: 10 });
+      expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
+    });
+
+    it('bounces at the target when asked', async function() {
+      sim().createToken(PROCESS, 'I1');
+      const token = await sim().advanceToken(PROCESS, 'I1', 'busy', true);
+      expect(token.state.bounce).to.be.true;
+    });
+
+    it('updates bounce on a same-position call', async function() {
+      sim().createToken(PROCESS, 'I1');
+      await sim().advanceToken(PROCESS, 'I1', 'busy', true);
+      const token = await sim().advanceToken(PROCESS, 'I1', 'busy', false);
+      expect(token.state.bounce).to.be.false;
+      expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
+    });
+
+    it('reaches the final position when steps are skipped (ready→exit)', async function() {
+      sim().createToken(PROCESS, 'I1');
+      const token = await sim().advanceToken(PROCESS, 'I1', 'exit');
+      expect(token.state.position).to.include({ left: 1, top: 0, voffset: -15 });
+    });
+
+    it('is forward-only (rejects advancing backward)', async function() {
+      sim().createToken(PROCESS, 'I1');
+      await sim().advanceToken(PROCESS, 'I1', 'busy');
+
+      let err;
+      try { await sim().advanceToken(PROCESS, 'I1', 'ready'); } catch (e) { err = e; }
+      expect(err).to.exist;
+      expect(err.message).to.match(/cannot advance backward/);
+    });
+
+    it('rejects an unknown position', async function() {
+      sim().createToken(PROCESS, 'I1');
+      let err;
+      try { await sim().advanceToken(PROCESS, 'I1', 'nope'); } catch (e) { err = e; }
+      expect(err.message).to.match(/unknown position/);
+    });
+
+    it('rejects a non-activity/container node', async function() {
+      let err;
+      try { await sim().advanceToken('StartEvent_1', 'X', 'busy'); } catch (e) { err = e; }
+      expect(err.message).to.match(/not an activity\/container/);
+    });
+
+    it('rejects a missing token', async function() {
+      let err;
+      try { await sim().advanceToken(PROCESS, 'NOPE', 'busy'); } catch (e) { err = e; }
+      expect(err.message).to.match(/no token/);
+    });
+
+  });
+
 });
