@@ -180,6 +180,61 @@ describe('SimulationAPI', function() {
   });
 
 
+  describe('forwardToken', function() {
+
+    beforeEach(bootstrap(miTaskXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    it('moves the token onto the flow and sends it to the far node', async function() {
+      const root = sim().createToken(PROCESS, 'I1');
+      const start = sim().createToken('StartEvent_1', 'I1');
+
+      const landed = await sim().forwardToken('StartEvent_1', 'I1', 'Flow_13p16ha');
+
+      expect(sim().getEntry('StartEvent_1', 'I1')).to.be.undefined;
+
+      const entry = sim().getEntry('MultiInstanceActivity_1', 'I1');
+      expect(entry).to.exist;
+      expect(entry.node).to.equal('MultiInstanceActivity_1');
+      expect(entry.sequenceFlow).to.equal('Flow_13p16ha'); // resting on the flow
+
+      expect(landed.node).to.equal('MultiInstanceActivity_1');
+      expect(landed.state.sequenceFlow).to.equal('Flow_13p16ha');
+
+      // sendToken lands a fresh token object; the hierarchy carries over to it
+      expect(landed).to.not.equal(start);
+      expect(sim().getChildren(root)).to.include(landed);
+      expect(sim().getChildren(root)).to.not.include(start);
+    });
+
+    it('rejects a non-flow node', async function() {
+      sim().createToken(PROCESS, 'I1');
+      let err;
+      try { await sim().forwardToken(PROCESS, 'I1', 'Flow_13p16ha'); } catch (e) { err = e; }
+      expect(err.message).to.match(/not a flow node/);
+    });
+
+    it('rejects when there is no token at the node', async function() {
+      let err;
+      try { await sim().forwardToken('MultiInstanceActivity_1', 'X', 'Flow_13p16ha'); } catch (e) { err = e; }
+      expect(err.message).to.match(/no token/);
+    });
+
+    it('rejects a flow not connected to the node', async function() {
+      sim().createToken(PROCESS, 'I1');
+      sim().createToken('StartEvent_1', 'I1');
+      let err;
+      try { await sim().forwardToken('StartEvent_1', 'I1', 'Flow_0ldndng'); } catch (e) { err = e; }
+      expect(err.message).to.match(/not connected/);
+    });
+
+  });
+
+
   describe('advanceToken', function() {
 
     // animationDuration: 0 ⇒ glides resolve synchronously (no real timers)

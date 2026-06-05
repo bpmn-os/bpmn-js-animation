@@ -21,7 +21,6 @@ const viewer = new NavigatedViewer({
 
 const $ = s => document.querySelector(s);
 const svc = n => viewer.get(n);
-const elOf = id => svc('elementRegistry').get(id);
 
 function log(msg) {
   const d = document.createElement('div');
@@ -96,6 +95,15 @@ function render() {
     });
   }
 
+  // forward — when a sequence flow is selected and a token rests on its source
+  if (is(el, 'bpmn:SequenceFlow') && el.source && sim.getEntry(el.source.id, label())) {
+    button(actions, `forward → ${el.target ? el.target.id : '?'}`, () => {
+      sim.forwardToken(el.source.id, label(), el.id)
+        .then(() => log(`forwardToken(${el.source.id}, ${label()}, ${el.id})`))
+        .catch(err => log('ERROR: ' + err.message));
+    });
+  }
+
   // (stacked nodes scroll via double-click — see the element.dblclick handler below)
 }
 
@@ -148,10 +156,10 @@ async function load(name) {
 // documented diagram-js / AnimationAPI events drive selection + the current instance
 viewer.get('eventBus').on('selection.changed', () => render());
 viewer.get('eventBus').on('token.click', e => {
-  // token selection (the blue ring) is a built-in animation feature now; here we just
-  // adopt the clicked instance + select its node
+  // clicking a token selects only the token (its blue ring is the lib's built-in); adopt
+  // its instance as the current one and refresh the action bar — but don't select the node
   setLabel(e.label);
-  svc('selection').select(elOf(e.node));
+  render();
 });
 // the implicit process box is the root — not natively selectable; select it on bg click
 viewer.get('eventBus').on('element.click', e => {

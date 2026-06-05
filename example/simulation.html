@@ -27,6 +27,13 @@
       overflow: auto; font-family: monospace; font-size: 12px; background: #fcfcfc;
     }
     #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+    /* diagram-js draws a selection outline for connections but hides it (it un-hides it
+       itself for `.djs-search-open`); show it so the selected sequence flow gets a visible
+       frame to forward a token along. !important to win regardless of CSS injection order. */
+    .djs-connection.selected .djs-outline {
+      display: block !important;
+      stroke: hsl(205, 100%, 50%);
+    }
   </style>
 </head>
 <body>
