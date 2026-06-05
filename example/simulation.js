@@ -29,7 +29,15 @@ function log(msg) {
 }
 
 let counter = 0;
-let outlined = null; // node currently showing our (stack-aware) selection outline
+let outlined = null;      // node currently showing our (stack-aware) selection outline
+
+// The token advanceToken acts on is the lib's *selected* token (blue ring) — read live, not
+// cached: `selected` is carried across a move (Animation.js sendToken), so the token object
+// tracks the dot to its new node. No stale {node,label}; the ring IS the advance target.
+const selectedToken = () => {
+  const sel = svc('animation').getSelectedTokens();
+  return sel.length === 1 ? sel[0] : null;
+};
 
 const label = () => $('#label').value.trim();
 const setLabel = l => { $('#label').value = l; };
@@ -53,6 +61,14 @@ function applyOutline(el) {
   }
 }
 
+// A node where advanceToken anchors a token at center: an event, or a pass-through gateway
+// (exclusive, or any gateway with a single incoming flow) — mirrors the lib's rule.
+function isCenter(el) {
+  return is(el, 'bpmn:Event') ||
+    is(el, 'bpmn:ExclusiveGateway') ||
+    (is(el, 'bpmn:Gateway') && (el.incoming || []).length <= 1);
+}
+
 // Rebuild the select-aware action bar for the current selection.
 function render() {
   const el = selected();
@@ -61,12 +77,35 @@ function render() {
 
   const actions = $('#actions');
   actions.innerHTML = '';
+
+  const sim = svc('simulation');
+
+  // advance — drives the SELECTED token (blue ring), independent of node selection: a center
+  // node (event, or a pass-through gateway) anchors at center; an activity takes a sweep position
+  const token = selectedToken();
+  if (token) {
+    const tEl = svc('elementRegistry').get(token.node);
+    const tag = `${token.label}@${token.node}`;
+    const advance = args => () =>
+      sim.advanceToken({ node: token.node, label: token.label, ...args })
+        .then(() => log(`advanceToken(${tag}${args.position ? ', ' + args.position : ' → center'})`))
+        .then(render)
+        .catch(err => log('ERROR: ' + err.message));
+
+    if (isCenter(tEl)) {
+      const bounce = checkbox(actions, 'bounce');
+      button(actions, `advance ${tag} → center`, () => advance({ bounce: bounce.checked })());
+    } else if (is(tEl, 'bpmn:Activity') || is(tEl, 'bpmn:Process') || is(tEl, 'bpmn:Participant')) {
+      const pos = select(actions, [ 'ready', 'entry', 'busy', 'completed', 'exit' ], 'busy');
+      const bounce = checkbox(actions, 'bounce');
+      button(actions, `advance ${tag}`, () => advance({ position: pos.value, bounce: bounce.checked })());
+    }
+  }
+
+  // node-driven actions (createToken, forward) need a selected node
   if (!el) {
     return;
   }
-
-  const sim = svc('simulation');
-  const anim = svc('animation');
 
   // createToken — start a process/participant instance
   if (is(el, 'bpmn:Process') || is(el, 'bpmn:Participant')) {
@@ -83,23 +122,12 @@ function render() {
       run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
   }
 
-  // advance — when a token of the current instance rests on this activity/container
-  if ((is(el, 'bpmn:Activity') || is(el, 'bpmn:Process') || is(el, 'bpmn:Participant')) &&
-      sim.getEntry(el.id, label())) {
-    const pos = select(actions, [ 'ready', 'entry', 'busy', 'completed', 'exit' ], 'busy');
-    const bounce = checkbox(actions, 'bounce');
-    button(actions, 'advance', () => {
-      sim.advanceToken({ node: el.id, label: label(), position: pos.value, bounce: bounce.checked })
-        .then(() => log(`advanceToken(${el.id}, ${label()}, ${pos.value})`))
-        .catch(err => log('ERROR: ' + err.message));
-    });
-  }
-
   // forward — when a sequence flow is selected and a token rests on its source
   if (is(el, 'bpmn:SequenceFlow') && el.source && sim.getEntry(el.source.id, label())) {
     button(actions, `forward → ${el.target ? el.target.id : '?'}`, () => {
       sim.forwardToken({ node: el.source.id, label: label(), sequenceFlow: el.id })
         .then(() => log(`forwardToken(${el.source.id}, ${label()}, ${el.id})`))
+        .then(render) // the selected token moved → refresh the advance bar for its new node
         .catch(err => log('ERROR: ' + err.message));
     });
   }
@@ -156,8 +184,8 @@ async function load(name) {
 // documented diagram-js / AnimationAPI events drive selection + the current instance
 viewer.get('eventBus').on('selection.changed', () => render());
 viewer.get('eventBus').on('token.click', e => {
-  // clicking a token selects only the token (its blue ring is the lib's built-in); adopt
-  // its instance as the current one and refresh the action bar — but don't select the node
+  // clicking a token toggles its blue ring (the lib's built-in selectTokenOnClick); the
+  // selected token is what advanceToken acts on. Adopt its instance label + refresh.
   setLabel(e.label);
   render();
 });

@@ -290,15 +290,60 @@ describe('SimulationAPI', function() {
       expect(err.message).to.match(/unknown position/);
     });
 
-    it('rejects a non-activity/container node', async function() {
-      let err;
-      try { await sim().advanceToken({ node: 'StartEvent_1', label: 'X', position: 'busy' }); } catch (e) { err = e; }
-      expect(err.message).to.match(/not an activity\/container/);
+    it('rejects a node that is neither activity/container nor a center node', async function() {
+      let err; // a sequence flow is neither
+      try { await sim().advanceToken({ node: 'Flow_13p16ha', label: 'X', position: 'busy' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/not an activity\/container or center/);
     });
 
     it('rejects a missing token', async function() {
       let err;
       try { await sim().advanceToken({ node: PROCESS, label: 'NOPE', position: 'busy' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/no token/);
+    });
+
+  });
+
+
+  describe('advanceToken — event anchor (to center)', function() {
+
+    beforeEach(bootstrap(miTaskXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    // walk a token onto the end event, resting on its incoming flow
+    async function toEndEventOnFlow() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().forwardToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
+      await sim().forwardToken({ node: 'MultiInstanceActivity_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' });
+    }
+
+    it('anchors a flow-resting token at the event center (no position needed)', async function() {
+      await toEndEventOnFlow();
+
+      const token = await sim().advanceToken({ node: 'Event_10nbvlp', label: 'I1' });
+
+      expect(token.state.position).to.include({ left: 0.5, top: 0.5, hoffset: 5, voffset: 5 });
+      expect(token.state.sequenceFlow == null).to.be.true; // off the flow now
+
+      const entry = sim().getEntry('Event_10nbvlp', 'I1');
+      expect(entry.position).to.equal('center');
+      expect(entry.sequenceFlow).to.equal(null);
+    });
+
+    it('honors the bounce flag', async function() {
+      await toEndEventOnFlow();
+      const token = await sim().advanceToken({ node: 'Event_10nbvlp', label: 'I1', bounce: true });
+      expect(token.state.bounce).to.be.true;
+    });
+
+    it('rejects a missing token', async function() {
+      let err;
+      try { await sim().advanceToken({ node: 'Event_10nbvlp', label: 'NOPE' }); } catch (e) { err = e; }
       expect(err.message).to.match(/no token/);
     });
 
