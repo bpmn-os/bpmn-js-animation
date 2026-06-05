@@ -4,6 +4,7 @@ import { bootstrap, cleanup, get } from '../TestHelper';
 
 import miTaskXML from '../diagrams/mi-task.bpmn';
 import collaborationXML from '../diagrams/collaboration.bpmn';
+import eventSubXML from '../diagrams/event-subprocess.bpmn';
 
 const PROCESS = 'Process_1';
 
@@ -81,9 +82,9 @@ describe('SimulationAPI', function() {
       expect(get('animation').getStackIndex(PROCESS)).to.equal(1); // unchanged
     });
 
-    it('rejects a non-process/participant node', function() {
+    it('rejects an unsupported node', function() {
       expect(() => sim().createToken('MultiInstanceActivity_1', 'X'))
-        .to.throw(/not a bpmn:Process or bpmn:Participant/);
+        .to.throw(/not a process\/participant or a start event/);
     });
 
     it('rejects an unknown node', function() {
@@ -121,6 +122,54 @@ describe('SimulationAPI', function() {
 
       expect(get('animation').getStackSize('Participant_1')).to.equal(2);
       expect(get('animation').getStackSize('Participant_2')).to.equal(1);
+    });
+
+  });
+
+
+  describe('createToken — start event case', function() {
+
+    beforeEach(bootstrap(miTaskXML));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    it('creates a child of the scope token at center, same label + color', function() {
+      const root = sim().createToken(PROCESS, 'I1');
+      const token = sim().createToken('StartEvent_1', 'I1');
+
+      expect(token.label).to.equal('I1');
+      expect(token.color).to.equal(root.color);
+      expect(token.state.position).to.include({ left: 0.5, top: 0.5, hoffset: 5, voffset: 5 });
+      expect(token.stackIndices).to.deep.equal({ [PROCESS]: 0 });
+      expect(sim().getChildren(root)).to.include(token);
+      expect(sim().getEntry('StartEvent_1', 'I1').position).to.equal('center');
+    });
+
+    it('honors the bounce flag', function() {
+      sim().createToken(PROCESS, 'B');
+      const token = sim().createToken('StartEvent_1', 'B', true);
+      expect(token.state.bounce).to.be.true;
+    });
+
+    it('rejects when the scope has no token of that label', function() {
+      expect(() => sim().createToken('StartEvent_1', 'I1'))
+        .to.throw(/no token <I1> at scope <Process_1>/);
+    });
+
+  });
+
+
+  describe('createToken — start event of event sub-process is rejected', function() {
+
+    beforeEach(bootstrap(eventSubXML));
+    afterEach(cleanup);
+
+    it('rejects an event sub-process start event', function() {
+      expect(() => get('simulation').createToken('EscalationStartEvent_1', 'X'))
+        .to.throw(/event sub-process/);
     });
 
   });

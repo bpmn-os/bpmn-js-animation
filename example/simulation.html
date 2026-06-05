@@ -27,6 +27,9 @@
       overflow: auto; font-family: monospace; font-size: 12px; background: #fcfcfc;
     }
     #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+    /* diagram-js's selection outline isn't stack-aware; we draw our own
+       (.bts-node-outline via animation.setNodeSelected), so hide the default. */
+    .djs-outline { display: none; }
   </style>
 </head>
 <body>
@@ -38,30 +41,15 @@
           <option value="collaboration">collaboration (pools)</option>
         </select>
       </label>
-      <label>target
-        <select id="target"></select>
-      </label>
       <span class="sep"></span>
-      <button id="createToken">createToken</button>
+      <span class="readout">selected: <b id="sel">—</b></span>
+      <label>instance <input id="label" size="7" /></label>
+      <span class="sep"></span>
+      <!-- select-aware actions are rendered here based on the current selection -->
+      <span id="actions"></span>
+      <span class="sep"></span>
       <label><input type="checkbox" id="autoFocus" checked /> auto-focus</label>
-      <span class="sep"></span>
-      <label>advance to
-        <select id="position">
-          <option value="ready">ready</option>
-          <option value="entry">entry</option>
-          <option value="busy" selected>busy</option>
-          <option value="completed">completed</option>
-          <option value="exit">exit</option>
-        </select>
-      </label>
-      <label><input type="checkbox" id="bounce" /> bounce</label>
-      <button id="advance">advance</button>
-      <span class="sep"></span>
-      <button id="scrollBack">◀ scroll</button>
-      <button id="scrollFwd">scroll ▶</button>
-      <span class="sep"></span>
       <button id="clear">clear</button>
-      <span class="readout">instances: <b id="count">0</b></span>
     </div>
     <div id="main">
       <div id="canvas"></div>
