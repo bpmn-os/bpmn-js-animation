@@ -29,6 +29,9 @@
       overflow: auto; font-family: monospace; font-size: 12px; background: #fcfcfc;
     }
     #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+    /* this playground uses the AnimationAPI's own selection outline
+       (.bts-node-outline via setNodeSelected); hide the native one to avoid a double frame. */
+    .djs-outline { display: none; }
   </style>
 </head>
 <body>

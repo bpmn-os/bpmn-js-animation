@@ -96,11 +96,7 @@ function render() {
     });
   }
 
-  // scroll — browse instances of a stacked node (UI-only, AnimationAPI passthrough)
-  if (anim.getStackSize(el.id) > 1) {
-    button(actions, '◀', () => anim.scrollStack(el.id, 'backward'));
-    button(actions, '▶', () => anim.scrollStack(el.id, 'forward'));
-  }
+  // (stacked nodes scroll via double-click — see the element.dblclick handler below)
 }
 
 function run(fn, msg) {
@@ -152,6 +148,8 @@ async function load(name) {
 // documented diagram-js / AnimationAPI events drive selection + the current instance
 viewer.get('eventBus').on('selection.changed', () => render());
 viewer.get('eventBus').on('token.click', e => {
+  // token selection (the blue ring) is a built-in animation feature now; here we just
+  // adopt the clicked instance + select its node
   setLabel(e.label);
   svc('selection').select(elOf(e.node));
 });
@@ -161,6 +159,8 @@ viewer.get('eventBus').on('element.click', e => {
     svc('selection').select(e.element);
   }
 });
+
+// (double-click a stacked node to scroll — built into the animation module now)
 
 $('#autoFocus').addEventListener('change', e => {
   viewer.get('simulation').autoFocus(e.target.checked);

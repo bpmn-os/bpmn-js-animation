@@ -153,36 +153,7 @@ async function main() {
     (t.state.sequenceFlow || null) === (sf || null) &&
     ctxKey(t.stackIndices) === ctxKey(stackIndices);
 
-  // selector = { sequenceFlow?, stackIndices? } — the instance is what lets us address a
-  // token on a non-front stack (not just the base instance)
-  function setTokenSelected(node, label, sequenceFlow, stackIndices, selected) {
-    const selector = { sequenceFlow: sequenceFlow || undefined, stackIndices };
-    if (selected) {
-      animation.selectToken(node, label, selector);
-    } else {
-      animation.deselectToken(node, label, selector);
-    }
-  }
-
-  function clickToken(node, label, sequenceFlow, stackIndices, additive) {
-    const t = animation.getTokens(x => sameToken(x, node, label, sequenceFlow, stackIndices))[0];
-    if (!t) {
-      return;
-    }
-    if (additive) {
-      setTokenSelected(node, label, sequenceFlow, stackIndices, !t.selected);
-    } else {
-      const selected = animation.getTokens(x => x.selected);
-      const wasSole = selected.length === 1 && t.selected;
-      selected.forEach(x => {
-        if (x !== t) {
-          setTokenSelected(x.node, x.label, x.state.sequenceFlow, x.stackIndices, false);
-        }
-      });
-      setTokenSelected(node, label, sequenceFlow, stackIndices, !wasSole);
-    }
-    log(`tokens: [${animation.getTokens(x => x.selected).map(x => `${x.label}@${x.node}`).join(', ') || '—'}]`);
-  }
+  // (clicking a token to select it — the blue ring — is built into the animation module)
 
   // reflect the current token's state in the bounce + location controls (so editing
   // continues from where the token is). Run after refreshLocations so the flow option exists.
@@ -230,26 +201,10 @@ async function main() {
     currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null, stackIndices: e.stackIndices };
     renderReadouts();
     syncControlsToToken(); // show the token's current bounce + location in the controls
-    clickToken(e.node, e.label, e.sequenceFlow || null, e.stackIndices, !!(e.originalEvent && e.originalEvent.shiftKey));
+    // (selecting the clicked token — the blue ring — is built into the animation module now)
   });
 
-  // double-click a stacked node to scroll it: forward, or backward with Shift held
-  eventBus.on('element.dblclick', e => {
-    let el = e.element;
-    // any stacked node/connection-free shape scrolls — including the implicit process
-    // root and a drilled-into sub-process plane (double-click the empty background, mapped
-    // to its sub-process shape via shapeOf); Shift reverses
-    if (!el || el.waypoints || !el.businessObject) {
-      return;
-    }
-    el = shapeOf(el);
-    if (animation.getStackSize(el.id) <= 1) {
-      return; // only stacked nodes scroll
-    }
-    const dir = e.originalEvent && e.originalEvent.shiftKey ? 'backward' : 'forward';
-    log(`scrollStack(${el.id}, ${dir})`);
-    animation.scrollStack(el.id, dir);
-  });
+  // (double-click a stacked node to scroll it — now built into the animation module)
 
   on('createToken', () => {
     if (!currentNode) {
