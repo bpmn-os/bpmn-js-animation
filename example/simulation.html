@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bpmn-js-animation — SimulationAPI</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      padding: 8px; border-bottom: 1px solid #ccc; background: #fafafa;
+    }
+    #toolbar button {
+      padding: 5px 10px; border: 1px solid #bbb; border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 13px;
+    }
+    #toolbar button:hover { background: #eee; }
+    #toolbar label { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }
+    #toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
+    #toolbar .readout { font-size: 13px; color: #444; }
+    #toolbar .readout b { color: #111; }
+    #main { flex: 1; display: flex; min-height: 0; }
+    #canvas { flex: 1; }
+    #log {
+      width: 280px; border-left: 1px solid #ccc; padding: 8px;
+      overflow: auto; font-family: monospace; font-size: 12px; background: #fcfcfc;
+    }
+    #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <label>diagram
+        <select id="diagram">
+          <option value="process">implicit process</option>
+          <option value="collaboration">collaboration (pools)</option>
+        </select>
+      </label>
+      <label>target
+        <select id="target"></select>
+      </label>
+      <span class="sep"></span>
+      <button id="createToken">createToken</button>
+      <label><input type="checkbox" id="autoFocus" checked /> auto-focus</label>
+      <span class="sep"></span>
+      <button id="scrollBack">◀ scroll</button>
+      <button id="scrollFwd">scroll ▶</button>
+      <span class="sep"></span>
+      <button id="clear">clear</button>
+      <span class="readout">instances: <b id="count">0</b></span>
+    </div>
+    <div id="main">
+      <div id="canvas"></div>
+      <div id="log"></div>
+    </div>
+  </div>
+  <script type="module" src="./simulation.js"></script>
+</body>
+</html>
