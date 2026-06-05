@@ -91,6 +91,11 @@ describe('SimulationAPI', function() {
       expect(() => sim().createToken('Nope_1', 'X')).to.throw(/unknown element/);
     });
 
+    it('rejects a duplicate (same node + label)', function() {
+      sim().createToken(PROCESS, 'I1');
+      expect(() => sim().createToken(PROCESS, 'I1')).to.throw(/already exists/);
+    });
+
     it('clears all state', function() {
       sim().createToken(PROCESS, 'I1');
       sim().clear();
