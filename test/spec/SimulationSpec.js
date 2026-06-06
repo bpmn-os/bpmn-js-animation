@@ -368,6 +368,75 @@ describe('SimulationAPI', function() {
   });
 
 
+  describe('consumeToken — subtree cascade', function() {
+
+    beforeEach(bootstrap(parallelJoinXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    it('removes the token and its whole subtree', async function() {
+      const root = sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' }); // child of root
+      expect(sim().getChildren(root)).to.have.length(1);
+
+      const removed = await sim().consumeToken({ node: PROCESS, label: 'I1' });
+
+      expect(removed).to.have.length(2);                          // root + start child
+      expect(sim().getToken(PROCESS, 'I1')).to.be.undefined;
+      expect(sim().getToken('StartEvent_1', 'I1')).to.be.undefined;
+      expect(get('animation').getTokens(t => t.label === 'I1')).to.have.length(0);
+    });
+
+    it('cascade deletes descendants even when they rest on flows', async function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' });
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+      await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+      // two branches now rest on flows at the join
+      expect(get('animation').getTokens(t => t.label === 'I1' && t.state.sequenceFlow)).to.have.length(2);
+
+      await sim().consumeToken({ node: PROCESS, label: 'I1' }); // consume the (anchored) root
+
+      expect(get('animation').getTokens(t => t.label === 'I1')).to.have.length(0); // root + both branches gone
+    });
+
+    it('rejects consuming a token resting on a sequence flow', async function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' }); // now on Flow_s at the split
+
+      let err;
+      try { await sim().consumeToken({ node: 'Gateway_Split', label: 'I1' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/rests on a sequence flow/);
+    });
+
+    it('rejects when there is no token at the node', async function() {
+      let err;
+      try { await sim().consumeToken({ node: PROCESS, label: 'X' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/no token/);
+    });
+
+    it('decrements the process stack as instances are consumed', async function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: PROCESS, label: 'I2' });
+      expect(get('animation').getStackSize(PROCESS)).to.equal(2);
+
+      await sim().consumeToken({ node: PROCESS, label: 'I2' }); // the latest instance
+      expect(get('animation').getStackSize(PROCESS)).to.equal(1);
+
+      await sim().consumeToken({ node: PROCESS, label: 'I1' });
+      expect(get('animation').getStackSize(PROCESS)).to.equal(0); // last instance → box removed
+    });
+
+  });
+
+
   describe('advanceToken', function() {
 
     // animationDuration: 0 ⇒ glides resolve synchronously (no real timers)

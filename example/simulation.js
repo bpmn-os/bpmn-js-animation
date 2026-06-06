@@ -125,6 +125,16 @@ function render() {
       const bounce = checkbox(actions, 'bounce');
       button(actions, `advance ${tag}`, () => advance({ position: pos.value, bounce: bounce.checked })());
     }
+
+    // consume — only an anchored token (one in transit on a flow can't be consumed directly,
+    // but is torn down as part of an ancestor's subtree cascade)
+    if (token.state.sequenceFlow == null) {
+      button(actions, `consume ${tag}`, () =>
+        sim.consumeToken({ node: token.node, label: token.label })
+          .then(() => log(`consumeToken(${tag})`))
+          .then(render)
+          .catch(err => log('ERROR: ' + err.message)));
+    }
   }
 
   // node-driven actions (createToken, advance-along-flow) need a selected node
