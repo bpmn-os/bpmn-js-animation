@@ -15,6 +15,7 @@
     <bpmn2:task id="Activity_1">
       <bpmn2:incoming>Flow_a</bpmn2:incoming>
       <bpmn2:outgoing>Flow_a2</bpmn2:outgoing>
+      <bpmn2:standardLoopCharacteristics />
     </bpmn2:task>
     <bpmn2:task id="Activity_2">
       <bpmn2:incoming>Flow_b</bpmn2:incoming>

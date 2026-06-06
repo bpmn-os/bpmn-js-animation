@@ -6,6 +6,7 @@ import miTaskXML from '../diagrams/mi-task.bpmn';
 import collaborationXML from '../diagrams/collaboration.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
+import exclusiveGatewayXML from '../diagrams/exclusive-gateway.bpmn'; // Activity_1 is a standard loop
 
 const PROCESS = 'Process_1';
 
@@ -44,13 +45,14 @@ describe('SimulationAPI', function() {
       expect(get('animation').getProcessBox()).to.equal(PROCESS);
     });
 
-    it('tags each instance with its own stack index', function() {
+    it('tags each instance with its own label as the stack key', function() {
       const a = sim().createToken({ node: PROCESS, label: 'I1' });
       const b = sim().createToken({ node: PROCESS, label: 'I2' });
 
-      expect(a.stackIndices).to.deep.equal({ [PROCESS]: 0 });
-      expect(b.stackIndices).to.deep.equal({ [PROCESS]: 1 });
+      expect(a.stackIndices).to.deep.equal({ [PROCESS]: 'I1' });
+      expect(b.stackIndices).to.deep.equal({ [PROCESS]: 'I2' });
       expect(get('animation').getStackSize(PROCESS)).to.equal(2);
+      expect(get('animation').getStacks(PROCESS)).to.eql([ 'I1', 'I2' ]);
     });
 
     it('gives subsequent tokens distinct colors', function() {
@@ -69,18 +71,18 @@ describe('SimulationAPI', function() {
     it('keeps the first instance in front by default', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: PROCESS, label: 'I2' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal(0);
+      expect(get('animation').getStackIndex(PROCESS)).to.equal('I1');
     });
 
     it('reveals the touched instance when auto-focus is on', function() {
       sim().autoFocus(true);
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: PROCESS, label: 'I2' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal(1);
+      expect(get('animation').getStackIndex(PROCESS)).to.equal('I2');
 
       sim().autoFocus(false);
       sim().createToken({ node: PROCESS, label: 'I3' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal(1); // unchanged
+      expect(get('animation').getStackIndex(PROCESS)).to.equal('I2'); // unchanged
     });
 
     it('rejects an unsupported node', function() {
@@ -117,7 +119,7 @@ describe('SimulationAPI', function() {
       const token = get('simulation').createToken({ node: 'Participant_1', label: 'I1' });
 
       expect(token.label).to.equal('I1');
-      expect(token.stackIndices).to.deep.equal({ Participant_1: 0 });
+      expect(token.stackIndices).to.deep.equal({ Participant_1: 'I1' });
       expect(get('animation').getStackSize('Participant_1')).to.equal(1);
     });
 
@@ -149,7 +151,7 @@ describe('SimulationAPI', function() {
       expect(token.label).to.equal('I1');
       expect(token.color).to.equal(root.color);
       expect(token.state.position).to.include({ left: 0.5, top: 0.5, hoffset: 5, voffset: 5 });
-      expect(token.stackIndices).to.deep.equal({ [PROCESS]: 0 });
+      expect(token.stackIndices).to.deep.equal({ [PROCESS]: 'I1' }); // inherits the instance label key
       expect(sim().getChildren(root)).to.include(token);
       expect(sim().getEntry('StartEvent_1', 'I1').position).to.equal('center');
     });
@@ -434,6 +436,30 @@ describe('SimulationAPI', function() {
       expect(get('animation').getStackSize(PROCESS)).to.equal(0); // last instance → box removed
     });
 
+    // regression: consuming a non-latest instance must not drop the survivors. Previously the
+    // stack was positional (count-based), so removing instance 0 left instance 1's tokens
+    // outside the shrunken stack → they vanished. Label-keyed stacks remove the *specific* key.
+    it('consuming one instance keeps the others and their children intact', async function() {
+      const dot = node => document.querySelector(`.bts-token-count[data-node-id="${node}"]`);
+
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: PROCESS, label: 'I2' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I2' }); // a child token on the 2nd instance
+      expect(get('animation').getStacks(PROCESS)).to.eql([ 'I1', 'I2' ]);
+      expect(dot('StartEvent_1'), 'I2 child hidden while I1 is front').to.not.exist; // I1 is front
+
+      await sim().consumeToken({ node: PROCESS, label: 'I1' }); // consume the first (front) instance
+
+      // the 2nd instance and its start-event child survive (its key stays; tokens still tracked)
+      expect(get('animation').getStacks(PROCESS)).to.eql([ 'I2' ]);
+      expect(sim().getToken(PROCESS, 'I1')).to.be.undefined;
+      expect(sim().getToken(PROCESS, 'I2')).to.exist;
+      expect(sim().getToken('StartEvent_1', 'I2')).to.exist;
+      expect(get('animation').getTokens(t => t.label === 'I2')).to.have.length(2);
+      // and it RENDERS — I2 is now the front instance, so its descendant dot must be re-drawn
+      expect(dot('StartEvent_1'), 'I2 child renders once it becomes front').to.exist;
+    });
+
   });
 
 
@@ -562,6 +588,46 @@ describe('SimulationAPI', function() {
       let err;
       try { await sim().advanceToken({ node: 'Event_10nbvlp', label: 'NOPE' }); } catch (e) { err = e; }
       expect(err.message).to.match(/no token/);
+    });
+
+  });
+
+
+  describe('advanceToken — loop activity', function() {
+
+    // Activity_1 in this diagram carries standardLoopCharacteristics
+    beforeEach(bootstrap(exclusiveGatewayXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    // get the instance token onto the looping Activity_1 (resting on its incoming flow)
+    async function toLoopActivity() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_1ra1q8g' }); // → Gateway_1
+      await sim().advanceToken({ node: 'Gateway_1', label: 'I1', sequenceFlow: 'Flow_1jj1qlk' });     // → Activity_1
+    }
+
+    it('re-enters ready from a later state (the loop)', async function() {
+      await toLoopActivity();
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });
+      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('busy');
+
+      // loop-back: ready from busy is allowed for a loop activity, gliding to the start position
+      const token = await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'ready' });
+      expect(token.state.position).to.include({ left: 0, top: 0, voffset: -15 }); // ready
+      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('ready');
+    });
+
+    it('allows any backward step on a loop (not just ready)', async function() {
+      await toLoopActivity();
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'completed' });
+      // completed → entry is backward but not to ready — still allowed for a loop
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'entry' });
+      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('entry');
     });
 
   });

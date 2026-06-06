@@ -110,6 +110,10 @@ describe('simulation/classify', function() {
       });
     });
 
+    it('flags a standard-loop activity (loop, not multi-instance)', function() {
+      expect(classifyId('Activity_1')).to.include({ task: 'task', loop: true, multiInstance: false });
+    });
+
   });
 
 
