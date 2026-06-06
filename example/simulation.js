@@ -69,6 +69,29 @@ function isCenter(el) {
     (is(el, 'bpmn:Gateway') && (el.incoming || []).length <= 1);
 }
 
+// forkToken is offered while the instance is forkable at a gateway: the original still rests
+// there (first fork = a move), or a branch already sits on one of its outflows (later forks).
+function canFork(gatewayId, lbl) {
+  return !!svc('simulation').getEntry(gatewayId, lbl) ||
+    svc('animation').getTokens(t => t.label === lbl && t.node === gatewayId && t.state.sequenceFlow).length > 0;
+}
+
+// a same-label branch already resting on this exact flow at its source (placed by forkToken,
+// or just any in-transit token) — i.e. there's something here to travel along it
+function branchOnFlow(flow, lbl) {
+  return svc('animation').getTokens(
+    t => t.label === lbl && t.node === flow.source.id && t.state.sequenceFlow === flow.id
+  ).length > 0;
+}
+
+// same-label branches that have arrived at a gateway on its incoming flows (joinable)
+function arrivedBranches(gateway, lbl) {
+  const incoming = new Set((gateway.incoming || []).map(f => f.id));
+  return svc('animation').getTokens(
+    t => t.label === lbl && t.node === gateway.id && incoming.has(t.state.sequenceFlow)
+  );
+}
+
 // Rebuild the select-aware action bar for the current selection.
 function render() {
   const el = selected();
@@ -124,14 +147,38 @@ function render() {
       run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
   }
 
-  // advance along a flow — when a sequence flow is selected and a token rests on its source
-  if (is(el, 'bpmn:SequenceFlow') && el.source && sim.getEntry(el.source.id, label())) {
-    button(actions, `advance → ${el.target ? el.target.id : '?'}`, () => {
-      sim.advanceToken({ node: el.source.id, label: label(), sequenceFlow: el.id })
-        .then(() => log(`advanceToken(${el.source.id}, ${label()}, ${el.id})`))
-        .then(render) // the selected token moved → refresh the advance bar for its new node
+  // join — a (converging) gateway with ≥2 branches resting on its incoming flows
+  if (is(el, 'bpmn:Gateway') && arrivedBranches(el, label()).length >= 2) {
+    button(actions, 'join', () => {
+      sim.joinTokens({ node: el.id, label: label() })
+        .then(() => log(`joinTokens(${el.id}, ${label()})`))
+        .then(render)
         .catch(err => log('ERROR: ' + err.message));
     });
+  }
+
+  // along a flow — when a sequence flow is selected. At a (diverging) gateway, `fork` places a
+  // branch on the outflow (no travel) so the other outflows can be forked too; then `advance`
+  // travels a placed branch (or just moves a token resting at the source) along the flow.
+  if (is(el, 'bpmn:SequenceFlow') && el.source) {
+    const src = el.source, tgt = el.target ? el.target.id : '?';
+    const onFlow = branchOnFlow(el, label());
+
+    if (is(src, 'bpmn:Gateway') && !onFlow && canFork(src.id, label())) {
+      button(actions, `fork → ${tgt}`, () => {
+        sim.forkToken({ node: src.id, label: label(), sequenceFlow: el.id })
+          .then(() => log(`forkToken(${src.id}, ${label()}, ${el.id})`))
+          .then(render)
+          .catch(err => log('ERROR: ' + err.message));
+      });
+    } else if (onFlow || sim.getEntry(src.id, label())) {
+      button(actions, `advance → ${tgt}`, () => {
+        sim.advanceToken({ node: src.id, label: label(), sequenceFlow: el.id })
+          .then(() => log(`advanceToken(${src.id}, ${label()}, ${el.id})`))
+          .then(render) // the token moved → refresh the action bar for its new node
+          .catch(err => log('ERROR: ' + err.message));
+      });
+    }
   }
 
   // (stacked nodes scroll via double-click — see the element.dblclick handler below)

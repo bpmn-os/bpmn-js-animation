@@ -5,6 +5,7 @@ import { bootstrap, cleanup, get } from '../TestHelper';
 import miTaskXML from '../diagrams/mi-task.bpmn';
 import collaborationXML from '../diagrams/collaboration.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
+import parallelJoinXML from '../diagrams/parallel-join.bpmn';
 
 const PROCESS = 'Process_1';
 
@@ -235,6 +236,138 @@ describe('SimulationAPI', function() {
   });
 
 
+  describe('forkToken / joinToken — gateways', function() {
+
+    // one implicit-process diagram: Start → Split → (Flow_a, Flow_b) → Join → End
+    beforeEach(bootstrap(parallelJoinXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    // get the instance token onto the split gateway (resting on its incoming flow)
+    async function toSplit() {
+      const root = sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' });
+      return root;
+    }
+
+    // fork both outflows and travel each branch to the join gateway
+    async function toJoin() {
+      const root = await toSplit();
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+      await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+      return root;
+    }
+
+    it('forkToken places branches on the outflows without leaving the gateway', async function() {
+      await toSplit();
+
+      const f1 = await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      const f2 = await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+
+      // both branches rest AT the gateway, one per outflow — not travelled
+      expect(f1.node).to.equal('Gateway_Split');
+      expect(f1.state.sequenceFlow).to.equal('Flow_a');
+      expect(f2.node).to.equal('Gateway_Split');
+      expect(f2.state.sequenceFlow).to.equal('Flow_b');
+      expect(f2).to.not.equal(f1);
+      expect(f2.color).to.equal(f1.color);            // same instance → same color
+      expect(f2.stackIndices).to.eql(f1.stackIndices);
+
+      const atGateway = get('animation').getTokens(
+        t => t.label === 'I1' && t.node === 'Gateway_Split' && t.state.sequenceFlow
+      );
+      expect(atGateway).to.have.length(2);
+    });
+
+    it('first fork moves the original, later forks clone', async function() {
+      await toSplit();
+      const count = () => get('animation').getTokens(t => t.label === 'I1').length;
+      const before = count(); // root + the arrived token = 2
+
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      expect(count()).to.equal(before);     // moved — no new token
+
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+      expect(count()).to.equal(before + 1); // cloned — one new token
+    });
+
+    it('advanceToken then travels each branch to the join gateway', async function() {
+      const root = await toSplit();
+
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+
+      const l1 = await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
+      const l2 = await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
+
+      expect(l1.node).to.equal('Gateway_Join');
+      expect(l2.node).to.equal('Gateway_Join');
+      expect(sim().getEntry('Gateway_Split', 'I1')).to.be.undefined;       // split cleared
+      expect(sim().getChildren(root)).to.include(l1).and.to.include(l2);   // both in the tree
+    });
+
+    it('forkToken rejects a non-gateway node', async function() {
+      let err;
+      try { await sim().forkToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/not a gateway/);
+    });
+
+    it('forkToken rejects a flow that is not outgoing from the gateway', async function() {
+      await toSplit();
+      let err;
+      try { await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_s' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/not an outgoing flow/);
+    });
+
+    it('joinTokens collapses the arrived branches into one token at center', async function() {
+      const root = await toJoin();
+
+      // two branches are resting on the join gateway's incoming flows
+      expect(get('animation').getTokens(t => t.label === 'I1' && t.node === 'Gateway_Join')).to.have.length(2);
+
+      const merged = await sim().joinTokens({ node: 'Gateway_Join', label: 'I1' });
+
+      expect(merged.node).to.equal('Gateway_Join');
+      expect(merged.state.sequenceFlow == null).to.be.true;      // anchored at center, no flow
+      expect(merged.state.position).to.include({ left: 0.5, top: 0.5 });
+
+      // exactly one token at the join now, and it's the sole same-label token there
+      const here = get('animation').getTokens(t => t.label === 'I1' && t.node === 'Gateway_Join');
+      expect(here).to.eql([ merged ]);
+
+      // the merged token replaces both branches in the instance tree
+      expect(sim().getChildren(root)).to.include(merged);
+      expect(sim().getChildren(root)).to.have.length(1);
+    });
+
+    it('joinTokens carries the instance color', async function() {
+      await toJoin();
+      const branchColor = get('animation').getTokens(t => t.label === 'I1' && t.node === 'Gateway_Join')[ 0 ].color;
+      const merged = await sim().joinTokens({ node: 'Gateway_Join', label: 'I1' });
+      expect(merged.color).to.equal(branchColor);
+    });
+
+    it('joinTokens rejects a non-gateway node', async function() {
+      let err;
+      try { await sim().joinTokens({ node: 'StartEvent_1', label: 'I1' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/not a gateway/);
+    });
+
+    it('joinTokens rejects when there are no branches to join', async function() {
+      let err;
+      try { await sim().joinTokens({ node: 'Gateway_Join', label: 'X' }); } catch (e) { err = e; }
+      expect(err.message).to.match(/no branches/);
+    });
+
+  });
+
+
   describe('advanceToken', function() {
 
     // animationDuration: 0 ⇒ glides resolve synchronously (no real timers)
@@ -251,6 +384,21 @@ describe('SimulationAPI', function() {
 
       expect(token.state.position).to.include({ left: 0.5, top: 0, voffset: 10 });
       expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
+    });
+
+    it('sweeps a token that just arrived resting on a flow (flow→anchor)', async function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      // travel to the activity — the token now rests ON its incoming flow there
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
+      expect(sim().getEntry('MultiInstanceActivity_1', 'I1').sequenceFlow).to.equal('Flow_13p16ha');
+
+      // advancing to a sweep position must take it off the flow and anchor it
+      const token = await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'I1', position: 'ready' });
+      expect(token.state.position).to.include({ left: 0, top: 0, voffset: -15 });
+      const entry = sim().getEntry('MultiInstanceActivity_1', 'I1');
+      expect(entry.position).to.equal('ready');
+      expect(entry.sequenceFlow == null).to.be.true; // anchored, no longer on the flow
     });
 
     it('bounces at the target when asked', async function() {
