@@ -62,12 +62,10 @@ function applyOutline(el) {
   }
 }
 
-// A node where advanceToken anchors a token at center: an event, or a pass-through gateway
-// (exclusive, or any gateway with a single incoming flow) — mirrors the lib's rule.
+// A node where advanceToken anchors a token at center: an event or any gateway (a converging
+// gateway too) — mirrors the lib's rule.
 function isCenter(el) {
-  return is(el, 'bpmn:Event') ||
-    is(el, 'bpmn:ExclusiveGateway') ||
-    (is(el, 'bpmn:Gateway') && (el.incoming || []).length <= 1);
+  return is(el, 'bpmn:Event') || is(el, 'bpmn:Gateway');
 }
 
 // A multi-instance activity (its token fans out into stacked sub-instances).

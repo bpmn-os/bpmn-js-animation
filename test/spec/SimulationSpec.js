@@ -339,6 +339,17 @@ describe('SimulationAPI', function() {
       return root;
     }
 
+    it('anchors a single arrived branch at a converging gateway center', async function() {
+      await toSplit();
+      await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' }); // first fork moves the original
+      await sim().advanceToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' }); // → Gateway_Join (on Flow_a)
+
+      // a converging gateway now accepts advance-to-center (anchors the single branch)
+      const token = await sim().advanceToken({ node: 'Gateway_Join', label: 'I1' });
+      expect(token.state.position).to.include({ left: 0.5, top: 0.5 }); // center
+      expect(sim().getEntry('Gateway_Join', 'I1').sequenceFlow == null).to.be.true; // anchored, off the flow
+    });
+
     it('forkToken places branches on the outflows without leaving the gateway', async function() {
       await toSplit();
 

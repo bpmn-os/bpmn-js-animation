@@ -156,9 +156,9 @@ One verb, three forms — chosen by which argument you pass:
 - **Along a flow** (`sequenceFlow`) — move the token onto that connected flow and travel it to
   the far node, where it comes to rest **on the same flow**. Advance it again to settle it into
   the node. The flow may be **outgoing** (forward) or **incoming** (reverse / rewind).
-- **Into a center node** (no `position`, on an event or pass-through gateway — exclusive, or any
-  gateway with a single incoming flow) — anchor the token at the symbol **center**, taking it
-  off whatever flow it rested on.
+- **Into a center node** (no `position`, on an event or **any gateway**) — anchor the token at the
+  symbol **center**, taking it off whatever flow it rested on. At a converging gateway this anchors
+  a single arrived branch; [`joinTokens`](#jointokens-node-label--promisetoken) collapses several.
 - **Within an activity/container** (`position` — a sweep value) — glide from the token's current
   position to the target, **through every skipped intermediate**. Forward-only. `animate` (a motion
   cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
