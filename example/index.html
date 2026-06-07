@@ -41,7 +41,17 @@
         <span class="readout">node: <b id="cur-node">—</b></span>
         <span class="readout">token: <b id="cur-token">—</b></span>
         <span class="sep"></span>
-        <label><input type="checkbox" id="bounce" /> bounce</label>
+        <label>animate
+          <select id="animate">
+            <option value="none">none</option>
+            <option value="bounce">bounce</option>
+            <option value="bounce-pause">bounce-pause</option>
+            <option value="pulse">pulse</option>
+            <option value="pulse-pause">pulse-pause</option>
+            <option value="flip">flip</option>
+            <option value="flip-pause">flip-pause</option>
+          </select>
+        </label>
         <span class="sep"></span>
         <label>location
           <select id="location"><!-- 9 anchor positions + the current node's connected flows (populated dynamically) --></select>

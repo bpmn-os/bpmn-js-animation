@@ -82,6 +82,10 @@ function isEvtSp(el) {
   return !!(bo && bo.$type === 'bpmn:SubProcess' && bo.triggeredByEvent);
 }
 
+// the token motion cues (state.animate); 'none' → no animation
+const ANIM_EFFECTS = [ 'none', 'bounce', 'bounce-pause', 'pulse', 'pulse-pause', 'flip', 'flip-pause' ];
+const anim = sel => (sel.value === 'none' ? null : sel.value);
+
 // forkToken is offered while the instance is forkable at a gateway: the original still rests
 // there (first fork = a move), or a branch already sits on one of its outflows (later forks).
 function canFork(gatewayId, lbl) {
@@ -131,12 +135,12 @@ function render() {
         .catch(err => log('ERROR: ' + err.message));
 
     if (isCenter(tEl)) {
-      const bounce = checkbox(actions, 'bounce');
-      button(actions, `advance ${tag} → center`, () => advance({ bounce: bounce.checked })());
+      const fx = select(actions, ANIM_EFFECTS, 'none');
+      button(actions, `advance ${tag} → center`, () => advance({ animate: anim(fx) })());
     } else if (is(tEl, 'bpmn:Activity') || is(tEl, 'bpmn:Process') || is(tEl, 'bpmn:Participant')) {
       const pos = select(actions, [ 'ready', 'entry', 'busy', 'completed', 'exit' ], 'busy');
-      const bounce = checkbox(actions, 'bounce');
-      button(actions, `advance ${tag}`, () => advance({ position: pos.value, bounce: bounce.checked })());
+      const fx = select(actions, ANIM_EFFECTS, 'none');
+      button(actions, `advance ${tag}`, () => advance({ position: pos.value, animate: anim(fx) })());
     }
 
     // consume — only an anchored token (one in transit on a flow can't be consumed directly,
@@ -271,16 +275,6 @@ function select(parent, opts, sel) {
   });
   parent.appendChild(s);
   return s;
-}
-
-function checkbox(parent, text) {
-  const l = document.createElement('label');
-  const c = document.createElement('input');
-  c.type = 'checkbox';
-  l.appendChild(c);
-  l.append(' ' + text);
-  parent.appendChild(l);
-  return c;
 }
 
 async function load(name) {

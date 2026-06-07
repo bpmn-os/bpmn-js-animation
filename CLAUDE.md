@@ -55,11 +55,13 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 
 - **`animation`** (`lib/AnimationAPI.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state, selected, stackIndices }`. `state = { position,
-    sequenceFlow, bounce, hidden }` is a pure visual descriptor (no lifecycle meaning baked in): `position` is a
+    sequenceFlow, animate, hidden }` is a pure visual descriptor (no lifecycle meaning baked in): `position` is a
     point `{ left, top, hoffset, voffset }` on/around the shape — `left`/`top` are **fractions** (may exceed
     0..1; default 0.5), `hoffset`/`voffset` add a **px** nudge (default 0): `x = left*w + hoffset` (`anchorPoint`)
     — `sequenceFlow` rests the dot
-    where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue; **`hidden`** parks the
+    where a flow meets the node, mutually exclusive; **`animate`** is a motion-cue **effect name**
+    (`null`/absent = still) rendered as `.bts-anim-<name>` — six built-ins (`bounce`/`pulse`/`flip`,
+    each `±-pause`), an **open set** (a host adds effects via CSS); **`hidden`** parks the
     dot — kept in the model + cluster, just CSS-`display:none` (`.bts-hidden`), e.g. an MI activity's outer token
     while its instances run (set via `setState`). **`stackIndices`**
     (T5) is the token's per-instance membership — a map `{ stackedNodeId: instanceKey }` over the stacked
@@ -228,8 +230,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     or the flow's node-end waypoint). **Dot size:** the default is small (20px, the moving-token size — so it
     doesn't cover an event/gateway symbol); an **anchored** token on a `bpmn:Activity`/`bpmn:Process` gets the
     larger 25px badge (`.bts-on-activity`, set per cluster via `big`). Per dot: `background: color`, `title =
-    label`, `.bts-bounce` when `bounce`, `.bts-selected` when `selected`, `.bts-hidden` (`display:none`) when `hidden`,
-    `data-left`/`-top`/`-hoffset`/`-voffset`/`-sequence-flow`/`-bounce`/`-selected`/`-hidden`. Capped per cluster at
+    label`, `.bts-anim-<animate>` when `animate`, `.bts-selected` when `selected`, `.bts-hidden` (`display:none`) when `hidden`,
+    `data-left`/`-top`/`-hoffset`/`-voffset`/`-sequence-flow`/`-animate`/`-selected`/`-hidden`. Capped per cluster at
     `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). Delegated click
     fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match

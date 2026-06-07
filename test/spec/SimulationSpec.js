@@ -157,10 +157,10 @@ describe('SimulationAPI', function() {
       expect(sim().getEntry('StartEvent_1', 'I1').position).to.equal('center');
     });
 
-    it('honors the bounce flag', function() {
+    it('honors the animate effect', function() {
       sim().createToken({ node: PROCESS, label: 'B' });
-      const token = sim().createToken({ node: 'StartEvent_1', label: 'B', bounce: true });
-      expect(token.state.bounce).to.be.true;
+      const token = sim().createToken({ node: 'StartEvent_1', label: 'B', animate: 'pulse' });
+      expect(token.state.animate).to.equal('pulse');
     });
 
     it('rejects when the scope has no token of that label', function() {
@@ -535,17 +535,17 @@ describe('SimulationAPI', function() {
       expect(entry.sequenceFlow == null).to.be.true; // anchored, no longer on the flow
     });
 
-    it('bounces at the target when asked', async function() {
+    it('animates at the target when asked', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', bounce: true });
-      expect(token.state.bounce).to.be.true;
+      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', animate: 'bounce' });
+      expect(token.state.animate).to.equal('bounce');
     });
 
-    it('updates bounce on a same-position call', async function() {
+    it('updates the animate effect on a same-position call', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', bounce: true });
-      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', bounce: false });
-      expect(token.state.bounce).to.be.false;
+      await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', animate: 'bounce' });
+      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy', animate: null });
+      expect(token.state.animate).to.equal(null);
       expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
     });
 
@@ -617,10 +617,10 @@ describe('SimulationAPI', function() {
       expect(entry.sequenceFlow).to.equal(null);
     });
 
-    it('honors the bounce flag', async function() {
+    it('honors the animate effect', async function() {
       await toEndEventOnFlow();
-      const token = await sim().advanceToken({ node: 'Event_10nbvlp', label: 'I1', bounce: true });
-      expect(token.state.bounce).to.be.true;
+      const token = await sim().advanceToken({ node: 'Event_10nbvlp', label: 'I1', animate: 'bounce' });
+      expect(token.state.animate).to.equal('bounce');
     });
 
     it('rejects a missing token', async function() {

@@ -112,7 +112,8 @@ async function main() {
   // (when a connected flow is picked) resting on that sequence flow
   function buildState() {
     const value = document.querySelector('#location').value;
-    const state = { bounce: document.querySelector('#bounce').checked };
+    const fx = document.querySelector('#animate').value;
+    const state = { animate: fx === 'none' ? null : fx };
     const preset = POSITION_BY_LABEL.get(value);
 
     if (preset) {
@@ -162,7 +163,7 @@ async function main() {
 
   // (clicking a token to select it — the blue ring — is built into the animation module)
 
-  // reflect the current token's state in the bounce + location controls (so editing
+  // reflect the current token's state in the animate + location controls (so editing
   // continues from where the token is). Run after refreshLocations so the flow option exists.
   function syncControlsToToken() {
     if (!currentToken) {
@@ -172,7 +173,7 @@ async function main() {
     if (!t) {
       return;
     }
-    document.querySelector('#bounce').checked = !!t.state.bounce;
+    document.querySelector('#animate').value = t.state.animate || 'none';
     const sel = document.querySelector('#location');
     if (t.state.sequenceFlow) {
       sel.value = t.state.sequenceFlow;
@@ -207,7 +208,7 @@ async function main() {
   eventBus.on('token.click', e => {
     currentToken = { node: e.node, label: e.label, sequenceFlow: e.sequenceFlow || null, stackIndices: e.stackIndices };
     renderReadouts();
-    syncControlsToToken(); // show the token's current bounce + location in the controls
+    syncControlsToToken(); // show the token's current animate + location in the controls
     // (selecting the clicked token — the blue ring — is built into the animation module now)
   });
 

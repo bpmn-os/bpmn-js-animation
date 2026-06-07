@@ -104,26 +104,27 @@ describe('animation', function() {
 
   describe('state', function() {
 
-    it('defaults to centered, bouncing', function() {
+    it('defaults to centered, still (no animation)', function() {
       get('animation').createToken('Task_1', 'A', 'tomato');
 
       const dot = dots()[0];
 
       expect(dot.dataset.left).to.equal('0.5');
       expect(dot.dataset.top).to.equal('0.5');
-      expect(dot.dataset.bounce).to.equal('true');
-      expect(dot.classList.contains('bts-bounce')).to.be.true;
+      expect(dot.dataset.animate).to.equal('');
+      expect(dot.classList.contains('bts-anim-bounce')).to.be.false;
     });
 
 
-    it('honors an explicit position and bounce', function() {
-      get('animation').createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), bounce: false });
+    it('honors an explicit position and animate effect', function() {
+      get('animation').createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), animate: 'pulse' });
 
       const dot = dots()[0];
 
       expect(dot.dataset.left).to.equal('0.5');
       expect(dot.dataset.top).to.equal('0.5');
-      expect(dot.classList.contains('bts-bounce')).to.be.false;
+      expect(dot.dataset.animate).to.equal('pulse');
+      expect(dot.classList.contains('bts-anim-pulse')).to.be.true;
     });
 
 
@@ -187,17 +188,17 @@ describe('animation', function() {
 
     describe('setState (partial merge)', function() {
 
-      it('toggles bounce without moving', function() {
+      it('toggles the animate effect without moving', function() {
         const tokens = get('animation');
 
-        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), bounce: true });
-        tokens.setState('Task_1', 'A', { bounce: false });
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle'), animate: 'bounce' });
+        tokens.setState('Task_1', 'A', { animate: null });
 
         const t = tok('Task_1', 'A');
 
         expect(t.state.position).to.eql(pos('center-middle'));
-        expect(t.state.bounce).to.equal(false);
-        expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
+        expect(t.state.animate).to.equal(null);
+        expect(dotAt('Task_1').classList.contains('bts-anim-bounce')).to.be.false;
       });
 
 
@@ -251,8 +252,8 @@ describe('animation', function() {
         expect(moving(), 'glide done').to.not.exist;
         expect(dotAt('Task_1'), 'rests at the new point').to.exist;
 
-        // a bounce-only change does not move -> no glide, applied synchronously
-        tokens.setState('Task_1', 'A', { bounce: false });
+        // an animate-only change does not move -> no glide, applied synchronously
+        tokens.setState('Task_1', 'A', { animate: 'pulse' });
         expect(moving()).to.not.exist;
         expect(dotAt('Task_1')).to.exist;
       });
@@ -292,9 +293,9 @@ describe('animation', function() {
       expect(landed.state.position).to.equal(null);
 
       // the host anchors it on the node afterwards
-      tokens.setState('Task_1', 'A', { position: pos('center-middle'), bounce: false }, { sequenceFlow: 'Flow_1' });
+      tokens.setState('Task_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_1' });
       expect(tok('Task_1', 'A').state.position).to.eql(pos('center-middle'));
-      expect(dotAt('Task_1').classList.contains('bts-bounce')).to.be.false;
+      expect(dotAt('Task_1').classList.contains('bts-anim-bounce')).to.be.false;
     });
 
 

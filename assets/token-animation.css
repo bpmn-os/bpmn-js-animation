@@ -39,11 +39,15 @@
   display: inline-block;
 }
 
-/* opt-in bounce — signals "user action needed" (state.bounce) */
-.bts-token-count.bts-bounce {
-  animation: bts-jump 1s infinite;
-  animation-timing-function: ease;
-}
+/* motion cues — `state.animate = '<name>'` → `.bts-anim-<name>`. Six built-ins: bounce / pulse /
+   flip, each in a continuous variant and a `-pause` variant (plays once quickly, then holds still
+   before repeating — a stronger attention grab). Open set: add `.bts-anim-<name>` in host CSS. */
+.bts-token-count.bts-anim-bounce       { animation: bts-bounce 1s infinite ease; }
+.bts-token-count.bts-anim-bounce-pause { animation: bts-bounce-pause 1.6s infinite ease; }
+.bts-token-count.bts-anim-pulse        { animation: bts-pulse 1.2s infinite ease-in-out; }
+.bts-token-count.bts-anim-pulse-pause  { animation: bts-pulse-pause 1.8s infinite ease-in-out; }
+.bts-token-count.bts-anim-flip         { animation: bts-flip 1.2s infinite ease-in-out; }
+.bts-token-count.bts-anim-flip-pause   { animation: bts-flip-pause 1.8s infinite ease-in-out; }
 
 /* an anchored token on a process/activity uses the larger badge size (25px); the
    default (20px, matching the moving token) is used on flows, events and gateways */
@@ -95,8 +99,29 @@
   pointer-events: none;
 }
 
-@keyframes bts-jump {
-  50% { top: 5px; }
+@keyframes bts-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@keyframes bts-bounce-pause {
+  0%, 30%, 100% { transform: translateY(0); }
+  15%           { transform: translateY(-5px); }
+}
+@keyframes bts-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.25); opacity: 0.7; }
+}
+@keyframes bts-pulse-pause {
+  0%, 30%, 100% { transform: scale(1); opacity: 1; }
+  15%           { transform: scale(1.25); opacity: 0.7; }
+}
+@keyframes bts-flip {
+  0%   { transform: perspective(80px) rotateY(0); }
+  100% { transform: perspective(80px) rotateY(360deg); }
+}
+@keyframes bts-flip-pause {
+  0%        { transform: perspective(80px) rotateY(0); }
+  30%, 100% { transform: perspective(80px) rotateY(360deg); }
 }
 
 /* instance stack — opaque clones of the node's own shape, offset behind it.

@@ -41,7 +41,7 @@ indices stay well-separated, so concurrent instances read distinctly. Reuse one 
 instance's tokens (a **child** should inherit its parent's color). Pass `{ seed }` to pin the
 palette in tests.
 
-## Token state — position & bounce
+## Token state — position, animate & hidden
 
 A token's `state` is a **pure visual descriptor**:
 
@@ -49,7 +49,7 @@ A token's `state` is a **pure visual descriptor**:
 state = {
   position: { left, top, hoffset, voffset } | null,   // a point on/around the shape
   sequenceFlow: '<connected sequence flow id>' | null, // rest where that flow meets the node
-  bounce: boolean,                                     // a "user action needed" cue
+  animate: '<effect name>' | null,                     // a motion cue (-> .bts-anim-<name>)
   hidden: boolean                                      // park the dot (kept in the model, CSS display:none)
 }
 ```
@@ -59,10 +59,15 @@ state = {
   `position.hoffset` / `position.voffset` add a **pixel** nudge on top (default `0`). So a point
   is a proportional anchor plus a constant offset — `x = left*w + hoffset`. Mix freely:
   `{ left: 1, hoffset: -10 }` is 10px inside the right edge.
-- `position` and `sequenceFlow` are **mutually exclusive**; `bounce` and `hidden` are independent.
+- `position` and `sequenceFlow` are **mutually exclusive**; `animate` and `hidden` are independent.
+- **`animate`** names a motion-cue effect (or `null`/absent = still), rendered as a class
+  `.bts-anim-<name>` on the dot. Six built-ins ship — `bounce`, `pulse`, `flip`, each with a
+  continuous variant and a `-pause` variant (plays once quickly, then holds still before repeating):
+  `bounce` / `bounce-pause` / `pulse` / `pulse-pause` / `flip` / `flip-pause`. It's an **open set** —
+  add `.bts-anim-myeffect { animation: … }` in your own CSS to define more, with no library change.
 - `hidden: true` keeps the token in the model (`getTokens` still returns it, it stays in its cluster)
   but CSS-hides the dot — for "parked" tokens like an MI activity's outer thread while its instances run.
-- Default (when omitted): `{ position: { left: 0.5, top: 0.5 }, bounce: true }`.
+- Default (when omitted): `{ position: { left: 0.5, top: 0.5 } }` — centered, still.
 - Tokens that resolve to the **same point queue** at that spot. None of the lifecycle meaning is
   hard-coded — a typical caller convention for an activity is arrived → `{ left: 0, top: 0 }`,
   entered → `{ left: 0.5, top: 0.5 }`, completed → `{ left: 1, top: 1 }`.

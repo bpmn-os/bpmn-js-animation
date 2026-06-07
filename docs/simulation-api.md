@@ -45,7 +45,7 @@ entered / running / done) is your convention.
 
 ## API
 
-### `createToken({ node, label, bounce? })` → `token`
+### `createToken({ node, label, animate? })` → `token`
 
 Create a token. Four cases, by node kind:
 
@@ -151,7 +151,7 @@ await simulation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops 
 > Interrupting event sub-processes (replace the parent scope's other tokens) are a follow-up; the
 > built case is non-interrupting.
 
-### `advanceToken({ node, label, sequenceFlow?, position?, bounce? })` → `Promise<token>`
+### `advanceToken({ node, label, sequenceFlow?, position?, animate? })` → `Promise<token>`
 
 One verb, three forms — chosen by which argument you pass:
 
@@ -162,13 +162,13 @@ One verb, three forms — chosen by which argument you pass:
   gateway with a single incoming flow) — anchor the token at the symbol **center**, taking it
   off whatever flow it rested on.
 - **Within an activity/container** (`position` — a sweep value) — glide from the token's current
-  position to the target, **through every skipped intermediate**. Forward-only. `bounce` applies
-  at the target.
+  position to the target, **through every skipped intermediate**. Forward-only. `animate` (a motion
+  cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
 
 ```javascript
 await simulation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
 await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'entry' });
-await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completed', bounce: false });
+await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completed', animate: 'pulse' });
 await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // center-anchor
 ```
 
@@ -233,7 +233,7 @@ Built and tested today: `createToken` (process / participant / start event / **b
 sweep), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token**
 stack-decrement covering process roots, MI subs, **and event-sub firings**), `autoFocus`, and the
 lookups. Most node types are covered by composing these (end events = advance-center + consume;
-tasks = activity sweep with `bounce`; start = createToken; boundary / MI / event-sub = createToken
+tasks = activity sweep with an `animate` cue; start = createToken; boundary / MI / event-sub = createToken
 + the choreographies above).
 
 Not yet built: **interrupting** event sub-processes, expanded sub-process entry, and the prescribed
