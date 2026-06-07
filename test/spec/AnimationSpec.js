@@ -1688,8 +1688,9 @@ describe('animation', function() {
       return document.querySelector('.bts-icon');
     }
 
-    it('throwIcon emits the element icon (fly out + fade)', function() {
-      get('animation').throwIcon('Task_2'); // send task has a icon
+    it('throwIcon emits the element icon from the token (fly out + fade)', function() {
+      get('animation').createToken('Task_2', 'A', 'tomato');
+      get('animation').throwIcon('Task_2', 'A'); // send task has an icon
 
       const g = document.querySelector('.bts-icon-emit');
       expect(g).to.exist;
@@ -1697,8 +1698,9 @@ describe('animation', function() {
     });
 
 
-    it('catchIcon draws the element icon in (fly in + fade)', function() {
-      get('animation').catchIcon('StartEvent_1'); // message start has a icon
+    it('catchIcon draws the element icon into the token (fly in + fade)', function() {
+      get('animation').createToken('StartEvent_1', 'A', 'tomato');
+      get('animation').catchIcon('StartEvent_1', 'A'); // message start has an icon
 
       expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
@@ -1706,32 +1708,44 @@ describe('animation', function() {
 
     it('direction is the caller\'s choice, not the element type', function() {
       const animation = get('animation');
+      animation.createToken('Task_3', 'A', 'tomato');
+      animation.createToken('EndEvent_1', 'B', 'tomato');
 
       // a "catching"-looking element thrown, and a "throwing"-looking one caught
-      animation.throwIcon('Task_3');     // receive task, but caller throws
-      animation.catchIcon('EndEvent_1'); // message end, but caller catches
+      animation.throwIcon('Task_3', 'A');     // receive task, but caller throws
+      animation.catchIcon('EndEvent_1', 'B'); // message end, but caller catches
 
       expect(document.querySelector('.bts-icon-emit')).to.exist;
       expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
 
 
-    it('works on any element with a icon (e.g. user task)', function() {
-      get('animation').catchIcon('Task_1'); // user task
+    it('works on any element with an icon (e.g. user task)', function() {
+      get('animation').createToken('Task_1', 'A', 'tomato');
+      get('animation').catchIcon('Task_1', 'A'); // user task
 
       expect(document.querySelector('.bts-icon-receive')).to.exist;
     });
 
 
     it('is a no-op for an element with no icon', async function() {
-      await get('animation').throwIcon('EndEvent_2'); // plain end event
+      get('animation').createToken('EndEvent_2', 'A', 'tomato');
+      await get('animation').throwIcon('EndEvent_2', 'A'); // plain end event
+
+      expect(icon()).to.not.exist;
+    });
+
+
+    it('is a no-op when no token rests at the node', async function() {
+      await get('animation').throwIcon('Task_2', 'none'); // no such token
 
       expect(icon()).to.not.exist;
     });
 
 
     it('removes the icon and resolves when done', async function() {
-      await get('animation').throwIcon('Task_2');
+      get('animation').createToken('Task_2', 'A', 'tomato');
+      await get('animation').throwIcon('Task_2', 'A');
 
       expect(icon()).to.not.exist;
     });

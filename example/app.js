@@ -420,20 +420,25 @@ async function main() {
     animation.scrollStack(currentNode, 'forward');
   });
 
+  // icons emit from / into the selected TOKEN (the icon is the token's node's symbol)
+  function iconSelector() {
+    return { sequenceFlow: currentToken.sequenceFlow || undefined, stackIndices: currentToken.stackIndices };
+  }
+
   on('throwIcon', () => {
-    if (!currentNode) {
-      return log('click a node first');
+    if (!currentToken) {
+      return log('click a token first');
     }
-    log('throwIcon(' + currentNode + ')');
-    animation.throwIcon(currentNode);
+    log(`throwIcon(${currentToken.node}, ${currentToken.label})`);
+    animation.throwIcon(currentToken.node, currentToken.label, iconSelector());
   });
 
   on('catchIcon', () => {
-    if (!currentNode) {
-      return log('click a node first');
+    if (!currentToken) {
+      return log('click a token first');
     }
-    log('catchIcon(' + currentNode + ')');
-    animation.catchIcon(currentNode);
+    log(`catchIcon(${currentToken.node}, ${currentToken.label})`);
+    animation.catchIcon(currentToken.node, currentToken.label, iconSelector());
   });
 
   on('removeToken', () => {

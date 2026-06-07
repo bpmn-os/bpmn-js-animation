@@ -83,7 +83,7 @@ state = {
 | `selectToken(node, label, selector?)` / `deselectToken(…)` | Toggle a blue ring on a resting token. Selection is **carried**: it survives a move and OR-merges on a join. |
 | `getSelectedTokens()` | The selected tokens (`Token[]`). |
 | `setNodeSelected(node, selected?)` / `getSelectedNodes()` | Draw a modeller-style blue boundary on an element (stack-aware); list selected node ids. |
-| `throwIcon(node)` / `catchIcon(node)` | Play the element's own **icon** as a **throw** (fly up-right, fade out) / **catch** (fly in from up-left, fade in). Native color, shared duration. `→ Promise`; no-op if the element has no icon. The direction is your choice — the library reads no BPMN semantics. |
+| `throwIcon(node, label, selector?)` / `catchIcon(node, label, selector?)` | Play the element's own **icon**, emitted **from / into the token** `(node, label, selector)` — the icon starts centered on the token's dot and flies out up-right + fades out (**throw**), or flies in from up-left + fades in to land on the dot (**catch**). Native color, shared duration. `→ Promise`; no-op if no token rests there or the element has no icon. Direction is your choice — the library reads no BPMN semantics. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state, selected, stackIndices }`), in insertion order. |
 | `clear()` | Remove all tokens. |
 | `setAnimationDuration(ms)` / `getAnimationDuration()` | Global animation duration — token moves **and** `throwIcon`/`catchIcon`. `0` makes transitions instant. |

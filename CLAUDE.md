@@ -92,7 +92,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     instance — node's own + stacked ancestors' front keys),
     `moveToFront(node,key) → Promise` / `moveToBack(node,key) → Promise`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
-    `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (insertion order),
+    `throwIcon(node,label,selector?) → Promise`, `catchIcon(node,label,selector?) → Promise`, `getTokens(filter?)` (insertion order),
     `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
     `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
@@ -206,14 +206,17 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `.djs-children`). `getProcessBox() → id|null`; drawn for `size>=1` (size 1 = box only), removed on
     `size<1`/`clear` (bounds restored). The example
     selects the pool-less process by **clicking the empty background** (`element.click` fires with the root).
-  - **`throwIcon(node)` / `catchIcon(node)`** (both → `_animateIcon(node, 'emit'|'receive')`):
-    clone the element's icon geometry from `getGraphics` (`iconNodes` — any child shape
-    whose bbox isn't the full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…),
-    place them over the element on the plane layer, and play a one-off CSS animation. `throwIcon`
-    flies the icon diagonally up-right + fades out (`.bts-icon-emit`); `catchIcon` flies it in
-    from up-left + fades in (`.bts-icon-receive`). **Direction is the caller's choice — the node
-    API reads no BPMN semantics** (it does not guess throw/catch from element type). Native color,
-    shared `animationDuration`; no-op if no icon; resolves on `animationend` (timeout fallback).
+  - **`throwIcon(node,label,selector?)` / `catchIcon(node,label,selector?)`** (both →
+    `_animateIcon(node, label, selector, 'emit'|'receive')`): the cue is **anchored to a token**, not
+    the bare node — resolve the resting token `(node,label,selector)` (no-op if absent), clone the
+    element's icon geometry from `getGraphics` (`iconNodes` — any child shape whose bbox isn't the
+    full-size body/outline, so it's tag-agnostic: path/circle/rect/polygon/…), and **center it on the
+    token's resolved dot** (`_clusterPoint`; measure the clone bbox, then translate so its centre lands
+    on the point — append→measure→transform is synchronous, no flash). Play a one-off CSS animation:
+    `throwIcon` flies the icon diagonally up-right + fades out (`.bts-icon-emit`); `catchIcon` flies it
+    in from up-left + fades in (`.bts-icon-receive`). **Direction is the caller's choice — reads no
+    BPMN semantics** (does not guess throw/catch from element type). Native color, shared
+    `animationDuration`; no-op if no icon; resolves on `animationend` (timeout fallback).
   - **`sendToken(transitions)`** — `{node,label,sequenceFlow,stackIndices?}`: travel a token **that already
     rests on `sequenceFlow`** along it to the far node, leaving it **resting on the same flow** there (no
     landing `state`; the host anchors it afterwards via `setState`). Resolve all first (invalid → reject, no
