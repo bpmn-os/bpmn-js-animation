@@ -597,74 +597,6 @@ describe('animation', function() {
   });
 
 
-  describe('setFilter', function() {
-
-    it('hides non-matching tokens (kept, not removed)', function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato');
-      tokens.createToken('Task_2', 'B', 'steelblue');
-      expect(dots()).to.have.length(2);
-
-      tokens.setFilter(t => t.color === 'tomato');
-
-      expect(dots()).to.have.length(1);
-      expect(dots()[0].dataset.label).to.equal('A');
-      expect(tokens.getTokens()).to.have.length(2); // still there
-    });
-
-
-    it('setFilter(null) shows all again', function() {
-      const tokens = get('animation');
-
-      tokens.createToken('Task_1', 'A', 'tomato');
-      tokens.createToken('Task_2', 'B', 'steelblue');
-      tokens.setFilter(t => t.label === 'A');
-      expect(dots()).to.have.length(1);
-
-      tokens.setFilter(null);
-      expect(dots()).to.have.length(2);
-    });
-
-
-    it('hidden tokens do not count toward the overflow cap', function() {
-      const tokens = get('animation');
-
-      for (let i = 1; i <= 5; i++) {
-        tokens.createToken('Gateway_1', 'S' + i, i <= 2 ? 'tomato' : 'steelblue');
-      }
-      expect(dots()).to.have.length(3);
-      expect(marker()).to.exist;
-
-      tokens.setFilter(t => t.color === 'tomato');
-
-      expect(dots()).to.have.length(2);
-      expect(marker()).to.not.exist;
-    });
-
-
-    it('the "+N" marker counts only matching tokens', function() {
-      const tokens = get('animation');
-
-      // 6 tomato + 3 steelblue at one location
-      for (let i = 1; i <= 9; i++) {
-        tokens.createToken('Gateway_1', 'S' + i, i <= 6 ? 'tomato' : 'steelblue');
-      }
-
-      // unfiltered: 3 dots + "+6" (all 9)
-      expect(dots()).to.have.length(3);
-      expect(marker().textContent.trim()).to.equal('+6');
-
-      tokens.setFilter(t => t.color === 'tomato');
-
-      // filtered: 6 match -> 3 dots + "+3" (hidden steelblue ignored)
-      expect(dots()).to.have.length(3);
-      expect(marker().textContent.trim()).to.equal('+3');
-    });
-
-  });
-
-
   describe('token list', function() {
 
     function labelsAt(node) {
@@ -1159,7 +1091,7 @@ describe('animation', function() {
       });
 
 
-      it('moveToFront swaps which instance is shown', function() {
+      it('moveToFront swaps which instance is shown', async function() {
         const tokens = get('animation');
 
         tokens.setStackSize('Task_1', 3);
@@ -1168,7 +1100,10 @@ describe('animation', function() {
 
         expect(labelsAt('Task_1')).to.eql([ 'A' ]);
 
-        tokens.moveToFront('Task_1', 2);
+        // the front update is synchronous; the arc is cosmetic (await it to read the DOM)
+        const p = tokens.moveToFront('Task_1', 2);
+        expect(tokens.getCurrentStack('Task_1')).to.equal(2);
+        await p;
         expect(labelsAt('Task_1')).to.eql([ 'C' ]);
       });
 
@@ -1514,6 +1449,81 @@ describe('animation', function() {
           expect(dotAt('SubTask_1').dataset.label).to.equal('a1');
         });
 
+      });
+
+    });
+
+
+    describe('moveToFront / moveToBack (animated reorder)', function() {
+
+      // the reorder primitives now own the arc gesture (so autoFocus animates too); fixed UI
+      // speed, default bootstrap is fine.
+
+      function frontVisual(node) {
+        return gfxOf(node).querySelector(':scope > .djs-visual');
+      }
+
+
+      it('moveToFront plays the arc, landing the requested instance in front', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3);
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.createToken('Task_1', 'C', 'seagreen', { position: pos('center-middle') }, { Task_1: 2 });
+
+        const p = tokens.moveToFront('Task_1', 2);
+
+        // the front updates synchronously; the arc runs over clones (the real front hidden)
+        expect(tokens.getCurrentStack('Task_1')).to.equal(2);
+        expect(frontVisual('Task_1').style.display).to.equal('none');
+        expect(shapes('Task_1')).to.have.length(3); // 2 copies + the front clone
+
+        await p;
+        expect(frontVisual('Task_1').style.display).to.equal('');
+        expect(dotAt('Task_1').dataset.label).to.equal('C');
+      });
+
+
+      it('moveToFront is a silent no-op when the key is already front', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3);
+
+        await tokens.moveToFront('Task_1', 0); // already front -> nothing to reveal
+        expect(shapes('Task_1')).to.have.length(2); // no clone added
+        expect(tokens.getCurrentStack('Task_1')).to.equal(0);
+      });
+
+
+      it('moveToBack animates the front instance sinking to the back', async function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3);
+
+        const p = tokens.moveToBack('Task_1', 0); // the front -> back
+        expect(frontVisual('Task_1').style.display).to.equal('none'); // arc runs
+        expect(tokens.getCurrentStack('Task_1')).to.equal(1); // next is front now
+
+        await p;
+        expect(frontVisual('Task_1').style.display).to.equal('');
+      });
+
+
+      it('moveToBack of a non-front key reorders instantly (no arc)', function() {
+        const tokens = get('animation');
+        tokens.setStackSize('Task_1', 3); // order [0,1,2]
+
+        tokens.moveToBack('Task_1', 1); // not the shown instance -> no gesture
+        expect(frontVisual('Task_1').style.display).to.equal(''); // never hidden
+        expect(shapes('Task_1')).to.have.length(2); // no clone added
+        expect(tokens.getCurrentStack('Task_1')).to.equal(0); // front unchanged
+        expect(tokens.getStacks('Task_1')).to.eql([ 0, 2, 1 ]); // 1 sent to the back
+      });
+
+
+      it('is a no-op on an unstacked node', async function() {
+        const tokens = get('animation');
+
+        await tokens.moveToFront('Task_1', 0);
+        await tokens.moveToBack('Task_1', 0);
+        expect(shapes('Task_1')).to.have.length(0);
       });
 
     });

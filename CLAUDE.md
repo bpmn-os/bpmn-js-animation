@@ -51,10 +51,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     at a merging gateway); `stackIndices` lets the same label coexist across **instances**.
   - State maps: `_tokens` (`key -> Token`), `_nodeTokens` (`node -> Set<Token>`, render set, deduped by
     `identityOf` = `label|flow|stackIndices`), `_nodeOverlays` (`node -> overlayId[]`, one per location
-    cluster), `_activeAnimations` (`Token -> movement`), `_movements` (all live tween instances),
-    `_filter` (visibility predicate). **Per-instance, context-keyed (T5):** `_stackSizes`
-    (`node -> Map<contextKey, size>`, a key-count cache) and `_stackOrder` (`node -> Map<contextKey, key[]>`
-    — instance **keys**, front first), both resolved against the current ancestor context (`_currentContext`).
+    cluster), `_activeAnimations` (`Token -> movement`), `_movements` (all live tween instances).
+    **Per-instance, context-keyed (T5):** `_stackOrder` (`node -> Map<contextKey, key[]>` — instance
+    **keys**, front first; size = key count), resolved against the current ancestor context (`_currentContext`).
   - **API:** `createToken(node,label,color,state?,stackIndices?)`,
     `sendToken([{node,label,sequenceFlow,stackIndices?},…]) → Promise<Token[]>` (token must already rest on
     `sequenceFlow`; travels to the far node, stays on the flow),
@@ -66,15 +65,14 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `getStacks(node) → key[]` (count = `.length`), `getCurrentStack(node) → key`
     (the front instance's key), `getCurrentStacks(node) → {id:key}` (the membership for the on-screen
     instance — node's own + stacked ancestors' front keys),
-    `moveToFront(node,key)` / `moveToBack(node,key)`, `getProcessBox() → string|null`,
+    `moveToFront(node,key) → Promise` / `moveToBack(node,key) → Promise`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (insertion order),
-    `setFilter(predicate|null)`, `clear`, `setAnimationDuration`. (The count/index conveniences
+    `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
     `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
-    reorder the node's **`stackOrder`** in the current context (front = the shown instance); `scrollStack`
-    rotates it. `setFilter` hides non-matching tokens (kept, not removed; excluded from rendering + the
-    cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in `_renderNode`.
+    reorder the node's **`stackOrder`** in the current context (front = the shown instance) **and own
+    the arc gesture** (so `autoFocus` animates too) — see below; `scrollStack` is thin sugar over them.
     `setState`/`removeToken`/`selectToken`/`deselectToken` take a trailing `sequenceFlow` to
     disambiguate; `setState` is a **partial merge** and rekeys (merging) when it changes the
     rest flow/position — that's how a join completes. Crossing the **flow↔anchor** boundary
@@ -112,14 +110,14 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     tokens for the **currently-resolved** size.
   - **Per-instance state is context-keyed (T5).** A "context" is the ancestor-instance map
     `{ stackedAncestorId: index }`; `_contextKey` normalizes it (non-zero, sorted; **`{}`/`{A:0}` → `''`** — so
-    *instance 0 is the base context*). `_stackSizes`/`_stackOrder` are `Map<contextKey, …>` per node;
+    *instance 0 is the base context*). `_stackOrder` is `Map<contextKey, key[]>` per node (size = key count);
     `setStackSize(node, size, ancestorStackIndices)` declares the size for *that outer-instance context* (**omit =
     the context currently on screen**, `_currentContext(node)`; pass `{}` for the base explicitly).
     `getStackSize`/`getCurrentStack(node)` **resolve** against `_currentContext(node)` (each stacked ancestor's
     current front index). **Contexts are independent — no fall-back to the base** (a size set for one outer
     instance never leaks to another; an unset context has no stack). So a nested activity can have a different
     count per outer instance, with **no callback**.
-  - **One resolution rule** drives all token visibility (`_isVisible`): a token shows iff `_filter` passes and,
+  - **One resolution rule** drives all token visibility (`_isVisible`): a token shows iff,
     for every stacked node `A` in its `node`+ancestors, `(stackIndices[A] ?? 0) === getCurrentStack(A)`. So a
     stacked node renders its **current front instance's** tokens (at the node *and* in scope) — no "show first
     token", no `_scopeHidden`, no `getInstance`. Non-stacked / `size≤1` nodes aren't checked → render as before.
@@ -134,21 +132,34 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     (`.bts-stack-count`, 12px Arial, no badge circle), on the right at ¾ height, pushed past `_stackExtent`. The
     selection outline grows to span it (`_drawNodeOutline` + `_stackMarkerWidth`). Stack-level; the *token-level*
     `+k` (cluster overflow) is separate.
-  - **`scrollStack(node, direction)`** — a one-off **snapshot transition** (Web Animations API), **no callback**:
-    snapshot the current instance (A, with content); **rotate the node's `stackOrder` in its current context** by
-    one (`'forward'` front→back, `'backward'` last→front) and `_renderStackSubtree` so the new instance is
-    current; snapshot that (B); hide the real node + content + the node's & descendants' token overlays; animate
-    **clones only** — the recycling clone **arcs over the stack** while the rest slide one slot (paint order
-    swapped at the apex). On finish: reveal, `_redrawStack` + re-render the subtree. Which tokens A/B carry is the
+  - **`moveToFront`/`moveToBack(node, key)` own the reorder + arc.** `moveToFront(key)` brings `key`'s
+    instance to the front (no-op if size≤1, `key` unknown, or `key` already front); `moveToBack(key)` sends it
+    to the back. Both reorder `stackOrder` **by key** in the current context. The reorder + `_renderStackSubtree`
+    run **synchronously** (a sync `getCurrentStack` read sees the new front); the **arc is cosmetic** and
+    returns a `Promise`. The arc plays **only when the shown (front) instance changes** — `moveToFront`
+    (a back copy rises to front) and `moveToBack` *of the front* (the front sinks to back) animate;
+    `moveToBack` of a **non-front** key reorders **instantly** (front unchanged, no gesture). `scrollStack(node,
+    direction)` is **sugar**: `'forward'` → `moveToBack(getCurrentStack)`, `'backward'` → `moveToFront(lastKey)`.
+    `getCurrentStack` = `stackOrder[0]` (the **front key**); `setStackIndex(node, index)` (test/example shim)
+    jumps by numeric position via `moveToFront` (wraps).
+  - **The arc gesture (`_animateStackStep(node, element, direction, reorder)`)** — a one-off **snapshot
+    transition** (Web Animations API), **no callback**: settle any in-flight gesture on this node (so rapid
+    `autoFocus`/`moveTo*` never pile up — tracked in `_stackAnims`); snapshot the current instance (A, with
+    content); run `reorder` (the caller's `stackOrder` bookkeeping) + `_renderStackSubtree` so the new instance
+    is current; snapshot that (B); hide the real node + content + the node's & descendants' token overlays;
+    animate **clones only** — the recycling clone **arcs over the stack** while the rest slide one slot (paint
+    order swapped at the apex). `direction` is purely the **visual** (`'backward'` = a back copy rises to front,
+    `'forward'` = the front sinks to back) — **front-agnostic** (hidden copies are identical silhouettes), so the
+    same gesture serves any `reorder`. On finish: reveal, `_redrawStack` + re-render the subtree (`clear` settles
+    any in-flight gesture; finish skips the re-render if the node is gone). Which tokens A/B carry is the
     resolution rule (`_drawTokenDots` draws every rule-visible token of the node + descendants that are
     **co-rendered on the same plane** (`_coRendered`) — a collapsed sub-process's drill-plane children are
     excluded from its collapsed-view snapshot). Fixed
     `STACK_SCROLL_DURATION` (600ms) — UI feedback, independent of `animationDuration`. **When drilled *into* the
     node's own plane** (its shape sits on a different plane than the active root, so the arc would play
-    off-screen), `scrollStack` **swaps instantly** instead — rotate `stackOrder` + `_renderStackSubtree`, no
-    overlay-hide — otherwise the on-plane token overlays would just vanish for 600ms and snap back. `moveToFront`/`moveToBack(
-    node, key)` reorder the same `stackOrder` by **key** and `setStackIndex(node, index)` jumps by numeric
-    position (count-based stacks; wraps); `getCurrentStack` = `stackOrder[0]` (the **front key**). With-content clones deep-clone the sibling `.djs-children` (compensated
+    off-screen), it **swaps instantly** instead — `reorder` + `_renderStackSubtree`, no
+    overlay-hide — otherwise the on-plane token overlays would just vanish for 600ms and snap back.
+    With-content clones deep-clone the sibling `.djs-children` (compensated
     `translate(-x,-y)`; `.djs-hit`/outlines stripped) + inline arrowhead `<marker>`s with fresh `bts-marker-N`
     ids. The `+k` marker stays visible through the gesture (stack-level). Composes for nesting (the rule checks
     every stacked ancestor) and event sub-processes (no at-node token → only scope tokens).
