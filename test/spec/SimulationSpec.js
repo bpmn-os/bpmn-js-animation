@@ -171,14 +171,52 @@ describe('SimulationAPI', function() {
   });
 
 
-  describe('createToken — start event of event sub-process is rejected', function() {
+  describe('event sub-process firings (lazy stack)', function() {
 
-    beforeEach(bootstrap(eventSubXML));
+    beforeEach(bootstrap(eventSubXML, { animation: { animationDuration: 0 } }));
     afterEach(cleanup);
 
-    it('rejects an event sub-process start event', function() {
-      expect(() => get('simulation').createToken({ node: 'EscalationStartEvent_1', label: 'X' }))
-        .to.throw(/event sub-process/);
+    const EVTSP = 'EventSubProcess_1';
+    const ESTART = 'EscalationStartEvent_1'; // non-interrupting
+
+    function sim() {
+      return get('simulation');
+    }
+
+    it('fires as a stacked child of the enclosing-scope token, inheriting its color', function() {
+      const root = sim().createToken({ node: PROCESS, label: 'I1' });
+      const f1 = sim().createToken({ node: ESTART, label: 'e1' });
+
+      expect(f1.color).to.equal(root.color);
+      expect(f1.stackIndices).to.include({ [EVTSP]: 'e1' });
+      expect(sim().getChildren(root)).to.include(f1);
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'e1' ]);
+    });
+
+    it('stacks multiple concurrent (non-interrupting) firings', function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: ESTART, label: 'e1' });
+      sim().createToken({ node: ESTART, label: 'e2' });
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'e1', 'e2' ]);
+    });
+
+    it('drops a firing key when its last token is consumed; the scope survives', async function() {
+      const root = sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: ESTART, label: 'e1' });
+      sim().createToken({ node: ESTART, label: 'e2' });
+
+      await sim().consumeToken({ node: ESTART, label: 'e1' });
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'e2' ]); // e1's firing ended
+      expect(sim().getToken(PROCESS, 'I1')).to.equal(root);        // scope untouched
+
+      await sim().consumeToken({ node: ESTART, label: 'e2' });
+      expect(get('animation').getStacks(EVTSP)).to.eql([]);        // evtsp un-stacked
+      expect(sim().getToken(PROCESS, 'I1')).to.equal(root);
+    });
+
+    it('rejects firing with no enclosing-scope instance', function() {
+      expect(() => sim().createToken({ node: ESTART, label: 'e1' }))
+        .to.throw(/no enclosing-scope instance/);
     });
 
   });

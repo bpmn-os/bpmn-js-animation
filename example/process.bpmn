@@ -41,6 +41,11 @@
     <bpmn2:endEvent id="EndEvent_Boundary">
       <bpmn2:incoming>Flow_be</bpmn2:incoming>
     </bpmn2:endEvent>
+    <bpmn2:subProcess id="EventSub_1" triggeredByEvent="true">
+      <bpmn2:startEvent id="EvtStart_1" isInterrupting="false">
+        <bpmn2:escalationEventDefinition id="EscDef_evt" />
+      </bpmn2:startEvent>
+    </bpmn2:subProcess>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
@@ -98,6 +103,12 @@
         <di:waypoint x="410" y="102" />
         <di:waypoint x="410" y="56" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EventSub_1_di" bpmnElement="EventSub_1" isExpanded="true">
+        <dc:Bounds x="350" y="360" width="220" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EvtStart_1_di" bpmnElement="EvtStart_1">
+        <dc:Bounds x="372" y="400" width="36" height="36" />
+      </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn2:definitions>

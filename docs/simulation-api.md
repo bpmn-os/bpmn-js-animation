@@ -59,6 +59,9 @@ Create a token. Four cases, by node kind:
 - **MI activity** — create a **sub-instance** (`label` = the sub's id), a child of the outer
   thread token resting on the activity's incoming flow, **stacked** at the node and inheriting its
   color, at `ready`. See [MI activities](#mi-activities) below.
+- **Event sub-process start event** — fire the event sub-process (`label` = the firing id): a
+  child of the enclosing scope's on-screen instance token, **stacked** on the event-sub node and
+  inheriting its color, at `center`. See [Event sub-processes](#event-sub-processes) below.
 
 ```javascript
 simulation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
@@ -123,6 +126,30 @@ for (const sub of [ 'I1#1', 'I1#2' ]) {
 // "I1" is now un-parked on the outgoing flow:
 await simulation.advanceToken({ node: 'MI_1', label: 'I1', sequenceFlow: 'Flow_out' });
 ```
+
+### Event sub-processes
+
+An event sub-process is triggered by an **event** (no incoming flow), so its instances are created
+**lazily** — a *firing* per trigger. Each firing is `createToken({ node: evtspStartEvent, label })`:
+a child of the **enclosing scope's on-screen instance** token, **stacked** on the event-sub node
+(key = the firing id), inheriting its color, at `center`.
+
+- **Non-interrupting** firings **coexist** — they stack, so the event-sub box scrolls through
+  concurrent firings; the enclosing scope keeps running.
+- A firing's key is dropped when **its last token is consumed** — `consumeToken` does a
+  surviving-token check (no remaining token carries that firing key → drop it). The enclosing scope
+  is untouched.
+
+```javascript
+simulation.createToken({ node: 'Process_1', label: 'I1' });        // scope instance
+simulation.createToken({ node: 'EvtStart_1', label: 'I1.e1' });    // firing 1 (stacked)
+simulation.createToken({ node: 'EvtStart_1', label: 'I1.e2' });    // firing 2 (concurrent)
+// run each firing's internal flow, then end it:
+await simulation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops the e1 firing key
+```
+
+> Interrupting event sub-processes (replace the parent scope's other tokens) are a follow-up; the
+> built case is non-interrupting.
 
 ### `advanceToken({ node, label, sequenceFlow?, position?, bounce? })` → `Promise<token>`
 
@@ -202,12 +229,13 @@ Reset all simulation state and clear the underlying animation.
 ## Status
 
 Built and tested today: `createToken` (process / participant / start event / **boundary event** /
-**MI activity**), `advanceToken` (flow travel / center-anchor / activity sweep), `forkToken` /
-`joinTokens`, `consumeToken` (subtree cascade + stack-decrement for process roots **and MI subs**),
-`autoFocus`, and the lookups. Most node types are covered by composing these (end events =
-advance-center + consume; tasks = activity sweep with `bounce`; start = createToken; boundary +
-MI = createToken + the choreographies above).
+**MI activity** / **event-sub firing**), `advanceToken` (flow travel / center-anchor / activity
+sweep), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token**
+stack-decrement covering process roots, MI subs, **and event-sub firings**), `autoFocus`, and the
+lookups. Most node types are covered by composing these (end events = advance-center + consume;
+tasks = activity sweep with `bounce`; start = createToken; boundary / MI / event-sub = createToken
++ the choreographies above).
 
-Not yet built: event sub-processes, expanded sub-process entry, and the prescribed icon cues
-(throw/catch, send/receive). For those — and for full manual control — drop down to the
+Not yet built: **interrupting** event sub-processes, expanded sub-process entry, and the prescribed
+icon cues (throw/catch, send/receive). For those — and for full manual control — drop down to the
 [`animation`](animation-api.md) service.

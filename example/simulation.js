@@ -76,6 +76,12 @@ function isMI(el) {
   return !!(lc && lc.$type === 'bpmn:MultiInstanceLoopCharacteristics');
 }
 
+// An event sub-process (its start event fires lazy, stacked instances).
+function isEvtSp(el) {
+  const bo = el && el.businessObject;
+  return !!(bo && bo.$type === 'bpmn:SubProcess' && bo.triggeredByEvent);
+}
+
 // forkToken is offered while the instance is forkable at a gateway: the original still rests
 // there (first fork = a move), or a branch already sits on one of its outflows (later forks).
 function canFork(gatewayId, lbl) {
@@ -169,10 +175,19 @@ function render() {
     });
   }
 
-  // createToken — child of the scope's token, at a start event
-  if (is(el, 'bpmn:StartEvent')) {
+  // createToken — child of the scope's token, at a (plain) start event
+  if (is(el, 'bpmn:StartEvent') && !isEvtSp(el.parent)) {
     button(actions, 'createToken (at start)', () =>
       run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
+  }
+
+  // fire an event sub-process — each click is a new (non-interrupting) firing: a stacked child
+  // of the enclosing-scope's on-screen instance. Scroll the box to see firings; select + consume.
+  if (is(el, 'bpmn:StartEvent') && isEvtSp(el.parent)) {
+    button(actions, `fire ${el.id}`, () => {
+      const f = `${label() || 'I'}.e${++miSeq}`;
+      run(() => sim.createToken({ node: el.id, label: f }), `createToken(${el.id}, ${f})`);
+    });
   }
 
   // boundary event — arm a listener (a child of the host activity's token), then fire it
