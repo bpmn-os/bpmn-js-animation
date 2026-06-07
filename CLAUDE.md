@@ -23,9 +23,14 @@ npm run build    # production bundle of the example (sanity-checks all imports)
 
 ## Architecture
 
-The package entry (`lib/index.js`) exports the module as default **plus a named
-`getRandomColor`** (`lib/color.js`) — a pure CSS-color helper callers use to mint a
-color per identity and pass it in; the package never assigns colors itself.
+The package entry (`lib/index.js`) exports the module as default **plus named color
+helpers `getRandomColor` / `getDistinctColor`** (`lib/color.js`) — callers mint a color
+per identity and pass it in; the package never assigns colors itself. Both wrap the
+**`randomcolor`** library — the **same coloring scheme as bpmn-js-token-simulation**:
+`getDistinctColor(index)` cycles a fixed, contrast-filtered palette (60 `randomColor`
+values kept under a YIQ cutoff), so concurrent instances read distinctly; a **child token
+inherits its parent's color** (no per-instance "related shade" ring). `randomcolor` is the
+package's one runtime dependency added for this; a `seed` option pins the palette for tests.
 
 A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one service,
 `animation`** (`lib/Animation.js`), which owns both token animation and node animation.

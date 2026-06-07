@@ -27,7 +27,7 @@ describe('SimulationAPI', function() {
 
       expect(token).to.exist;
       expect(token.label).to.equal('I1');
-      expect(token.color).to.match(/^hsl\(/);
+      expect(token.color).to.match(/^#[0-9a-f]{6}$/i);
       expect(sim().getToken(PROCESS, 'I1')).to.equal(token);
     });
 

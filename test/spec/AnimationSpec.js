@@ -1721,8 +1721,8 @@ describe('animation', function() {
 
   describe('getRandomColor', function() {
 
-    it('returns a CSS hsl() color', function() {
-      expect(getRandomColor()).to.match(/^hsl\(\d+, \d+%, \d+%\)$/);
+    it('returns a CSS hex color', function() {
+      expect(getRandomColor()).to.match(/^#[0-9a-f]{6}$/i);
     });
 
   });

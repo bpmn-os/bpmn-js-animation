@@ -2,22 +2,18 @@ import { expect } from 'chai';
 
 import {
   getRandomColor,
-  getDistinctColor,
-  getRelatedColors
+  getDistinctColor
 } from '../../lib/index.js';
 
-const HSL_RE = /^hsl\((\d+(?:\.\d+)?), (\d+(?:\.\d+)?)%, (\d+(?:\.\d+)?)%\)$/;
+const HEX_RE = /^#[0-9a-f]{6}$/i;
 
-function parse(hsl) {
-  const m = HSL_RE.exec(hsl);
-  expect(m, `"${hsl}" is not a valid hsl() string`).to.exist;
-  return { h: parseFloat(m[1]), s: parseFloat(m[2]), l: parseFloat(m[3]) };
-}
-
-// shortest distance between two hues on the 0..360 circle
-function hueGap(a, b) {
-  const d = Math.abs(a - b) % 360;
-  return Math.min(d, 360 - d);
+// YIQ brightness of a `#rrggbb` hex color (token-simulation's getContrastYIQ)
+function contrastYIQ(hex) {
+  const h = hex.slice(1);
+  const r = parseInt(h.substr(0, 2), 16);
+  const g = parseInt(h.substr(2, 2), 16);
+  const b = parseInt(h.substr(4, 2), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
 
@@ -25,14 +21,12 @@ describe('color', function() {
 
   describe('getRandomColor', function() {
 
-    it('returns a valid hsl() string', function() {
-      parse(getRandomColor());
+    it('returns a hex color', function() {
+      expect(getRandomColor()).to.match(HEX_RE);
     });
 
-    it('honors saturation/lightness options', function() {
-      const { s, l } = parse(getRandomColor({ saturation: 50, lightness: 30 }));
-      expect(s).to.equal(50);
-      expect(l).to.equal(30);
+    it('is deterministic given a seed', function() {
+      expect(getRandomColor({ seed: 42 })).to.equal(getRandomColor({ seed: 42 }));
     });
 
   });
@@ -40,92 +34,47 @@ describe('color', function() {
 
   describe('getDistinctColor', function() {
 
-    it('is deterministic given an explicit startAngle', function() {
-      const a = getDistinctColor(3, { startAngle: 0 });
-      const b = getDistinctColor(3, { startAngle: 0 });
-      expect(a).to.equal(b);
+    it('returns a hex color', function() {
+      expect(getDistinctColor(0, { seed: 1 })).to.match(HEX_RE);
     });
 
-    it('keeps lightness fixed across the sequence', function() {
-      for (let i = 0; i < 8; i++) {
-        expect(parse(getDistinctColor(i, { startAngle: 0 })).l).to.equal(45);
-      }
+    it('is deterministic given a seed', function() {
+      expect(getDistinctColor(3, { seed: 1 })).to.equal(getDistinctColor(3, { seed: 1 }));
     });
 
-    it('spreads successive colors far apart in hue', function() {
-      // golden-angle steps ⇒ adjacent indices are ~137.5° apart
-      for (let i = 0; i < 12; i++) {
-        const h1 = parse(getDistinctColor(i, { startAngle: 0 })).h;
-        const h2 = parse(getDistinctColor(i + 1, { startAngle: 0 })).h;
-        expect(hueGap(h1, h2)).to.be.greaterThan(60);
-      }
-    });
-
-    it('does not repeat a hue within a reasonable run', function() {
-      const hues = [];
+    it('walks distinct colors across a run (the palette has no immediate repeats)', function() {
+      const colors = [];
       for (let i = 0; i < 16; i++) {
-        hues.push(Math.round(parse(getDistinctColor(i, { startAngle: 0 })).h));
+        colors.push(getDistinctColor(i, { seed: 1 }));
       }
-      // every pair is at least a few degrees apart
-      for (let i = 0; i < hues.length; i++) {
-        for (let j = i + 1; j < hues.length; j++) {
-          expect(hueGap(hues[i], hues[j])).to.be.greaterThan(5);
-        }
+      // every entry within the palette length is unique
+      expect(new Set(colors).size).to.equal(colors.length);
+    });
+
+    it('cycles the palette (wraps after its length)', function() {
+      const first = getDistinctColor(0, { seed: 1 });
+
+      // the palette length is the first index > 0 whose color repeats index 0
+      let len = 1;
+      while (getDistinctColor(len, { seed: 1 }) !== first && len < 100) {
+        len++;
+      }
+
+      // index len wraps to index 0, and one before it does not
+      expect(getDistinctColor(len, { seed: 1 })).to.equal(first);
+      expect(getDistinctColor(len + 3, { seed: 1 })).to.equal(getDistinctColor(3, { seed: 1 }));
+    });
+
+    it('keeps every palette color under the contrast cutoff (readable on a light canvas)', function() {
+      for (let i = 0; i < 30; i++) {
+        expect(contrastYIQ(getDistinctColor(i, { seed: 1 }))).to.be.lessThan(200);
       }
     });
 
-    it('rotates with startAngle (no fixed first color)', function() {
-      const a = parse(getDistinctColor(0, { startAngle: 0 })).h;
-      const b = parse(getDistinctColor(0, { startAngle: Math.PI })).h;
-      expect(hueGap(a, b)).to.be.greaterThan(60);
-    });
-
-  });
-
-
-  describe('getRelatedColors', function() {
-
-    it('returns the requested count', function() {
-      expect(getRelatedColors('hsl(207, 65%, 45%)', 4, { startAngle: 0 })).to.have.length(4);
-    });
-
-    it('returns [] for count <= 0', function() {
-      expect(getRelatedColors('hsl(207, 65%, 45%)', 0)).to.deep.equal([]);
-    });
-
-    it('is deterministic given an explicit startAngle', function() {
-      const a = getRelatedColors('hsl(207, 65%, 45%)', 3, { startAngle: 0 });
-      const b = getRelatedColors('hsl(207, 65%, 45%)', 3, { startAngle: 0 });
-      expect(a).to.deep.equal(b);
-    });
-
-    it('keeps shades in the same family (close hue to the base)', function() {
-      const base = 207;
-      const shades = getRelatedColors(`hsl(${base}, 65%, 45%)`, 4, { startAngle: 0 });
-      shades.forEach(c => {
-        expect(hueGap(parse(c).h, base)).to.be.lessThan(60);
-      });
-    });
-
-    it('defaults lightness to the base color', function() {
-      const shades = getRelatedColors('hsl(207, 65%, 30%)', 3, { startAngle: 0 });
-      shades.forEach(c => expect(parse(c).l).to.equal(30));
-    });
-
-    it('makes the shades distinct from each other', function() {
-      const shades = getRelatedColors('hsl(207, 65%, 45%)', 4, { startAngle: 0 });
-      const set = new Set(shades);
-      expect(set.size).to.equal(shades.length);
-    });
-
-    it('accepts a hex base color', function() {
-      const shades = getRelatedColors('#3b82c4', 3, { startAngle: 0 });
-      expect(shades).to.have.length(3);
-      shades.forEach(parse);
-    });
-
-    it('throws on an unsupported base color', function() {
-      expect(() => getRelatedColors('rebeccapurple', 2)).to.throw(/unsupported/);
+    it('varies the palette with the seed', function() {
+      const a = getDistinctColor(0, { seed: 1 });
+      const b = getDistinctColor(0, { seed: 2 });
+      expect(a).to.not.equal(b);
     });
 
   });
