@@ -29,6 +29,7 @@ function log(msg) {
 }
 
 let counter = 0;
+let miSeq = 0;            // suffix for MI sub-instance labels (e.g. "I1#1")
 let outlined = null;      // node currently showing our (stack-aware) selection outline
 
 // The token advanceToken acts on is the lib's *selected* token (blue ring) — read live, not
@@ -67,6 +68,12 @@ function isCenter(el) {
   return is(el, 'bpmn:Event') ||
     is(el, 'bpmn:ExclusiveGateway') ||
     (is(el, 'bpmn:Gateway') && (el.incoming || []).length <= 1);
+}
+
+// A multi-instance activity (its token fans out into stacked sub-instances).
+function isMI(el) {
+  const lc = el && el.businessObject && el.businessObject.loopCharacteristics;
+  return !!(lc && lc.$type === 'bpmn:MultiInstanceLoopCharacteristics');
 }
 
 // forkToken is offered while the instance is forkable at a gateway: the original still rests
@@ -137,6 +144,17 @@ function render() {
     }
   }
 
+  // spawn MI sub-instances — when the selected token rests on an MI activity's incoming flow it
+  // never enters; each click adds a stacked instance (until the first one runs and parks the
+  // parent). Then select a sub (scroll the stack) and advance it (entry…exit) / consume it; the
+  // last consume releases the parent onto the outgoing flow.
+  if (token && token.state.sequenceFlow && isMI(svc('elementRegistry').get(token.node))) {
+    button(actions, `spawn instance @ ${token.node}`, () => {
+      const sub = `${token.label}#${++miSeq}`;
+      run(() => sim.createToken({ node: token.node, label: sub }), `createToken(${token.node}, ${sub})`);
+    });
+  }
+
   // node-driven actions (createToken, advance-along-flow) need a selected node
   if (!el) {
     return;
@@ -155,6 +173,28 @@ function render() {
   if (is(el, 'bpmn:StartEvent')) {
     button(actions, 'createToken (at start)', () =>
       run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
+  }
+
+  // boundary event — arm a listener (a child of the host activity's token), then fire it
+  // (interrupting): travel onto its outflow (auto-reparents to the scope) + consume the host.
+  if (is(el, 'bpmn:BoundaryEvent') && el.host) {
+    const host = el.host;
+    const listener = sim.getToken(el.id, label());
+    const out = (el.outgoing || [])[0];
+
+    if (!listener && sim.getToken(host.id, label())) {
+      button(actions, `arm listener @ ${el.id}`, () =>
+        run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
+    }
+    if (listener && out) {
+      button(actions, `fire → interrupt ${host.id}`, () => {
+        sim.advanceToken({ node: el.id, label: label(), sequenceFlow: out.id })
+          .then(() => sim.consumeToken({ node: host.id, label: label() }))
+          .then(() => log(`fire boundary ${el.id} → consume ${host.id}`))
+          .then(render)
+          .catch(err => log('ERROR: ' + err.message));
+      });
+    }
   }
 
   // join — a (converging) gateway with ≥2 branches resting on its incoming flows
@@ -234,6 +274,7 @@ async function load(name) {
   viewer.get('canvas').zoom('fit-viewport', 'auto');
   viewer.get('simulation').autoFocus($('#autoFocus').checked);
   counter = 0;
+  miSeq = 0;
   outlined = null;
   setLabel('');
   render();
@@ -265,6 +306,7 @@ $('#autoFocus').addEventListener('change', e => {
 $('#clear').addEventListener('click', () => {
   viewer.get('simulation').clear();
   counter = 0;
+  miSeq = 0;
   outlined = null;
   render();
   log('clear');

@@ -20,6 +20,7 @@
     <bpmn2:task id="Activity_2">
       <bpmn2:incoming>Flow_b</bpmn2:incoming>
       <bpmn2:outgoing>Flow_b2</bpmn2:outgoing>
+      <bpmn2:multiInstanceLoopCharacteristics />
     </bpmn2:task>
     <bpmn2:sequenceFlow id="Flow_a2" sourceRef="Activity_1" targetRef="Gateway_Join" />
     <bpmn2:sequenceFlow id="Flow_b2" sourceRef="Activity_2" targetRef="Gateway_Join" />
@@ -31,6 +32,14 @@
     <bpmn2:sequenceFlow id="Flow_end" sourceRef="Gateway_Join" targetRef="EndEvent_1" />
     <bpmn2:endEvent id="EndEvent_1">
       <bpmn2:incoming>Flow_end</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:boundaryEvent id="BoundaryEvent_1" attachedToRef="Activity_1">
+      <bpmn2:outgoing>Flow_be</bpmn2:outgoing>
+      <bpmn2:errorEventDefinition id="ErrorDef_1" />
+    </bpmn2:boundaryEvent>
+    <bpmn2:sequenceFlow id="Flow_be" sourceRef="BoundaryEvent_1" targetRef="EndEvent_Boundary" />
+    <bpmn2:endEvent id="EndEvent_Boundary">
+      <bpmn2:incoming>Flow_be</bpmn2:incoming>
     </bpmn2:endEvent>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -78,6 +87,16 @@
       <bpmndi:BPMNEdge id="Flow_end_di" bpmnElement="Flow_end">
         <di:waypoint x="570" y="160" />
         <di:waypoint x="632" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BoundaryEvent_1_di" bpmnElement="BoundaryEvent_1">
+        <dc:Bounds x="392" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Boundary_di" bpmnElement="EndEvent_Boundary">
+        <dc:Bounds x="392" y="20" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_be_di" bpmnElement="Flow_be">
+        <di:waypoint x="410" y="102" />
+        <di:waypoint x="410" y="56" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
