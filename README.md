@@ -1,10 +1,26 @@
 # bpmn-js-animation
 
-API-driven animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
+API-driven token animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 
-> The token animation (`lib/Animation.js`) is vendored and
-> adapted from [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation)
-> (MIT). Everything else is new.
+Render **tokens** — colored dots — on a BPMN diagram and move them along flows under
+**programmatic control**. There is no execution engine: the host application decides when tokens
+are created, moved, split, and removed. It's the "visualization only" counterpart to
+[bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation).
+
+> The low-level token tween (the bottom of `lib/AnimationAPI.js`) is vendored and adapted from
+> bpmn-js-token-simulation (MIT). Everything else is new.
+
+## Two layers
+
+The module registers two bpmn-js services:
+
+- **`simulation`** — a high-level, BPMN-shaped vocabulary (`createToken`, `advanceToken`,
+  `forkToken` / `joinTokens`, `consumeToken`). It addresses tokens by readable `(node, label)`
+  names and applies prescribed per-type behaviour. **The supported surface most hosts use.**
+  → **[docs/simulation-api.md](docs/simulation-api.md)**
+- **`animation`** — the low-level visual primitive it's built on (place a dot, move it along a
+  flow, set its position, stack a node into instances). Use it directly for full control.
+  → **[docs/animation-api.md](docs/animation-api.md)**
 
 ## Install
 
@@ -12,7 +28,7 @@ API-driven animation for [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 npm install bpmn-js-animation
 ```
 
-## Usage
+## Basic usage
 
 ```javascript
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
@@ -27,195 +43,31 @@ const viewer = new BpmnViewer({
 
 await viewer.importXML(diagramXML);
 
-const animation = viewer.get('animation');
+const simulation = viewer.get('simulation');
 
-// create a token (a colored dot resting on a node)
-animation.createToken('StartEvent_1', 'order-42', 'tomato');
+// start a process instance (a colored dot on the implicit process / pool)
+simulation.createToken({ node: 'Process_1', label: 'order-42' });
 
-// to move it: put it on the outgoing flow, travel along it, then anchor it on the target
-animation.setState('StartEvent_1', 'order-42', { sequenceFlow: 'Flow_1' });          // step onto the flow
-await animation.sendToken([ { node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' } ]); // travel
-animation.setState('Task_1', 'order-42', { position: { left: 0.5, top: 0.5 } });    // anchor (e.g. "entered")
+// a child token at the start event, then travel it along a flow and into a task
+simulation.createToken({ node: 'StartEvent_1', label: 'order-42' });
+await simulation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
+await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'busy' });
 
-// split at a diverging gateway — the host puts a token on each outgoing flow and sends each
-animation.createToken('Gateway_1', 'order-42', 'tomato', { sequenceFlow: 'Flow_3' });
-animation.createToken('Gateway_1', 'order-99', 'tomato', { sequenceFlow: 'Flow_4' });
-await Promise.all([
-  animation.sendToken([ { node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_3' } ]),
-  animation.sendToken([ { node: 'Gateway_1', label: 'order-99', sequenceFlow: 'Flow_4' } ])
-]);
-
-// advance its lifecycle in place — position + bounce are your call (see below)
-animation.setState('Task_1', 'order-42', { bounce: true });               // needs user action
-
-// react to clicks — the host app decides what to show
-viewer.get('eventBus').on('token.click', ({ node, label, sequenceFlow }) => {
-  console.log('clicked token', label, 'at', node, sequenceFlow ? `(on ${sequenceFlow})` : '');
-});
-
-// remove it
-animation.removeToken('Task_1', 'order-42');
+// react to clicks on a token (the host decides what to show)
+viewer.get('eventBus').on('token.click', ({ node, label }) => console.log('clicked', label, 'at', node));
 ```
 
-## Token identity & color
+For full control over placement, movement, selection, icons, and instance stacks, drive the
+**`animation`** service directly — see **[docs/animation-api.md](docs/animation-api.md)**.
 
-- A token is identified by **`(node, label, sequenceFlow?)`**. `node` is a BPMN
-  element id; `label` is any string you choose (an instance id, an order number, …);
-  `sequenceFlow` is set only when the token **rests on a flow** (see state, below).
-- Placing a token at an existing identity **replaces** it. At most one token per
-  `(node, label)` rests at an **anchor**; tokens resting on **distinct flows** can
-  **coexist** at one node — that's how branches pile up at a merging gateway. Move
-  them to a shared anchor (or remove the extras) to **merge**.
-- **`color` is required** and may be **any CSS color** — name (`tomato`), hex
-  (`#3399ff`), `rgb()/rgba()`, `hsl()/hsla()`. Applied directly, no parsing; a token
-  carries its color, so a move keeps it.
-- Need a color? Use the **`getRandomColor()`** named export: mint one per identity
-  and reuse it so related tokens stay consistent. The package never assigns colors.
+## Development
 
-  ```javascript
-  import AnimationModule, { getRandomColor } from 'bpmn-js-animation';
-  const color = getRandomColor();   // e.g. "hsl(207, 65%, 45%)"
-  ```
-- Tokens carry **no other data** — just `color` + `state`. The `label` shows on
-  **hover**; the dot is a plain colored circle.
-
-## Token state — position & bounce
-
-A token's `state` is a **pure visual descriptor**; the library has no built-in
-lifecycle semantics — *you* map your meaning onto positions.
-
+```sh
+npm install     # deps (incl. dev: bpmn-js + vite for the example)
+npm run dev     # vite playground (example/) — the visual check
+npm test        # karma + mocha in headless Chrome
+npm run build   # production bundle of the example (sanity-checks all imports)
 ```
-state = {
-  position: { left, top, hoffset, voffset } | null,  // a point on/around the shape
-  sequenceFlow: '<connected sequence flow id>' | null,  // rest where that flow meets the node
-  bounce: boolean                   // a "user action needed" cue
-}
-```
-- `position.left` / `position.top` are **fractions** of the shape (`0` = left/top edge,
-  `1` = right/bottom; may go outside, e.g. `top: -0.1` sits above); default `0.5` (center).
-  `position.hoffset` / `position.voffset` add a **pixel** nudge on top (default `0`). So a
-  point is a proportional anchor plus a constant offset — mix freely:
-  `{ left: 0.5, top: 1, voffset: 20 }` is 20px below the bottom-center;
-  `{ left: 1, hoffset: -10 }` is 10px inside the right edge.
-- `position` and `sequenceFlow` are **mutually exclusive**; `bounce` is independent.
-- Default (when omitted): `{ position: { left: 0.5, top: 0.5 }, bounce: true }` — a centered,
-  bouncing token.
-- A typical **caller convention** for an activity: arrived → `{ left: 0, top: 0 }`, entered
-  → `{ left: 0.5, top: 0.5 }`, completed → `{ left: 1, top: 1 }`; for a gateway *arrived*,
-  rest on the incoming flow via `{ sequenceFlow: '<incoming flow id>' }`. None of this is
-  hard-coded. Tokens that resolve to the **same point queue** at that spot.
-
-## `animation` API
-
-| Method | Description |
-| --- | --- |
-| `createToken(node, label, color, state?, stackIndices?)` | Place a token (replaces one at the same identity). `state` defaults to centered, bouncing. `stackIndices` (a map `{ stackedNodeId: index }`) sets which instance it belongs to — omit unless the node or an ancestor is stacked. Returns the token. |
-| `sendToken([{ node, label, sequenceFlow, stackIndices? }, …])` | Travel token(s) **already resting on a flow** along that flow to its far node, leaving them resting on the **same flow** there (no landing `state` — anchor afterwards with `setState`). The token must be on `sequenceFlow` first (`setState(..., { sequenceFlow })`); `sequenceFlow` may be **outgoing** (forward → target) or **incoming** (reverse → source, e.g. rewind), inferred from which end the token is at. A **split** is the host's job (create a token on each flow). A move keeps the token's instance (`stackIndices`); while on a flow its own node's stack index doesn't gate visibility, so it stays visible traveling into a stacked node. Resolves `Promise<Token[]>` when landed; auto-settles an in-flight source; rejects if it isn't on the flow or several share it. |
-| `setState(node, label, state, selector?)` | Update state in place (partial merge). `selector` = `{ sequenceFlow?, stackIndices? }` picks which token when several rest at the node. |
-| `removeToken(node, label, selector?)` | Remove a token, cancelling any in-flight animation. |
-| `selectToken(node, label, selector?)` / `deselectToken(…)` | Toggle a blue ring on a resting token. Selection is **carried**: it survives a move and OR-merges on a join (when tokens collapse to one identity). |
-| `getSelectedTokens()` | The selected tokens (`Token[]`). |
-| `setNodeSelected(node, selected?)` / `getSelectedNodes()` | Draw a modeller-style blue boundary on an element (stack-aware); list selected node ids. |
-| `throwIcon(node)` | Play the element's own **icon** (event/task-type icon) as a **throw**: fly it diagonally up-right and fade out. Native color, shared duration. `→ Promise`; no-op if the element has no icon. |
-| `catchIcon(node)` | Play the element's own **icon** as a **catch**: draw it in from up-left and fade in. Counterpart to `throwIcon`. `→ Promise`; no-op if no icon. |
-| `getTokens(filter?)` | List tokens (each `{ node, label, color, state, selected, stackIndices }`), in insertion order. |
-| `setFilter(predicate \| null)` | Visibility filter: tokens where `predicate(token)` is falsy are **hidden** (kept, not removed — `getTokens` still returns them; they don't count toward the `+N` cap). `null` shows all. |
-| `clear()` | Remove all tokens. |
-| `setAnimationDuration(ms)` | Global animation duration — token moves **and** `throwIcon`/`catchIcon` (see below). |
-
-### Events (on the bpmn-js `eventBus`)
-
-- `token.click` — `{ node, label, sequenceFlow, stackIndices }` (`stackIndices` is the
-  clicked **instance** — pass it back as the selector to address that token, since a
-  stacked node shows only its front instance)
-- `token.overflow.click` — `{ node, hidden }` (the `+N` marker; `hidden` is the
-  list of `{ node, label, stackIndices }` not shown)
-
-### Crowded nodes
-
-At most **`maxVisible`** dots (default **3**) render on a node; beyond that, a
-single neutral **`+N`** marker is shown (clicking it fires `token.overflow.click`).
-A lone overflow is shown as an extra dot rather than a pointless "+1". Configure
-via module config:
-
-```javascript
-new BpmnViewer({
-  container: '#canvas',
-  additionalModules: [ AnimationModule ],
-  animation: { maxVisible: 5, animationDuration: 600 }
-});
-```
-
-### Keeping up with fast events
-
-Every transition takes a **fixed duration**, independent of flow length (default
-1000 ms; set globally via `animation: { animationDuration }` config or
-`animation.setAnimationDuration(ms)` at runtime — `0` makes transitions instant). If
-transitions are driven by external events that can arrive faster than a token animates:
-
-- **No pile-up** — a token's logical position updates the instant you call
-  `sendToken` (so it's addressable at the destination immediately), and a new
-  `sendToken` auto-finishes any still-running transition first. Rapid sends never
-  overlap; the animation is cosmetic catch-up.
-- **Shorten transitions** — lower the global duration with `setAnimationDuration(ms)`
-  (or the `animation: { animationDuration }` config); `0` makes them instant.
-
-## Instance stacks
-
-Render a node as a **stack of its own shape** (multiple instances) and scroll through
-them. Visualization only — the host drives sizes and contents; the library never infers
-a stack from tokens.
-
-| Method | Description |
-| --- | --- |
-| `setStackSize(node, size, ancestorStackIndices?)` | Declare `node`'s **instance count** (`size`). The first instance is drawn by whatever already represents the node — its own shape, or the implicit process's box (T4) — and the additional `size - 1` instances render as diagonally-offset copies, so **size 1 is a single instance with no copies** and `0`/`null` clears it (for the process, removes the box). A plain **`+k`** marks instances beyond the drawn cap. `ancestorStackIndices` (a map `{ stackedAncestorId: index }`) declares the count *for a given outer instance*, so a nested activity can differ per outer instance — **contexts are independent** (a count set under one outer instance never leaks to another). Omit it to target the instance **currently on screen**; pass `{}` for the base/flat context explicitly. |
-| `getStackSize(node)` / `getMaxVisible()` | The stack size for the instance on screen (resolved against the current context); the per-node drawn cap (default 3, via `animation: { maxVisible }`). |
-| `getStackIndex(node)` | The current front-instance index (0-based). |
-| `getStackIndices(node)` | The `stackIndices` a token resting at `node` must carry to belong to the instance **currently on screen** (`node`'s own front index when stacked, plus each stacked ancestor's). Pass it to `createToken`/`sendToken`, or inside a selector, so an action targets the visible instance instead of the base. `{}` when nothing in the chain is stacked. |
-| `setStackIndex(node, index)` / `moveToFront(node, instanceIndex)` / `moveToBack(node, instanceIndex)` | Reorder the node's instances (no animation): jump an instance to the front, or send it to the back. |
-| `scrollStack(node, direction?)` | Animate stepping to the next (`'forward'`) / previous (`'backward'`) instance, at a fixed UI speed. **No callback.** `→ Promise`. |
-| `getProcessBox()` | Id of the box drawn around an implicit (pool-less) `bpmn:Process` while it's stacked, else `null`. |
-
-**Per-instance tokens.** A token records which instance it belongs to via `stackIndices`, so
-a stacked node shows exactly its current front instance's tokens. You declare the
-instances up front and the library resolves what to show against the current front indices —
-there is no callback:
-
-```javascript
-animation.setStackSize('SubProcess_1', 3);
-
-// each instance's tokens, tagged with the instance index
-animation.createToken('SubTask_1', 'order-42', color, state, { SubProcess_1: 0 });
-animation.createToken('SubTask_1', 'order-77', color, state, { SubProcess_1: 1 });
-
-await animation.scrollStack('SubProcess_1', 'forward'); // now shows instance 1's tokens
-```
-
-A token's instance membership is fixed (a move keeps it); only the node's display order
-changes when you scroll / reorder. `stackIndices` need only list the stacked nodes in the
-token's own/ancestor chain (omit it entirely when nothing is stacked; an omitted stacked
-entry means instance 0 — which is also the base/default context).
-
-You may, however, pass a **complete** ancestor map if that's simpler — entries with index
-`0` (or `null`) are normalized away, so listing every ancestor with its current index and
-using `0`/`null` for the non-stacked ones yields exactly the same identity as the minimal
-form (and stays addressable by either). The only rule: never give a non-stacked ancestor a
-**positive** index — a node with no stack genuinely has no instance above `0` (its
-`getStackIndex` is `0`), so populating each ancestor with its real current index is always
-correct and needs no stackability check on your side.
-
-**Nested stacks.** A token deep inside lists every stacked ancestor, e.g.
-`{ Process_1: 2, MI_Activity: 1 }`. Nested stack *sizes* that differ per outer instance are
-declared with the context argument, e.g. `setStackSize('MI_Activity', 3, { Process_1: 1 })`,
-and resolve automatically as you scroll the outer stack.
-
-**Implicit process box.** A bare `bpmn:Process` with no pool has no shape of its own, so
-the box *is* its first instance. `setStackSize(processId, n >= 1)` draws a **pool-style
-box** (outer rect + left banner with the process name) around its flow nodes — at `n = 1`
-just the box, at `n > 1` the box plus `n - 1` offset copies — and `setStackSize(processId,
-0)` (or `null`) removes it. `getProcessBox()` returns its id. The box behaves like a
-sub-process — it carries tokens at the process and tokens in its scope, and supports
-selection.
 
 ## License
 

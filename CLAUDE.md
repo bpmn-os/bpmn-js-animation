@@ -21,6 +21,22 @@ npm run dev      # vite dev server for example/ (open the printed localhost URL)
 npm run build    # production bundle of the example (sanity-checks all imports)
 ```
 
+## Docs (keep in sync)
+
+User-facing docs live in three places — **keep them current with every public-API change in the
+same commit** (a renamed/removed/added method, changed signature, or new behaviour):
+
+- **`README.md`** — purpose & what, install, a minimal basic-usage snippet, links to the guides.
+  Keep it short; detailed API tables belong in `docs/`, not here.
+- **`docs/simulation-api.md`** — the high-level `simulation` service (the supported surface).
+- **`docs/animation-api.md`** — the low-level `animation` service.
+
+`CLAUDE.md` (this file) is the **internal architecture/invariant** doc — a different audience;
+update it too, but it is not a substitute for the user-facing guides. When you change a public
+method, grep `README.md docs/` for the old name/signature and fix every mention. (Auto-generation
+via documentation.js was evaluated and **declined** — it dumps every internal `_`-prefixed method
+without `@private` tags; the hand-curated guides read better.)
+
 ## Architecture
 
 The package entry (`lib/index.js`) exports the module as default **plus named color
