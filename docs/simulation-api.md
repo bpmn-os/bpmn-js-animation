@@ -27,17 +27,15 @@ as the engine reports movements. The library decides *how* each node type animat
 
 ## Lifecycle positions
 
-Within an activity/container a token sweeps **left → right across the top edge** through five
+Within an activity/container a token sweeps **left → right along the top edge** through three
 named positions; events and gateways use a single **center** point. You name the target;
 `advanceToken` glides through every skipped intermediate so the path is shown.
 
 | position | where (activity) |
 | --- | --- |
-| `ready` | above the top-left corner (outside) |
-| `entry` | inside, top-left |
-| `busy` | inside, top-center |
-| `completed` | inside, top-right |
-| `exit` | above the top-right corner (outside) |
+| `entry` | top-left corner (on the edge) |
+| `busy` | top-center (on the edge) |
+| `completion` | top-right corner (on the edge) |
 | `center` | events & gateways — the symbol center (one point for the whole lifecycle) |
 
 These names are **prescribed**, not configurable. What each *means* in your engine (arrived /
@@ -50,7 +48,7 @@ entered / running / done) is your convention.
 Create a token. Four cases, by node kind:
 
 - **Process / Participant** — start a new instance: bump the node's instance stack and create
-  the **root** token at `ready` with a fresh distinct color. For a pool-less `bpmn:Process`
+  the **root** token at `entry` with a fresh distinct color. For a pool-less `bpmn:Process`
   this also draws the [implicit process box](animation-api.md#implicit-process-box).
 - **Start event** of a Process / SubProcess (not an event sub-process) — create a **child** of
   the token at the enclosing scope, with the **same label** and color, at `center`.
@@ -58,7 +56,7 @@ Create a token. Four cases, by node kind:
   from it (same label/color), at `center`. See [Boundary events](#boundary-events) below.
 - **MI activity** — create a **sub-instance** (`label` = the sub's id), a child of the outer
   thread token resting on the activity's incoming flow, **stacked** at the node and inheriting its
-  color, at `ready`. See [MI activities](#mi-activities) below.
+  color, at `entry`. See [MI activities](#mi-activities) below.
 - **Event sub-process start event** — fire the event sub-process (`label` = the firing id): a
   child of the enclosing scope's on-screen instance token, **stacked** on the event-sub node and
   inheriting its color, at `center`. See [Event sub-processes](#event-sub-processes) below.
@@ -103,12 +101,12 @@ A multi-instance activity renders as a **stack of its own instances**. The outer
 out) — and from there fans out into *N* sub-instances:
 
 - **Fan-out** — `createToken({ node: MIactivity, label: subLabel })` per sub: a child of the outer
-  thread token, **stacked** at the node, inheriting its color, at `ready`.
-- **Park / spawn window** — as soon as the **first** sub advances `ready→entry`, the outer thread
+  thread token, **stacked** at the node, inheriting its color, at `entry`.
+- **Park / spawn window** — as soon as the **first** sub starts running (leaves `entry`), the outer thread
   token is **parked** (`state.hidden`, CSS-hidden) and **no more subs may be spawned** (further
   `createToken` is rejected). One color per instance; subs differ by stack position, not hue.
 - **Run** each sub independently with `advanceToken({ node, label: subLabel, position })`.
-- **Fan-in** — `consumeToken({ node, label: subLabel })` per sub (from `exit`). The decrement drops
+- **Fan-in** — `consumeToken({ node, label: subLabel })` per sub (from `completion`). The decrement drops
   that sub's stack key; when the **last** sub is consumed, the parent is **un-parked onto the
   outgoing flow**, ready to travel.
 
@@ -116,11 +114,11 @@ out) — and from there fans out into *N* sub-instances:
 // outer thread "I1" rests on the MI activity's incoming flow (advanceToken'd there)
 simulation.createToken({ node: 'MI_1', label: 'I1#1' });   // fan out
 simulation.createToken({ node: 'MI_1', label: 'I1#2' });
-await simulation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'entry' }); // parks "I1", closes the window
+await simulation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'busy' }); // sub runs → parks "I1", closes the window
 
-// ... run each sub to exit, then collapse:
+// ... run each sub to completion, then collapse:
 for (const sub of [ 'I1#1', 'I1#2' ]) {
-  await simulation.advanceToken({ node: 'MI_1', label: sub, position: 'exit' });
+  await simulation.advanceToken({ node: 'MI_1', label: sub, position: 'completion' });
   await simulation.consumeToken({ node: 'MI_1', label: sub });
 }
 // "I1" is now un-parked on the outgoing flow:
@@ -168,7 +166,7 @@ One verb, three forms — chosen by which argument you pass:
 ```javascript
 await simulation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
 await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'entry' });
-await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completed', animate: 'pulse' });
+await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completion', animate: 'pulse' });
 await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // center-anchor
 ```
 

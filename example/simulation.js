@@ -138,7 +138,7 @@ function render() {
       const fx = select(actions, ANIM_EFFECTS, 'none');
       button(actions, `advance ${tag} → center`, () => advance({ animate: anim(fx) })());
     } else if (is(tEl, 'bpmn:Activity') || is(tEl, 'bpmn:Process') || is(tEl, 'bpmn:Participant')) {
-      const pos = select(actions, [ 'ready', 'entry', 'busy', 'completed', 'exit' ], 'busy');
+      const pos = select(actions, [ 'entry', 'busy', 'completion' ], 'busy');
       const fx = select(actions, ANIM_EFFECTS, 'none');
       button(actions, `advance ${tag}`, () => advance({ position: pos.value, animate: anim(fx) })());
     }

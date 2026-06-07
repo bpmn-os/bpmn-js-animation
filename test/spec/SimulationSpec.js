@@ -32,9 +32,9 @@ describe('SimulationAPI', function() {
       expect(sim().getToken(PROCESS, 'I1')).to.equal(token);
     });
 
-    it('places it at the ready position (above the top-left)', function() {
+    it('places it at the entry position (top-left, on the edge)', function() {
       const token = sim().createToken({ node: PROCESS, label: 'I1' });
-      expect(token.state.position).to.include({ left: 0, top: 0, voffset: -15 });
+      expect(token.state.position).to.include({ left: 0, top: 0, hoffset: 0, voffset: 0 });
     });
 
     it('increments the instance stack and draws the process box', function() {
@@ -533,7 +533,7 @@ describe('SimulationAPI', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy' });
 
-      expect(token.state.position).to.include({ left: 0.5, top: 0, voffset: 10 });
+      expect(token.state.position).to.include({ left: 0.5, top: 0, voffset: 0 });
       expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
     });
 
@@ -545,10 +545,10 @@ describe('SimulationAPI', function() {
       expect(sim().getEntry('MultiInstanceActivity_1', 'I1').sequenceFlow).to.equal('Flow_13p16ha');
 
       // advancing to a sweep position must take it off the flow and anchor it
-      const token = await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'I1', position: 'ready' });
-      expect(token.state.position).to.include({ left: 0, top: 0, voffset: -15 });
+      const token = await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'I1', position: 'entry' });
+      expect(token.state.position).to.include({ left: 0, top: 0, voffset: 0 });
       const entry = sim().getEntry('MultiInstanceActivity_1', 'I1');
-      expect(entry.position).to.equal('ready');
+      expect(entry.position).to.equal('entry');
       expect(entry.sequenceFlow == null).to.be.true; // anchored, no longer on the flow
     });
 
@@ -566,10 +566,10 @@ describe('SimulationAPI', function() {
       expect(sim().getEntry(PROCESS, 'I1').position).to.equal('busy');
     });
 
-    it('reaches the final position when steps are skipped (ready→exit)', async function() {
+    it('reaches the final position when steps are skipped (entry→completion)', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'exit' });
-      expect(token.state.position).to.include({ left: 1, top: 0, voffset: -15 });
+      const token = await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'completion' });
+      expect(token.state.position).to.include({ left: 1, top: 0, hoffset: 0, voffset: 0 });
     });
 
     it('is forward-only (rejects advancing backward)', async function() {
@@ -577,7 +577,7 @@ describe('SimulationAPI', function() {
       await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'busy' });
 
       let err;
-      try { await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'ready' }); } catch (e) { err = e; }
+      try { await sim().advanceToken({ node: PROCESS, label: 'I1', position: 'entry' }); } catch (e) { err = e; }
       expect(err).to.exist;
       expect(err.message).to.match(/cannot advance backward/);
     });
@@ -667,23 +667,23 @@ describe('SimulationAPI', function() {
       await sim().advanceToken({ node: 'Gateway_1', label: 'I1', sequenceFlow: 'Flow_1jj1qlk' });     // → Activity_1
     }
 
-    it('re-enters ready from a later state (the loop)', async function() {
+    it('re-enters the start position from a later state (the loop)', async function() {
       await toLoopActivity();
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });
       expect(sim().getEntry('Activity_1', 'I1').position).to.equal('busy');
 
-      // loop-back: ready from busy is allowed for a loop activity, gliding to the start position
-      const token = await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'ready' });
-      expect(token.state.position).to.include({ left: 0, top: 0, voffset: -15 }); // ready
-      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('ready');
+      // loop-back: entry from busy is allowed for a loop activity, gliding to the start position
+      const token = await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'entry' });
+      expect(token.state.position).to.include({ left: 0, top: 0, voffset: 0 }); // entry
+      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('entry');
     });
 
-    it('allows any backward step on a loop (not just ready)', async function() {
+    it('allows any backward step on a loop', async function() {
       await toLoopActivity();
-      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'completed' });
-      // completed → entry is backward but not to ready — still allowed for a loop
-      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'entry' });
-      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('entry');
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'completion' });
+      // completion → busy is a backward step — allowed for a loop activity
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });
+      expect(sim().getEntry('Activity_1', 'I1').position).to.equal('busy');
     });
 
   });
@@ -797,15 +797,15 @@ describe('SimulationAPI', function() {
       expect(get('animation').getStacks(MI)).to.eql([ 'I1#1', 'I1#2' ]);
     });
 
-    it('parks the parent and closes the spawn window when the first sub enters', async function() {
+    it('parks the parent and closes the spawn window when the first sub starts running', async function() {
       await toMIActivity();
       const parent = sim().getToken(MI, 'I1');
-      sim().createToken({ node: MI, label: 'I1#1' });
+      sim().createToken({ node: MI, label: 'I1#1' }); // spawned at `entry`
 
-      expect(parent.state.hidden).to.equal(false); // visible while spawning
+      expect(parent.state.hidden).to.equal(false); // visible while spawning (subs at entry)
 
-      await sim().advanceToken({ node: MI, label: 'I1#1', position: 'entry' });
-      expect(parent.state.hidden).to.equal(true); // parked on first entry
+      await sim().advanceToken({ node: MI, label: 'I1#1', position: 'busy' }); // leaves entry → runs
+      expect(parent.state.hidden).to.equal(true); // parked
 
       expect(() => sim().createToken({ node: MI, label: 'I1#2' })).to.throw(/spawn window is closed/);
     });
@@ -817,7 +817,7 @@ describe('SimulationAPI', function() {
       sim().createToken({ node: MI, label: 'I1#2' });
 
       for (const sub of [ 'I1#1', 'I1#2' ]) {
-        await sim().advanceToken({ node: MI, label: sub, position: 'exit' });
+        await sim().advanceToken({ node: MI, label: sub, position: 'completion' });
         await sim().consumeToken({ node: MI, label: sub });
       }
 
