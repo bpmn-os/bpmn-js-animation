@@ -49,7 +49,8 @@ A token's `state` is a **pure visual descriptor**:
 state = {
   position: { left, top, hoffset, voffset } | null,   // a point on/around the shape
   sequenceFlow: '<connected sequence flow id>' | null, // rest where that flow meets the node
-  bounce: boolean                                      // a "user action needed" cue
+  bounce: boolean,                                     // a "user action needed" cue
+  hidden: boolean                                      // park the dot (kept in the model, CSS display:none)
 }
 ```
 
@@ -58,7 +59,9 @@ state = {
   `position.hoffset` / `position.voffset` add a **pixel** nudge on top (default `0`). So a point
   is a proportional anchor plus a constant offset — `x = left*w + hoffset`. Mix freely:
   `{ left: 1, hoffset: -10 }` is 10px inside the right edge.
-- `position` and `sequenceFlow` are **mutually exclusive**; `bounce` is independent.
+- `position` and `sequenceFlow` are **mutually exclusive**; `bounce` and `hidden` are independent.
+- `hidden: true` keeps the token in the model (`getTokens` still returns it, it stays in its cluster)
+  but CSS-hides the dot — for "parked" tokens like an MI activity's outer thread while its instances run.
 - Default (when omitted): `{ position: { left: 0.5, top: 0.5 }, bounce: true }`.
 - Tokens that resolve to the **same point queue** at that spot. None of the lifecycle meaning is
   hard-coded — a typical caller convention for an activity is arrived → `{ left: 0, top: 0 }`,

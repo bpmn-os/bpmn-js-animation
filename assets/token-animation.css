@@ -73,6 +73,12 @@
   animation: none;
 }
 
+/* parked token — a carried visual flag (state.hidden); kept in the model + cluster, just not shown
+   (e.g. an MI activity's outer token while its instances run) */
+.bts-token-count.bts-hidden {
+  display: none;
+}
+
 /* selected resting token — blue ring with a small gap (raised above siblings) */
 .bts-token-count.bts-selected {
   outline: 2px solid var(--token-simulation-blue-selected, hsl(205, 100%, 50%));

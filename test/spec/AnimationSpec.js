@@ -201,6 +201,25 @@ describe('animation', function() {
       });
 
 
+      it('toggles hidden (a carried visual flag) — .bts-hidden, dot kept in the model', function() {
+        const tokens = get('animation');
+
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') });
+        expect(dotAt('Task_1').classList.contains('bts-hidden')).to.be.false;
+
+        // park it: the dot stays rendered (still in getTokens), just CSS-hidden
+        tokens.setState('Task_1', 'A', { hidden: true });
+        expect(tok('Task_1', 'A').state.hidden).to.equal(true);
+        expect(dotAt('Task_1').classList.contains('bts-hidden')).to.be.true;
+        expect(dotAt('Task_1').dataset.hidden).to.equal('true');
+        expect(tokens.getTokens()).to.have.length(1); // still in the model
+
+        // un-park
+        tokens.setState('Task_1', 'A', { hidden: false });
+        expect(dotAt('Task_1').classList.contains('bts-hidden')).to.be.false;
+      });
+
+
       it('setting position clears sequenceFlow', function() {
         const tokens = get('animation');
 

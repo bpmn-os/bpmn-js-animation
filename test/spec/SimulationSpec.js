@@ -87,8 +87,8 @@ describe('SimulationAPI', function() {
     });
 
     it('rejects an unsupported node', function() {
-      expect(() => sim().createToken({ node: 'MultiInstanceActivity_1', label: 'X' }))
-        .to.throw(/not a process\/participant, a start event, or a boundary event/);
+      expect(() => sim().createToken({ node: 'Event_10nbvlp', label: 'X' })) // an end event
+        .to.throw(/not a process\/participant, a start\/boundary event, or an MI activity/);
     });
 
     it('rejects an unknown node', function() {
@@ -705,6 +705,81 @@ describe('SimulationAPI', function() {
       await sim().consumeToken({ node: 'Activity_1', label: 'I1' });
       expect(sim().getToken('Activity_1', 'I1')).to.be.undefined;  // activity gone
       expect(sim().getToken('EndEvent_1', 'I1')).to.equal(landed); // boundary token survived at the far node
+    });
+
+  });
+
+
+  describe('MI activities', function() {
+
+    // Process_1: StartEvent_1 → Flow_13p16ha → MultiInstanceActivity_1 → Flow_0ldndng → Event_10nbvlp
+    beforeEach(bootstrap(miTaskXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    const MI = 'MultiInstanceActivity_1';
+
+    function sim() {
+      return get('simulation');
+    }
+
+    // outer thread token resting on the MI activity's incoming flow (never enters)
+    async function toMIActivity() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
+    }
+
+    it('fans out into stacked sub-instances — children of the outer thread, inheriting its color', async function() {
+      await toMIActivity();
+      const parent = sim().getToken(MI, 'I1'); // rests on the incoming flow
+
+      const s1 = sim().createToken({ node: MI, label: 'I1#1' });
+      const s2 = sim().createToken({ node: MI, label: 'I1#2' });
+
+      expect(s1.color).to.equal(parent.color);
+      expect(s1.stackIndices).to.include({ [MI]: 'I1#1' });
+      expect(sim().getChildren(parent)).to.include(s1).and.include(s2);
+      expect(get('animation').getStacks(MI)).to.eql([ 'I1#1', 'I1#2' ]);
+    });
+
+    it('parks the parent and closes the spawn window when the first sub enters', async function() {
+      await toMIActivity();
+      const parent = sim().getToken(MI, 'I1');
+      sim().createToken({ node: MI, label: 'I1#1' });
+
+      expect(parent.state.hidden).to.equal(false); // visible while spawning
+
+      await sim().advanceToken({ node: MI, label: 'I1#1', position: 'entry' });
+      expect(parent.state.hidden).to.equal(true); // parked on first entry
+
+      expect(() => sim().createToken({ node: MI, label: 'I1#2' })).to.throw(/spawn window is closed/);
+    });
+
+    it('releases the parent onto the outgoing flow when the last sub is consumed, then it travels', async function() {
+      await toMIActivity();
+      const parent = sim().getToken(MI, 'I1');
+      sim().createToken({ node: MI, label: 'I1#1' });
+      sim().createToken({ node: MI, label: 'I1#2' });
+
+      for (const sub of [ 'I1#1', 'I1#2' ]) {
+        await sim().advanceToken({ node: MI, label: sub, position: 'exit' });
+        await sim().consumeToken({ node: MI, label: sub });
+      }
+
+      // stack emptied, parent un-parked onto the outgoing flow
+      expect(get('animation').getStacks(MI)).to.eql([]);
+      expect(parent.state.hidden).to.equal(false);
+      expect(parent.state.sequenceFlow).to.equal('Flow_0ldndng');
+
+      // and it can travel onward
+      const landed = await sim().advanceToken({ node: MI, label: 'I1', sequenceFlow: 'Flow_0ldndng' });
+      expect(landed.node).to.equal('Event_10nbvlp');
+    });
+
+    it('rejects spawning when no outer thread rests on the incoming flow', function() {
+      sim().createToken({ node: PROCESS, label: 'I1' }); // never advanced onto the MI activity
+      expect(() => sim().createToken({ node: MI, label: 'I1#1' }))
+        .to.throw(/no token resting on .* incoming flow/);
     });
 
   });

@@ -47,7 +47,7 @@ entered / running / done) is your convention.
 
 ### `createToken({ node, label, bounce? })` → `token`
 
-Create a token. Three cases, by node kind:
+Create a token. Four cases, by node kind:
 
 - **Process / Participant** — start a new instance: bump the node's instance stack and create
   the **root** token at `ready` with a fresh distinct color. For a pool-less `bpmn:Process`
@@ -56,6 +56,9 @@ Create a token. Three cases, by node kind:
   the token at the enclosing scope, with the **same label** and color, at `center`.
 - **Boundary event** — create a **child** of the token at the **attached activity**, cloned
   from it (same label/color), at `center`. See [Boundary events](#boundary-events) below.
+- **MI activity** — create a **sub-instance** (`label` = the sub's id), a child of the outer
+  thread token resting on the activity's incoming flow, **stacked** at the node and inheriting its
+  color, at `ready`. See [MI activities](#mi-activities) below.
 
 ```javascript
 simulation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
@@ -89,6 +92,37 @@ await simulation.consumeToken({ node: 'Activity_1', label: 'order-42' }); // the
 
 The interrupting/non-interrupting distinction is the **host's** to act on (the library exposes it
 via `classify(element).interrupting`); both kinds spawn the same way.
+
+### MI activities
+
+A multi-instance activity renders as a **stack of its own instances**. The outer thread's token
+**arrives but never enters** — it rests on the activity's **incoming flow** (assume one in / one
+out) — and from there fans out into *N* sub-instances:
+
+- **Fan-out** — `createToken({ node: MIactivity, label: subLabel })` per sub: a child of the outer
+  thread token, **stacked** at the node, inheriting its color, at `ready`.
+- **Park / spawn window** — as soon as the **first** sub advances `ready→entry`, the outer thread
+  token is **parked** (`state.hidden`, CSS-hidden) and **no more subs may be spawned** (further
+  `createToken` is rejected). One color per instance; subs differ by stack position, not hue.
+- **Run** each sub independently with `advanceToken({ node, label: subLabel, position })`.
+- **Fan-in** — `consumeToken({ node, label: subLabel })` per sub (from `exit`). The decrement drops
+  that sub's stack key; when the **last** sub is consumed, the parent is **un-parked onto the
+  outgoing flow**, ready to travel.
+
+```javascript
+// outer thread "I1" rests on the MI activity's incoming flow (advanceToken'd there)
+simulation.createToken({ node: 'MI_1', label: 'I1#1' });   // fan out
+simulation.createToken({ node: 'MI_1', label: 'I1#2' });
+await simulation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'entry' }); // parks "I1", closes the window
+
+// ... run each sub to exit, then collapse:
+for (const sub of [ 'I1#1', 'I1#2' ]) {
+  await simulation.advanceToken({ node: 'MI_1', label: sub, position: 'exit' });
+  await simulation.consumeToken({ node: 'MI_1', label: sub });
+}
+// "I1" is now un-parked on the outgoing flow:
+await simulation.advanceToken({ node: 'MI_1', label: 'I1', sequenceFlow: 'Flow_out' });
+```
 
 ### `advanceToken({ node, label, sequenceFlow?, position?, bounce? })` → `Promise<token>`
 
@@ -167,12 +201,13 @@ Reset all simulation state and clear the underlying animation.
 
 ## Status
 
-Built and tested today: `createToken` (process / participant / start event / **boundary event**),
-`advanceToken` (flow travel / center-anchor / activity sweep), `forkToken` / `joinTokens`,
-`consumeToken` (subtree cascade + process stack-decrement), `autoFocus`, and the lookups. Most
-node types are covered by composing these (end events = advance-center + consume; tasks = activity
-sweep with `bounce`; start = createToken; boundary = createToken + the fire choreography above).
+Built and tested today: `createToken` (process / participant / start event / **boundary event** /
+**MI activity**), `advanceToken` (flow travel / center-anchor / activity sweep), `forkToken` /
+`joinTokens`, `consumeToken` (subtree cascade + stack-decrement for process roots **and MI subs**),
+`autoFocus`, and the lookups. Most node types are covered by composing these (end events =
+advance-center + consume; tasks = activity sweep with `bounce`; start = createToken; boundary +
+MI = createToken + the choreographies above).
 
-Not yet built: multi-instance fan-out/fan-in, event sub-processes, expanded sub-process entry, and
-the prescribed icon cues (throw/catch, send/receive). For those — and for full manual control —
-drop down to the [`animation`](animation-api.md) service.
+Not yet built: event sub-processes, expanded sub-process entry, and the prescribed icon cues
+(throw/catch, send/receive). For those — and for full manual control — drop down to the
+[`animation`](animation-api.md) service.
