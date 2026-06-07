@@ -929,24 +929,24 @@ describe('animation', function() {
     });
 
 
-    it('getStackIndices gives the membership for the instance on screen', function() {
+    it('getCurrentStacks gives the membership for the instance on screen', function() {
       const tokens = get('animation');
 
-      expect(tokens.getStackIndices('SubTask_1'), 'nothing stacked => {}').to.eql({});
+      expect(tokens.getCurrentStacks('SubTask_1'), 'nothing stacked => {}').to.eql({});
 
       tokens.setStackSize('SubProcess_1', 2);
       tokens.setStackIndex('SubProcess_1', 1);
 
       // a child of the stacked container picks up the container's front index
-      expect(tokens.getStackIndices('SubTask_1')).to.eql({ SubProcess_1: 1 });
+      expect(tokens.getCurrentStacks('SubTask_1')).to.eql({ SubProcess_1: 1 });
 
       // the stacked node itself is included too
       tokens.setStackSize('SubTask_1', 2, { SubProcess_1: 1 });
       tokens.setStackIndex('SubTask_1', 1);
-      expect(tokens.getStackIndices('SubTask_1')).to.eql({ SubProcess_1: 1, SubTask_1: 1 });
+      expect(tokens.getCurrentStacks('SubTask_1')).to.eql({ SubProcess_1: 1, SubTask_1: 1 });
 
       // creating with it lands the token on the visible instance
-      tokens.createToken('SubTask_1', 'V', 'tomato', { position: pos('center-middle') }, tokens.getStackIndices('SubTask_1'));
+      tokens.createToken('SubTask_1', 'V', 'tomato', { position: pos('center-middle') }, tokens.getCurrentStacks('SubTask_1'));
       expect(dotAt('SubTask_1')).to.exist;
       tokens.setStackIndex('SubProcess_1', 0);
       expect(dotAt('SubTask_1'), 'hidden once the outer instance changes').to.not.exist;
@@ -1435,13 +1435,13 @@ describe('animation', function() {
         it('advances the stack index forward and backward', async function() {
           const tokens = get('animation');
           tokens.setStackSize('SubProcess_1', 3);
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(0);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(0);
 
           await tokens.scrollStack('SubProcess_1', 'forward');
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(1);
 
           await tokens.scrollStack('SubProcess_1', 'backward');
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(0);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(0);
         });
 
 
@@ -1450,12 +1450,12 @@ describe('animation', function() {
           tokens.setStackSize('SubProcess_1', 4);
 
           tokens.setStackIndex('SubProcess_1', 5);          // 5 mod 4 = 1
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(1);
           tokens.setStackIndex('SubProcess_1', -1);         // wraps to 3
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(3);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(3);
 
           tokens.setStackSize('SubProcess_1', 2);           // clamp 3 -> 1
-          expect(tokens.getStackIndex('SubProcess_1')).to.equal(1);
+          expect(tokens.getCurrentStack('SubProcess_1')).to.equal(1);
         });
 
 
@@ -1576,7 +1576,7 @@ describe('animation', function() {
       expect(box().querySelector('.bts-stack-shape .djs-group')).to.exist;
 
       await p;
-      expect(tokens.getStackIndex('Process_1')).to.equal(1);
+      expect(tokens.getCurrentStack('Process_1')).to.equal(1);
     });
 
 
@@ -1766,7 +1766,7 @@ describe('animation — collapsed sub-process (drill plane)', function() {
 
     // synchronously (before the promise resolves) the front has stepped and the new
     // instance's token is already shown — not hidden waiting on a 600ms arc
-    expect(animation.getStackIndex('Collapsed_1'), 'front stepped instantly').to.equal(1);
+    expect(animation.getCurrentStack('Collapsed_1'), 'front stepped instantly').to.equal(1);
     const dot = document.querySelector('.bts-token-count[data-node-id="Inner_1"]');
     expect(dot && dot.style.display !== 'none', 'token shown immediately').to.be.true;
 

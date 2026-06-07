@@ -45,6 +45,13 @@ async function main() {
   const elementRegistry = viewer.get('elementRegistry');
   const eventBus = viewer.get('eventBus');
 
+  // count-based convenience for this playground — the service itself is key-based
+  // (setStacks/getStacks); here we just want "N copies" keyed 0..n-1.
+  animation.setStackSize = (node, n, ctx) => {
+    const keys = Array.from({ length: Math.floor(n) || 0 }, (_, i) => i);
+    animation.setStacks(node, keys, ctx);
+  };
+
   window.viewer = viewer;
   window.animation = animation;
 
@@ -215,7 +222,7 @@ async function main() {
     const state = buildState();
     // tag the token with the instance currently on screen, so it shows on a stacked node
     // that's scrolled past instance 0 (otherwise it'd land on the hidden base instance)
-    const stackIndices = animation.getStackIndices(currentNode);
+    const stackIndices = animation.getCurrentStacks(currentNode);
     animation.createToken(currentNode, label, color, state, stackIndices);
     currentToken = { node: currentNode, label, sequenceFlow: state.sequenceFlow || null, stackIndices };
     renderReadouts();

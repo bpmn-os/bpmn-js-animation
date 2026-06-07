@@ -41,10 +41,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     where a flow meets the node, mutually exclusive; `bounce` is the "action needed" cue. **`stackIndices`**
     (T5) is the token's per-instance membership — a map `{ stackedNodeId: instanceKey }` over the stacked
     nodes in its own/ancestor chain. **An instance key is the stable id of an instance** — the count-based
-    `setStackSize` keys instances by their numeric index `0..n-1`, while `updateStacks` (and SimulationAPI,
+    `setStackSize` keys instances by their numeric index `0..n-1`, while `setStacks` (and SimulationAPI,
     which keys by **instance label**) names them. (Omitted/`{}` when nothing is stacked; omitted entry ⇒ 0
     for count-based stacks. `_contextKey` keeps only truthy entries, so `0`/`null` normalize away to the same
-    identity — a non-stacked ancestor must never carry a positive index; its real `getStackIndex` is 0.)
+    identity — a non-stacked ancestor must never carry a positive index; its real `getCurrentStack` is 0.)
   - **Identity = `(node, label, state.sequenceFlow, stackIndices)`** — key
     `` `node|label|sequenceFlow|A:2,B:1` `` (instance entries are non-zero, sorted; `_contextKey`).
     The rest flow lets same-label tokens **coexist** on distinct flows at one node (branches piling up
@@ -61,16 +61,17 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `setState(node,label,state,selector?)`, `removeToken(node,label,selector?)`,
     `selectToken(node,label,selector?)` / `deselectToken(…)` — `selector` = `{ sequenceFlow?,
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
-    `getSelectedNodes() → string[]`, `updateStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
+    `getSelectedNodes() → string[]`, `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
     set a node's ordered instance **keys**, front first — removing one never shifts the others),
-    `getStacks(node) → key[]`, `setStackSize(node,size,ancestorStackIndices?)` (count-based shim over
-    `updateStacks`, keying instances `0..n-1`), `getStackSize(node) → number`, `getStackIndex(node) → key`
-    (the front instance's key), `getStackIndices(node) → {id:key}` (the membership for the on-screen
-    instance — node's own + stacked ancestors' front keys), `setStackIndex(node,index)`,
-    `moveToFront(node,instanceIndex)` / `moveToBack(node,instanceIndex)`, `getProcessBox() → string|null`,
+    `getStacks(node) → key[]` (count = `.length`), `getCurrentStack(node) → key`
+    (the front instance's key), `getCurrentStacks(node) → {id:key}` (the membership for the on-screen
+    instance — node's own + stacked ancestors' front keys),
+    `moveToFront(node,key)` / `moveToBack(node,key)`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
     `throwIcon(node) → Promise`, `catchIcon(node) → Promise`, `getTokens(filter?)` (insertion order),
-    `setFilter(predicate|null)`, `clear`, `setAnimationDuration`. `moveToFront`/`moveToBack`/`setStackIndex`
+    `setFilter(predicate|null)`, `clear`, `setAnimationDuration`. (The count/index conveniences
+    `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
+    `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
     reorder the node's **`stackOrder`** in the current context (front = the shown instance); `scrollStack`
     rotates it. `setFilter` hides non-matching tokens (kept, not removed; excluded from rendering + the
     cap, and in-flight ones `animation.hide()`) via `_isVisible` checked in `_renderNode`.
@@ -78,7 +79,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     disambiguate; `setState` is a **partial merge** and rekeys (merging) when it changes the
     rest flow/position — that's how a join completes. Crossing the **flow↔anchor** boundary
     adjusts the token's own-node stack index (anchoring a flow token commits it into the
-    current front instance: `stackIndices[node] = getStackIndex(node)`; stepping onto a flow
+    current front instance: `stackIndices[node] = getCurrentStack(node)`; stepping onto a flow
     drops it). When the rest point moves and `animationDuration > 0`, the dot **glides** to
     the new point (reusing `_move`, over `_duration/3`) instead of jumping; the model updates
     synchronously (glide is cosmetic).
@@ -101,8 +102,8 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `size>=1` and `0`/`null` clears it; the first instance is the node itself (or the process box), so only the
     `size-1` extras become copies — **size 1 = a single instance, no copies** (`getStackSize` returns 1).
     **Instances are identified by stable keys** (`_stackOrder` is a `key[]`): `setStackSize` keys them by
-    numeric index `0..n-1`, while **`updateStacks(node, keys, ctx?)`** sets explicit keys (SimulationAPI uses
-    each instance's **label**). So removing one instance drops its *specific* key (`updateStacks` minus that
+    numeric index `0..n-1`, while **`setStacks(node, keys, ctx?)`** sets explicit keys (SimulationAPI uses
+    each instance's **label**). So removing one instance drops its *specific* key (`setStacks` minus that
     key) — survivors keep their keys and stay rendered, no positional gap (this is how `consume` shrinks a
     process stack). `getStacks(node) → key[]` reads the order. Static
     copies are **outline-only**; their **contents** are only
@@ -114,12 +115,12 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     *instance 0 is the base context*). `_stackSizes`/`_stackOrder` are `Map<contextKey, …>` per node;
     `setStackSize(node, size, ancestorStackIndices)` declares the size for *that outer-instance context* (**omit =
     the context currently on screen**, `_currentContext(node)`; pass `{}` for the base explicitly).
-    `getStackSize`/`getStackIndex(node)` **resolve** against `_currentContext(node)` (each stacked ancestor's
+    `getStackSize`/`getCurrentStack(node)` **resolve** against `_currentContext(node)` (each stacked ancestor's
     current front index). **Contexts are independent — no fall-back to the base** (a size set for one outer
     instance never leaks to another; an unset context has no stack). So a nested activity can have a different
     count per outer instance, with **no callback**.
   - **One resolution rule** drives all token visibility (`_isVisible`): a token shows iff `_filter` passes and,
-    for every stacked node `A` in its `node`+ancestors, `(stackIndices[A] ?? 0) === getStackIndex(A)`. So a
+    for every stacked node `A` in its `node`+ancestors, `(stackIndices[A] ?? 0) === getCurrentStack(A)`. So a
     stacked node renders its **current front instance's** tokens (at the node *and* in scope) — no "show first
     token", no `_scopeHidden`, no `getInstance`. Non-stacked / `size≤1` nodes aren't checked → render as before.
     **Exception: a token resting on a sequence flow ignores its own node's stack index** (only ancestors gate
@@ -147,7 +148,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     off-screen), `scrollStack` **swaps instantly** instead — rotate `stackOrder` + `_renderStackSubtree`, no
     overlay-hide — otherwise the on-plane token overlays would just vanish for 600ms and snap back. `moveToFront`/`moveToBack(
     node, key)` reorder the same `stackOrder` by **key** and `setStackIndex(node, index)` jumps by numeric
-    position (count-based stacks; wraps); `getStackIndex` = `stackOrder[0]` (the **front key**). With-content clones deep-clone the sibling `.djs-children` (compensated
+    position (count-based stacks; wraps); `getCurrentStack` = `stackOrder[0]` (the **front key**). With-content clones deep-clone the sibling `.djs-children` (compensated
     `translate(-x,-y)`; `.djs-hit`/outlines stripped) + inline arrowhead `<marker>`s with fresh `bts-marker-N`
     ids. The `+k` marker stays visible through the gesture (stack-level). Composes for nesting (the rule checks
     every stacked ancestor) and event sub-processes (no at-node token → only scope tokens).

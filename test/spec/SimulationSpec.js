@@ -71,18 +71,18 @@ describe('SimulationAPI', function() {
     it('keeps the first instance in front by default', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: PROCESS, label: 'I2' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal('I1');
+      expect(get('animation').getCurrentStack(PROCESS)).to.equal('I1');
     });
 
     it('reveals the touched instance when auto-focus is on', function() {
       sim().autoFocus(true);
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: PROCESS, label: 'I2' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal('I2');
+      expect(get('animation').getCurrentStack(PROCESS)).to.equal('I2');
 
       sim().autoFocus(false);
       sim().createToken({ node: PROCESS, label: 'I3' });
-      expect(get('animation').getStackIndex(PROCESS)).to.equal('I2'); // unchanged
+      expect(get('animation').getCurrentStack(PROCESS)).to.equal('I2'); // unchanged
     });
 
     it('rejects an unsupported node', function() {

@@ -25,7 +25,35 @@ export function bootstrap(xml, config = {}) {
       ...config
     });
 
+    installStackShims(viewer.get('animation'));
+
     return viewer.importXML(xml);
+  };
+}
+
+// Count/index conveniences the specs use, kept out of the production service (it's key-based:
+// setStacks/getStacks/getCurrentStack/moveTo*). Attached per-instance here so existing call-sites
+// — get('animation').setStackSize(node, n), getStackSize(node), setStackIndex(node, i) — still work.
+function installStackShims(animation) {
+  animation.getStackSize = node => animation.getStacks(node).length;
+
+  animation.setStackSize = (node, n, ctx) => {
+    n = Math.floor(n) || 0;
+    // numeric keys 0..n-1, preserving the current order's arrangement where it still fits
+    const current = ctx === undefined ? animation.getStacks(node) : [];
+    const keys = current.filter(k => k < n);
+    for (let i = 0; i < n; i++) {
+      if (!keys.includes(i)) keys.push(i);
+    }
+    animation.setStacks(node, keys, ctx);
+  };
+
+  animation.setStackIndex = (node, index) => {
+    const size = animation.getStacks(node).length;
+    if (size <= 1) {
+      return;
+    }
+    animation.moveToFront(node, ((Math.floor(index) || 0) % size + size) % size);
   };
 }
 
