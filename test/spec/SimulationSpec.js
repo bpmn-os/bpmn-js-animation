@@ -219,6 +219,23 @@ describe('SimulationAPI', function() {
         .to.throw(/no enclosing-scope instance/);
     });
 
+    it('keeps each process instance\'s firings across instances + scrolling (no orphaning)', async function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: ESTART, label: 'I1.e1' }); // fire for I1 while the process is size 1
+
+      // a 2nd process instance grows the process stack 1 -> 2 — the context-key flip the bug hit
+      sim().createToken({ node: PROCESS, label: 'I2' });
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'I1.e1' ]); // I1's firing is NOT orphaned
+
+      // fire for I2 (front it first); each instance keeps its own firings as we scroll between them
+      await get('animation').moveToFront(PROCESS, 'I2');
+      sim().createToken({ node: ESTART, label: 'I2.e1' });
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'I2.e1' ]);
+
+      await get('animation').moveToFront(PROCESS, 'I1');
+      expect(get('animation').getStacks(EVTSP)).to.eql([ 'I1.e1' ]);
+    });
+
   });
 
 

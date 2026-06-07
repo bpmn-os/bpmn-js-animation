@@ -139,9 +139,13 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `setStackSize(node, size, ancestorStackIndices)` declares the size for *that outer-instance context* (**omit =
     the context currently on screen**, `_currentContext(node)`; pass `{}` for the base explicitly).
     `getStackSize`/`getCurrentStack(node)` **resolve** against `_currentContext(node)` (each stacked ancestor's
-    current front index). **Contexts are independent — no fall-back to the base** (a size set for one outer
+    current front key). **Contexts are independent — no fall-back to the base** (a size set for one outer
     instance never leaks to another; an unset context has no stack). So a nested activity can have a different
-    count per outer instance, with **no callback**.
+    count per outer instance, with **no callback**. **`_currentContext` includes an ancestor at size `>= 1`**
+    (not only `>1`, which is the *`_isVisible`* visibility gate) — so a single **label-keyed** instance is
+    already in the context and the key stays **stable** when the outer node grows 1→2 (a 2nd process instance
+    no longer orphans descendant MI/event-sub stacks). `_contextKey` still drops a count-based front index of
+    `0`, so base stays base; only a truthy (label) key participates at size 1.
   - **One resolution rule** drives all token visibility (`_isVisible`): a token shows iff,
     for every stacked node `A` in its `node`+ancestors, `(stackIndices[A] ?? 0) === getCurrentStack(A)`. So a
     stacked node renders its **current front instance's** tokens (at the node *and* in scope) — no "show first
