@@ -78,7 +78,7 @@ describe('simulation/classify', function() {
 
     it('classifies an interrupting boundary event (cancelActivity default)', function() {
       expect(classifyId('BoundaryEvent_1')).to.include({
-        profile: 'event', event: 'boundary', interrupting: true
+        profile: 'event', event: 'boundary', interrupting: true, attachedTo: 'Activity_1'
       });
     });
 

@@ -7,6 +7,7 @@ import collaborationXML from '../diagrams/collaboration.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
 import exclusiveGatewayXML from '../diagrams/exclusive-gateway.bpmn'; // Activity_1 is a standard loop
+import boundaryXML from '../diagrams/boundary.bpmn';
 
 const PROCESS = 'Process_1';
 
@@ -87,7 +88,7 @@ describe('SimulationAPI', function() {
 
     it('rejects an unsupported node', function() {
       expect(() => sim().createToken({ node: 'MultiInstanceActivity_1', label: 'X' }))
-        .to.throw(/not a process\/participant or a start event/);
+        .to.throw(/not a process\/participant, a start event, or a boundary event/);
     });
 
     it('rejects an unknown node', function() {
@@ -628,6 +629,82 @@ describe('SimulationAPI', function() {
       // completed → entry is backward but not to ready — still allowed for a loop
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'entry' });
       expect(sim().getEntry('Activity_1', 'I1').position).to.equal('entry');
+    });
+
+  });
+
+
+  describe('boundary events', function() {
+
+    // Process_1: StartEvent_1 → Activity_1 (task) → Flow_norm → EndEvent_2; BoundaryEvent_1
+    // (interrupting, error) on Activity_1 → Flow_00uuuqq → EndEvent_1.
+    beforeEach(bootstrap(boundaryXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    function sim() {
+      return get('simulation');
+    }
+
+    // an instance token swept onto Activity_1 (anchored there)
+    async function toActivity() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_09j0ytu' }); // → Activity_1
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });                // sweep in
+    }
+
+    it('spawns a boundary listener as a child of the attached activity', async function() {
+      await toActivity();
+      const activityToken = sim().getToken('Activity_1', 'I1');
+
+      const token = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+
+      expect(token.label).to.equal('I1');
+      expect(token.color).to.equal(activityToken.color);          // cloned from the host
+      expect(token.state.position).to.include({ left: 0.5, top: 0.5 }); // center
+      expect(sim().getChildren(activityToken)).to.include(token);
+    });
+
+    it('rejects when the attached activity has no token', function() {
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      expect(() => sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' }))
+        .to.throw(/no token <I1> at the attached activity <Activity_1>/);
+    });
+
+    it('cascades: consuming the activity removes its boundary listener', async function() {
+      await toActivity();
+      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      expect(sim().getToken('BoundaryEvent_1', 'I1')).to.exist;
+
+      await sim().consumeToken({ node: 'Activity_1', label: 'I1' });
+      expect(sim().getToken('BoundaryEvent_1', 'I1')).to.be.undefined; // gone with its parent
+    });
+
+    it('sheds the boundary listener when the activity departs normally (W1)', async function() {
+      await toActivity();
+      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+
+      // the activity completes and departs on its normal outflow → its children are shed
+      await sim().advanceToken({ node: 'Activity_1', label: 'I1', sequenceFlow: 'Flow_norm' }); // → EndEvent_2
+      expect(sim().getToken('BoundaryEvent_1', 'I1')).to.be.undefined;
+    });
+
+    it('interrupting fire: the boundary token survives consuming the activity', async function() {
+      await toActivity();
+      const root = sim().getToken(PROCESS, 'I1');
+      const activityToken = sim().getToken('Activity_1', 'I1');
+      const boundary = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      expect(sim().getChildren(activityToken)).to.include(boundary);
+
+      // fire: depart the boundary token onto its outflow — it auto-reparents to the scope
+      const landed = await sim().advanceToken({ node: 'BoundaryEvent_1', label: 'I1', sequenceFlow: 'Flow_00uuuqq' });
+      expect(sim().getChildren(root)).to.include(landed);          // re-parented to the process root
+      expect(sim().getChildren(activityToken)).to.not.include(landed);
+
+      // ... then consume the interrupted activity — the boundary token is out of its subtree
+      await sim().consumeToken({ node: 'Activity_1', label: 'I1' });
+      expect(sim().getToken('Activity_1', 'I1')).to.be.undefined;  // activity gone
+      expect(sim().getToken('EndEvent_1', 'I1')).to.equal(landed); // boundary token survived at the far node
     });
 
   });

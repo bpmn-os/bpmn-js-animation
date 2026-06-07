@@ -47,20 +47,48 @@ entered / running / done) is your convention.
 
 ### `createToken({ node, label, bounce? })` → `token`
 
-Create a token. Two cases, by node kind:
+Create a token. Three cases, by node kind:
 
 - **Process / Participant** — start a new instance: bump the node's instance stack and create
   the **root** token at `ready` with a fresh distinct color. For a pool-less `bpmn:Process`
   this also draws the [implicit process box](animation-api.md#implicit-process-box).
 - **Start event** of a Process / SubProcess (not an event sub-process) — create a **child** of
   the token at the enclosing scope, with the **same label** and color, at `center`.
+- **Boundary event** — create a **child** of the token at the **attached activity**, cloned
+  from it (same label/color), at `center`. See [Boundary events](#boundary-events) below.
 
 ```javascript
 simulation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
 simulation.createToken({ node: 'StartEvent_1', label: 'order-42' });   // its child at the start event
 ```
 
-Throws if a token `(node, label)` already exists, or the scope has no token of that label.
+Throws if a token `(node, label)` already exists, or the scope/host has no token of that label.
+
+### Boundary events
+
+`createToken({ node: boundaryEvent, label })` attaches a **listener token** as a child of the
+token at the boundary's host activity. Its lifecycle rides the parent-child tree — no bespoke
+cleanup:
+
+- **Non-interrupting** (or a listener that never triggers) — the host stays; the listener is just
+  a child, **shed automatically when the activity departs** (invariant W1: a departing token sheds
+  its children) or is consumed.
+- **Interrupting** — the fire is two existing calls. `advanceToken` the boundary token onto its
+  outflow — a departing boundary token **auto-reparents to the enclosing scope**, leaving the
+  activity's subtree — then `consumeToken` the (interrupted) activity. The boundary token survives
+  and continues.
+
+```javascript
+// while the activity is busy, a boundary listener arms
+simulation.createToken({ node: 'BoundaryEvent_1', label: 'order-42' });
+
+// interrupting fire:
+await simulation.advanceToken({ node: 'BoundaryEvent_1', label: 'order-42', sequenceFlow: 'Flow_err' });
+await simulation.consumeToken({ node: 'Activity_1', label: 'order-42' }); // the listener token lives on
+```
+
+The interrupting/non-interrupting distinction is the **host's** to act on (the library exposes it
+via `classify(element).interrupting`); both kinds spawn the same way.
 
 ### `advanceToken({ node, label, sequenceFlow?, position?, bounce? })` → `Promise<token>`
 
@@ -139,12 +167,12 @@ Reset all simulation state and clear the underlying animation.
 
 ## Status
 
-Built and tested today: `createToken` (process / participant / start event), `advanceToken`
-(flow travel / center-anchor / activity sweep), `forkToken` / `joinTokens`, `consumeToken`
-(subtree cascade + process stack-decrement), `autoFocus`, and the lookups. Most node types are
-covered by composing these (end events = advance-center + consume; tasks = activity sweep with
-`bounce`; start = createToken).
+Built and tested today: `createToken` (process / participant / start event / **boundary event**),
+`advanceToken` (flow travel / center-anchor / activity sweep), `forkToken` / `joinTokens`,
+`consumeToken` (subtree cascade + process stack-decrement), `autoFocus`, and the lookups. Most
+node types are covered by composing these (end events = advance-center + consume; tasks = activity
+sweep with `bounce`; start = createToken; boundary = createToken + the fire choreography above).
 
-Not yet built: multi-instance fan-out/fan-in, event sub-processes, boundary events, expanded
-sub-process entry, and the prescribed icon cues (throw/catch, send/receive). For those — and for
-full manual control — drop down to the [`animation`](animation-api.md) service.
+Not yet built: multi-instance fan-out/fan-in, event sub-processes, expanded sub-process entry, and
+the prescribed icon cues (throw/catch, send/receive). For those — and for full manual control —
+drop down to the [`animation`](animation-api.md) service.
