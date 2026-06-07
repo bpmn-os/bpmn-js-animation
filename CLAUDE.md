@@ -33,11 +33,11 @@ inherits its parent's color** (no per-instance "related shade" ring). `randomcol
 package's one runtime dependency added for this; a `seed` option pins the palette for tests.
 
 A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one service,
-`animation`** (`lib/Animation.js`), which owns both token animation and node animation.
+`animation`** (`lib/AnimationAPI.js`), which owns both token animation and node animation.
 (The earlier split into `tokens` + `animation` services was merged — `createToken`/
 `setState`/etc. *are* animation concerns, and one service beats a fuzzy boundary.)
 
-- **`animation`** (`lib/Animation.js`) — the whole public API + renderer + low-level tween.
+- **`animation`** (`lib/AnimationAPI.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state, selected, stackIndices }`. `state = { position,
     sequenceFlow, bounce }` is a pure visual descriptor (no lifecycle meaning baked in): `position` is a
     point `{ left, top, hoffset, voffset }` on/around the shape — `left`/`top` are **fractions** (may exceed
@@ -216,7 +216,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match
     the front), in insertion order — no special branch.
-  - **Low-level tween:** `TokenAnimation` lives at the **bottom of `Animation.js`, below a
+  - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
     (`config.animation.animationDuration` / `setAnimationDuration`, default 1000ms — *not*
@@ -237,7 +237,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
 
 ## Vendored code
 
-The **low-level tween** at the bottom of `lib/Animation.js` (below the banner) derives from
+The **low-level tween** at the bottom of `lib/AnimationAPI.js` (below the banner) derives from
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /

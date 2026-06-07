@@ -2,7 +2,7 @@ import { expect } from 'chai';
 
 import { bootstrap, cleanup, get } from '../TestHelper';
 
-import { classify, isStackable } from '../../lib/simulation/classify.js';
+import { classify, isStackable } from '../../lib/classify.js';
 
 import miTaskXML from '../diagrams/mi-task.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
