@@ -179,10 +179,17 @@ function render() {
     });
   }
 
-  // createToken — child of the scope's token, at a (plain) start event
+  // createToken — a child at a (plain) start event, for the enclosing scope's ON-SCREEN instance.
+  // The label follows the front instance of the pool/process (scroll to pick it), NOT a stale
+  // input — so after scrolling, the child lands on the displayed instance.
   if (is(el, 'bpmn:StartEvent') && !isEvtSp(el.parent)) {
-    button(actions, 'createToken (at start)', () =>
-      run(() => sim.createToken({ node: el.id, label: label() }), `createToken(${el.id}, ${label()})`));
+    const inst = el.parent && svc('animation').getCurrentStack(el.parent.id);
+    if (inst) {
+      button(actions, `createToken (at start, ${inst})`, () => {
+        setLabel(inst);
+        run(() => sim.createToken({ node: el.id, label: inst }), `createToken(${el.id}, ${inst})`);
+      });
+    }
   }
 
   // fire an event sub-process — each click is a new (non-interrupting) firing: a stacked child

@@ -133,6 +133,23 @@ describe('SimulationAPI', function() {
       expect(get('animation').getStackSize('Participant_2')).to.equal(1);
     });
 
+    it('creates distinct start-event children per participant instance (scroll-safe)', async function() {
+      const sim = get('simulation');
+      sim.createToken({ node: 'Participant_1', label: 'A1' });
+      sim.createToken({ node: 'Participant_1', label: 'A2' });
+
+      const c1 = sim.createToken({ node: 'StartEvent_1', label: 'A1' }); // child of A1 (front)
+      expect(c1.stackIndices).to.include({ Participant_1: 'A1' });
+
+      await get('animation').moveToFront('Participant_1', 'A2'); // scroll to A2
+      const c2 = sim.createToken({ node: 'StartEvent_1', label: 'A2' });
+      expect(c2.stackIndices).to.include({ Participant_1: 'A2' });
+
+      // both coexist, addressable, distinct
+      expect(sim.getToken('StartEvent_1', 'A1')).to.equal(c1);
+      expect(sim.getToken('StartEvent_1', 'A2')).to.equal(c2);
+    });
+
   });
 
 
