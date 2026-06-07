@@ -234,7 +234,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     grouped into **location clusters** — keyed by the **resolved point** (`anchorPoint`, rounded) so equal/
     equivalent positions queue together, or by rest `sequenceFlow`; each cluster is its own overlay
     (`overlays.add`, `bts-token-count`) at the computed point (`_clusterPoint`: `anchorPoint` of the position,
-    or the flow's node-end waypoint). **Dot size:** the default is small (20px, the moving-token size — so it
+    or the flow's node-end waypoint). **Boundary-event avoidance** (`_avoidBoundaryEvents`): if the activity
+    has a boundary event on its **top edge** (`element.attachers`), top-edge sweep points (`top:0`) drop by a
+    fixed `BOUNDARY_VOFFSET` so the dots don't sit under the boundary symbol (the whole row shifts together;
+    lower-half anchors untouched). **Dot size:** the default is small (20px, the moving-token size — so it
     doesn't cover an event/gateway symbol); an **anchored** token on a `bpmn:Activity`/`bpmn:Process` gets the
     larger 25px badge (`.bts-on-activity`, set per cluster via `big`). Per dot: `background: color`, `title =
     label`, `.bts-anim-<animate>` when `animate`, `.bts-selected` when `selected`, `.bts-hidden` (`display:none`) when `hidden`,

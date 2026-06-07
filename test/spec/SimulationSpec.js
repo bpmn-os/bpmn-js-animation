@@ -736,6 +736,19 @@ describe('SimulationAPI', function() {
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });                // sweep in
     }
 
+    it('shifts top-edge sweep tokens down so they clear a top boundary event', function() {
+      const animation = get('animation');
+      const activity = get('elementRegistry').get('Activity_1'); // BoundaryEvent_1 sits on its top edge
+
+      // a top:0 sweep point drops by BOUNDARY_VOFFSET — off the boundary symbol
+      const top = animation._clusterPoint(activity, { position: { left: 0.5, top: 0, hoffset: 0, voffset: 0 } });
+      expect(top.y).to.equal(20);
+
+      // a lower-half anchor (e.g. center) is untouched
+      const center = animation._clusterPoint(activity, { position: { left: 0.5, top: 0.5, hoffset: 0, voffset: 0 } });
+      expect(center.y).to.equal(activity.height / 2);
+    });
+
     it('spawns a boundary listener as a child of the attached activity', async function() {
       await toActivity();
       const activityToken = sim().getToken('Activity_1', 'I1');
