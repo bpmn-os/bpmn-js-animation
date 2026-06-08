@@ -27,6 +27,11 @@ export function bootstrap(xml, config = {}) {
 
     installStackShims(viewer.get('animation'));
 
+    // the bundled `simulator` turns on `simulation.autoFocus` (the interactive default); the
+    // API-level specs assert the autofocus-OFF default (front = first instance), so reset it —
+    // the simulator's own focus behaviour is exercised in SimulatorSpec where it matters.
+    viewer.get('simulation').autoFocus(false);
+
     return viewer.importXML(xml);
   };
 }

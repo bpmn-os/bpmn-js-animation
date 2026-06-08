@@ -209,7 +209,21 @@ is `consumeToken` on its root.
 
 When on, every call that touches a token **reveals that token's instance** — bringing it to the
 front of its stack(s) (animated, via [`moveToFront`](animation-api.md#instance-stacks)) so the
-just-touched token is the one on screen. Off by default; global.
+just-touched token is the one on screen. Off by default; global. While a reveal arc is playing,
+`advanceToken` **waits for it** before moving, so an advance never overlaps the reveal gesture.
+
+### `setCue(node, label, animate, selector?)`
+
+Set a token's motion cue (`state.animate`) **without moving it** — e.g. `pulse-pause` while a
+user picks an outflow, or `bounce-pause` for an MI parent idling on its flow. `animate` is an
+effect name or `null` to clear. The optional `selector` (`{ sequenceFlow?, stackIndices? }`)
+disambiguates a branch/instance; omit to use the single token there.
+
+### `playTokenEffect(node, label, effect, selector?)` → `Promise`
+
+Play a **one-shot** dot gesture on a resting token (delegates to [`animation.playTokenEffect`](animation-api.md))
+— e.g. a `flip` when an event triggers, or a `fade-out` sequenced before `consumeToken`. Resolves
+when the gesture ends.
 
 ### Lookups
 

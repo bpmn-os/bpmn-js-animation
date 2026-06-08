@@ -1,0 +1,56 @@
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
+
+import 'bpmn-js/dist/assets/diagram-js.css';
+import 'bpmn-js/dist/assets/bpmn-js.css';
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
+
+import { is } from 'bpmn-js/lib/util/ModelUtil';
+
+// The headline drop-in module (same shape as adding bpmn-js-token-simulation): just load it
+// and the simulation is driven entirely by double-clicking — no orchestration code here.
+import SimulatorModule from '../lib/index.js';
+import '../assets/token-animation.css';
+
+import linearXML from '../test/diagrams/linear.bpmn?raw';
+import processXML from './process.bpmn?raw';
+
+const DIAGRAMS = {
+  linear: linearXML,     // start → task → end (the full lifecycle works end-to-end)
+  process: processXML    // gateways / MI / boundary / event-sub — partial (upcoming slices)
+};
+
+const viewer = new NavigatedViewer({
+  container: '#canvas',
+  additionalModules: [ SimulatorModule ]
+});
+
+const $ = s => document.querySelector(s);
+
+function log(msg) {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  $('#log').prepend(d);
+}
+
+async function load(name) {
+  await viewer.importXML(DIAGRAMS[name]);
+  viewer.get('canvas').zoom('fit-viewport', 'auto');
+  log(`loaded "${name}" — double-click the start event to spawn an instance`);
+}
+
+// light activity log so you can see what each double-click triggered
+const bus = viewer.get('eventBus');
+bus.on('element.dblclick', e => {
+  if (e.element && is(e.element, 'bpmn:StartEvent')) {
+    log(`spawn @ ${e.element.id}`);
+  }
+});
+bus.on('token.dblclick', e => log(`advance ${e.label} @ ${e.node}`));
+
+$('#diagram').addEventListener('change', e => load(e.target.value));
+$('#clear').addEventListener('click', () => {
+  viewer.get('simulation').clear();
+  log('cleared tokens');
+});
+
+load('linear');
