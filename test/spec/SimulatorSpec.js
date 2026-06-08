@@ -5,6 +5,7 @@ import { bootstrap, cleanup, get } from '../TestHelper';
 import linearXML from '../diagrams/linear.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
 import boundaryXML from '../diagrams/boundary.bpmn';
+import terminateXML from '../diagrams/terminate.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -298,6 +299,28 @@ describe('simulator — boundary events', function() {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     expect(tokenAt('CatchEvent_1', label)).to.not.exist; // triggered + departed
+  });
+
+});
+
+
+describe('simulator — terminate event', function() {
+
+  // StartEvent_1 → Gateway_Split (parallel) → {Task_1 (waits) | TerminateEnd (terminate)}
+  beforeEach(bootstrap(terminateXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('a terminate end event kills the whole instance (every sibling token)', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    // the split forks; one branch reaches the terminate end event → it kills the other branch
+    // (waiting at Task_1) and the process box along with it
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    expect(simulation.getTokens('Task_1', label)).to.have.length(0); // sibling killed
+    expect(tokenAt('TerminateEnd', label)).to.not.exist;
+    expect(tokenAt('Process_1', label)).to.not.exist;                // instance terminated
   });
 
 });

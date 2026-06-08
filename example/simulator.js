@@ -13,12 +13,14 @@ import '../assets/token-animation.css';
 
 import linearXML from '../test/diagrams/linear.bpmn?raw';
 import boundaryXML from '../test/diagrams/boundary.bpmn?raw';
+import terminateXML from '../test/diagrams/terminate.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
-  linear: linearXML,    // start → task → end (the full lifecycle works end-to-end)
-  boundary: boundaryXML, // task with both an interrupting + a non-interrupting boundary event
-  process: processXML   // parallel split + loop task; MI / event-sub — partial (upcoming)
+  linear: linearXML,       // start → task → end (the full lifecycle works end-to-end)
+  boundary: boundaryXML,   // task with both an interrupting + a non-interrupting boundary event
+  terminate: terminateXML, // parallel split → one branch terminates the whole instance
+  process: processXML      // parallel split + loop task; MI / event-sub — partial (upcoming)
 };
 
 const viewer = new NavigatedViewer({
