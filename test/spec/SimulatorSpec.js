@@ -403,6 +403,34 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
 });
 
 
+describe('consume — synchronous model drop, async ghost flip-fade', function() {
+
+  // a non-zero duration so the flip-fade is genuinely in flight (instant at 0 would hide the point)
+  beforeEach(bootstrap(linearXML, { animation: { animationDuration: 45 } }));
+  afterEach(cleanup);
+
+  it('drops the token from the model at once and flip-fades a detached ghost that self-removes', async function() {
+    const animation = get('animation');
+    const container = get('canvas').getContainer();
+
+    animation.createToken('Task_1', 'I1', 'red');
+    expect(animation.getTokens(t => t.label === 'I1')).to.have.length(1);
+
+    // gestured removal — NOT awaited; the model must drop synchronously
+    animation.removeToken('Task_1', 'I1', undefined, [ 'flip', 'fade-out' ]);
+    expect(animation.getTokens(t => t.label === 'I1')).to.have.length(0); // gone from the model immediately
+
+    // a detached ghost is flip-fading in its own layer (survives re-renders)
+    expect(container.querySelectorAll('.bts-token-ghost')).to.have.length(1);
+
+    // ...and it self-removes once the gesture finishes
+    await new Promise(resolve => setTimeout(resolve, 300));
+    expect(container.querySelectorAll('.bts-token-ghost')).to.have.length(0);
+  });
+
+});
+
+
 describe('simulator — standard-loop activity', function() {
 
   // StartEvent_1 → Task_loop (↻ standard loop) → EndEvent_1

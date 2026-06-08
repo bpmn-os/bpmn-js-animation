@@ -199,7 +199,7 @@ membership, inheriting any children). Carry it onward with `advanceToken`.
 > A converging *exclusive* gateway is an uncontrolled merge, not a join — there each token just
 > passes through with `advanceToken` (center-anchor).
 
-### `consumeToken({ node, label })` → `Promise<token[]>`
+### `consumeToken({ node, label, gesture? })` → `Promise<token[]>`
 
 Remove the **anchored** target token **and its whole subtree** (descendants on flows included).
 Resolves with the removed tokens. If the target sits at a **stacked host** (a process /
@@ -209,6 +209,12 @@ decremented — consuming the last process instance removes its box.
 The target must be *anchored*; a token in transit on a flow can't be consumed directly (anchor
 it first), though descendants on flows **are** torn down by the cascade. Terminating an instance
 is `consumeToken` on its root.
+
+The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the
+moment this returns (don't await it to observe the removal). Pass `gesture: true` to flip-fade each
+removed dot on the way out: the whole subtree gestures **simultaneously** on **detached "ghost"
+clones** that play out and self-remove independently of the model — so a consume never blocks the
+caller, and the gesture survives any concurrent re-render.
 
 ### `autoFocus(on = true)`
 

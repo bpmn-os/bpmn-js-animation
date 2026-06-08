@@ -104,6 +104,19 @@
   display: none;
 }
 
+/* consume "ghost" layer — detached clones of a dot, flip-fading out **after** the model dropped the
+   token. Independent of the overlay re-render, so the gesture survives concurrent re-renders. */
+.bts-token-ghosts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 100;
+}
+.bts-token-ghost {
+  position: absolute;
+}
+
 /* selected resting token — blue ring with a small gap (raised above siblings) */
 .bts-token-count.bts-selected {
   outline: 2px solid var(--token-simulation-blue-selected, hsl(205, 100%, 50%));

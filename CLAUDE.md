@@ -89,7 +89,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
   - **API:** `createToken(node,label,color,state?,stackIndices?)`,
     `sendToken([{node,label,sequenceFlow,stackIndices?},…]) → Promise<Token[]>` (token must already rest on
     `sequenceFlow`; travels to the far node, stays on the flow),
-    `setState(node,label,state,selector?)`, `removeToken(node,label,selector?)`,
+    `setState(node,label,state,selector?)`, `removeToken(node,label,selector?,gesture?)`,
     `selectToken(node,label,selector?)` / `deselectToken(…)` — `selector` = `{ sequenceFlow?,
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
@@ -102,7 +102,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `throwIcon(node,label,selector?) → Promise`, `catchIcon(node,label,selector?) → Promise`,
     `playTokenEffect(node,label,effect,selector?) → Promise` (a **one-shot** dot gesture —
     `.bts-once-<effect>` for a third of a token-move (quick feedback) then stripped; transient, unlike the looping `state.animate`;
-    sequence it before a depart/consume), `getTokens(filter?)` (insertion order),
+    sequence it before a depart/consume; reuses `_playOnce`, shared with the ghost below), `getTokens(filter?)` (insertion order),
     `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
     `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
@@ -262,6 +262,18 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     never collide. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match
     the front), in insertion order — no special branch.
+  - **Consume = synchronous model drop + async "ghost" gesture (shape ⟂ identity).** `removeToken(node,
+    label,selector,gesture?)` drops the token's **identity** (model: `_tokens`/`_nodeTokens`, and via
+    `consumeToken`→`_tearDown` the `_tokenMap`) **synchronously** — callers never await a fade to observe
+    the removal. For a **gestured** removal (`gesture` = effect names, e.g. `['flip','fade-out']`; threaded
+    from `consumeToken({…,gesture:true})`), the live dot is **cloned into a detached "ghost"** (`_ghostFor`)
+    in a persistent `.bts-token-ghosts` layer (in the canvas container, `_ghostLayer`) at its on-screen
+    point, the identity is dropped + `_renderNode` runs (the live cluster loses it), then `_playGhost` plays
+    the effects (`_playOnce`, shared with `playTokenEffect`) and **removes the clone on `animationend`** —
+    fire-and-forget. The ghost is **outside `_renderNode`**, so a concurrent re-render can't wipe the
+    in-flight gesture (the bug that made a fire-and-forget consume's dot **vanish instantly**). A whole
+    subtree gestures **simultaneously** (one synchronous `_tearDown` loop). Cleared by `clear`. **Never block
+    a reposition/travel on a consume** — fire the gesture and proceed in the same tick.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
