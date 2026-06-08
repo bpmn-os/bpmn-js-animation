@@ -95,8 +95,10 @@ state = {
   **instance** — pass it back as the selector to address that token, since a stacked node shows
   only its front instance).
 - `token.dblclick` — same payload as `token.click`; fired on a **double-click of the token dot**
-  (the interactive simulator's advance gesture). The dot is an HTML overlay, a distinct target
-  from the SVG shape `element.dblclick` (stack-scroll) fires on, so the two never collide.
+  (the interactive simulator's advance gesture), synthesized from two clicks (a native dblclick
+  can't survive the selection re-render that replaces the dot between clicks). The dot is an HTML
+  overlay, a distinct target from the SVG shape `element.dblclick` (stack-scroll) fires on, so the
+  two never collide.
 - `token.overflow.click` — `{ node, hidden }` (the `+N` marker; `hidden` lists the
   `{ node, label, stackIndices }` not shown).
 

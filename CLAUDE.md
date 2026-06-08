@@ -248,8 +248,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). The delegated
     handler fires `token.click {node,label,sequenceFlow,stackIndices}` / `token.overflow.click {node,hidden}`
     on click, and **`token.dblclick`** (same payload as `token.click`) on a **double-click of the dot** —
-    the interactive simulator's advance gesture; the dot is an HTML overlay, distinct from the SVG shape
-    that `element.dblclick` (stack-scroll) fires on, so they never collide. A **stacked**
+    the interactive simulator's advance gesture, **synthesized from two clicks** within `DOUBLE_CLICK_MS`
+    (a native dblclick can't survive the selection re-render that replaces the dot between clicks); the dot
+    is an HTML overlay, distinct from the SVG shape that `element.dblclick` (stack-scroll) fires on, so they
+    never collide. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match
     the front), in insertion order — no special branch.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a

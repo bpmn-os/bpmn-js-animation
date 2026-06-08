@@ -597,14 +597,17 @@ describe('animation', function() {
     });
 
 
-    it('fires token.dblclick with { node, label, sequenceFlow }', function() {
+    it('fires token.dblclick (synthesized from two clicks) with { node, label, sequenceFlow }', function() {
       const tokens = get('animation');
 
       let fired;
       get('eventBus').on('token.dblclick', e => (fired = e));
 
       tokens.createToken('Task_1', 'A', 'tomato');
-      dotAt('Task_1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      // two quick clicks on the same token → synthesized dblclick (re-queried: selecting on the
+      // first click re-renders the dot, so the element differs but the token identity matches)
+      dotAt('Task_1').click();
+      dotAt('Task_1').click();
 
       expect(fired).to.exist;
       expect(fired.node).to.equal('Task_1');
@@ -613,7 +616,7 @@ describe('animation', function() {
     });
 
 
-    it('does not fire token.dblclick on the overflow marker', function() {
+    it('does not synthesize token.dblclick from clicks on the overflow marker', function() {
       const tokens = get('animation');
 
       let fired = false;
@@ -622,7 +625,8 @@ describe('animation', function() {
       for (let i = 1; i <= 5; i++) {
         tokens.createToken('Gateway_1', 'S' + i, 'tomato');
       }
-      marker().dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      marker().click();
+      marker().click();
 
       expect(fired).to.be.false;
     });
