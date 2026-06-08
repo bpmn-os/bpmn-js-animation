@@ -14,18 +14,18 @@
     <bpmn2:sequenceFlow id="Flow_a" sourceRef="Gateway_Split" targetRef="Task_A" />
     <bpmn2:sequenceFlow id="Flow_b" sourceRef="Gateway_Split" targetRef="Task_B" />
     <bpmn2:sequenceFlow id="Flow_c" sourceRef="Gateway_Split" targetRef="Task_C" />
-    <bpmn2:task id="Task_A">
+    <bpmn2:sendTask id="Task_A" name="Send">
       <bpmn2:incoming>Flow_a</bpmn2:incoming>
       <bpmn2:outgoing>Flow_a2</bpmn2:outgoing>
-    </bpmn2:task>
+    </bpmn2:sendTask>
     <bpmn2:task id="Task_B">
       <bpmn2:incoming>Flow_b</bpmn2:incoming>
       <bpmn2:outgoing>Flow_b2</bpmn2:outgoing>
     </bpmn2:task>
-    <bpmn2:task id="Task_C">
+    <bpmn2:receiveTask id="Task_C" name="Receive">
       <bpmn2:incoming>Flow_c</bpmn2:incoming>
       <bpmn2:outgoing>Flow_c2</bpmn2:outgoing>
-    </bpmn2:task>
+    </bpmn2:receiveTask>
     <bpmn2:sequenceFlow id="Flow_a2" sourceRef="Task_A" targetRef="Gateway_Join" />
     <bpmn2:sequenceFlow id="Flow_b2" sourceRef="Task_B" targetRef="Gateway_Join" />
     <bpmn2:sequenceFlow id="Flow_c2" sourceRef="Task_C" targetRef="Gateway_Join" />
