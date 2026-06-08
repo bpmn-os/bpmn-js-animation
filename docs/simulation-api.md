@@ -225,6 +225,13 @@ Play a **one-shot** dot gesture on a resting token (delegates to [`animation.pla
 — e.g. a `flip` when an event triggers, or a `fade-out` sequenced before `consumeToken`. Resolves
 when the gesture ends.
 
+### `whenFocused()` → `Promise`
+
+Resolves once any in-flight auto-focus **reveal arc** has settled (resolves immediately when nothing
+is animating). Lets you sequence *after* the reveal — e.g. create a child token only once its
+instance has scrolled to the front. `consumeToken` also plays the reveal arc in reverse
+(`moveToBack`) when it drops a stacked instance, so the removed copy scrolls out.
+
 ### Lookups
 
 | Method | Returns |
