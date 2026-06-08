@@ -11,6 +11,7 @@ import loopXML from '../diagrams/loop.bpmn';
 import miXML from '../diagrams/mi-task.bpmn';
 import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
 import subprocessXML from '../diagrams/subprocess.bpmn';
+import eventSubXML from '../diagrams/event-subprocess.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -476,6 +477,52 @@ describe('simulator — multi-instance activity', function() {
     await sim._step(MI, label + '/2'); // completion → consume (last) → parent departs
     expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
     expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
+  });
+
+});
+
+
+
+describe('simulator — event sub-process (non-interrupting)', function() {
+
+  // Process_1: StartEvent_1 → Activity_1 → … → EndEvent_1, + EventSubProcess_1 (non-interrupting,
+  // typed escalation start EscalationStartEvent_1, no body)
+  beforeEach(bootstrap(eventSubXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  const EVTSP = 'EventSubProcess_1';
+  const ESTART = 'EscalationStartEvent_1';
+
+  it('arms the event sub on spawn; the armed waiter does not block the process start or completion', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    // the process start fired automatically (untyped) and the event sub is armed (a waiting firing)
+    expect(tokenAt('StartEvent_1', label)).to.not.exist;
+    expect(get('animation').getStacks(EVTSP)).to.have.length(1);
+
+    // run the normal flow to the end — the throw events pass through, the process completes despite
+    // the armed event-sub waiter (a token at a start event doesn't count toward completion)
+    await sim._step('Activity_1', label); // entry → busy
+    await sim._step('Activity_1', label); // busy → completion
+    await sim._step('Activity_1', label); // completion → depart → throws pass through → end → done
+    expect(tokenAt('Process_1', label)).to.not.exist;
+  });
+
+  it('fires a non-interrupting event sub by double-click, re-arming a fresh waiter', async function() {
+    const sim = get('simulator');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    const armed = get('animation').getStacks(EVTSP)[0]; // the armed firing key
+    expect(armed).to.exist;
+
+    // double-click the armed (typed) start → it fires (trivial body, consumed) and re-arms a new waiter
+    await sim._step(ESTART, armed);
+    const after = get('animation').getStacks(EVTSP);
+    expect(after).to.have.length(1);        // still one armed waiter
+    expect(after[0]).to.not.equal(armed);   // …but a fresh firing (re-armed)
   });
 
 });
