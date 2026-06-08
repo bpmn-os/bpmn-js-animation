@@ -14,17 +14,13 @@ import '../assets/token-animation.css';
 import linearXML from '../test/diagrams/linear.bpmn?raw';
 import boundaryXML from '../test/diagrams/boundary.bpmn?raw';
 import inclusiveXML from '../test/diagrams/inclusive.bpmn?raw';
-import loopXML from '../test/diagrams/loop.bpmn?raw';
-import miXML from '../test/diagrams/mi.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
   linear: linearXML,       // start → task → end (the full lifecycle works end-to-end)
   boundary: boundaryXML,   // task + interrupting boundary → terminate, + a non-interrupting boundary
   inclusive: inclusiveXML, // inclusive split → 3 task branches → inclusive join
-  loop: loopXML,           // standard-loop task — re-enter (plain dbl-click) or depart (pick the outflow)
-  mi: miXML,               // multi-instance task — dbl-click the parent to spawn subs, run + consume each
-  process: processXML      // parallel split + loop + MI; event-sub — partial (upcoming)
+  process: processXML      // parallel split + standard-loop task + multi-instance task; event-sub — partial
 };
 
 const viewer = new NavigatedViewer({

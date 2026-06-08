@@ -8,7 +8,7 @@ import boundaryXML from '../diagrams/boundary.bpmn';
 import terminateXML from '../diagrams/terminate.bpmn';
 import inclusiveXML from '../diagrams/inclusive.bpmn';
 import loopXML from '../diagrams/loop.bpmn';
-import miXML from '../diagrams/mi.bpmn';
+import miXML from '../diagrams/mi-task.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -434,9 +434,12 @@ describe('consume — synchronous model drop, async ghost flip-fade', function()
 
 describe('simulator — multi-instance activity', function() {
 
-  // StartEvent_1 → Task_mi (‖ multi-instance) → EndEvent_1
+  // StartEvent_1 → MultiInstanceActivity_1 (‖) → Event_10nbvlp (end)
   beforeEach(bootstrap(miXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
+
+  const MI = 'MultiInstanceActivity_1';
+  const IN = 'Flow_13p16ha';
 
   it('spawns subs from the pulse-pausing parent, runs + consumes them, departs on the last', async function() {
     const sim = get('simulator');
@@ -445,32 +448,32 @@ describe('simulator — multi-instance activity', function() {
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
     // the outer thread token rests on the incoming flow, pulse-pausing — it never entered
-    const parent = simulation.getToken('Task_mi', label);
-    expect(parent.state.sequenceFlow).to.equal('Flow_1');
+    const parent = simulation.getToken(MI, label);
+    expect(parent.state.sequenceFlow).to.equal(IN);
     expect(parent.state.animate).to.equal('pulse-pause');
 
     // double-click the parent twice → two sub-instances appear (at entry), the parent still rests there
-    await sim._step('Task_mi', label, 'Flow_1');
-    await sim._step('Task_mi', label, 'Flow_1');
-    expect(simulation.getToken('Task_mi', label + '/1')).to.exist;
-    expect(simulation.getToken('Task_mi', label + '/2')).to.exist;
-    expect(posAt('Task_mi', label + '/1')).to.equal('entry');
+    await sim._step(MI, label, IN);
+    await sim._step(MI, label, IN);
+    expect(simulation.getToken(MI, label + '/1')).to.exist;
+    expect(simulation.getToken(MI, label + '/2')).to.exist;
+    expect(posAt(MI, label + '/1')).to.equal('entry');
 
     // run each sub entry → busy → completion (the first to leave entry parks the parent)
     for (const sub of [ label + '/1', label + '/2' ]) {
-      await sim._step('Task_mi', sub); // entry → busy
-      await sim._step('Task_mi', sub); // busy → completion
+      await sim._step(MI, sub); // entry → busy
+      await sim._step(MI, sub); // busy → completion
     }
-    expect(simulation.getToken('Task_mi', label).state.hidden).to.equal(true); // parent parked
+    expect(simulation.getToken(MI, label).state.hidden).to.equal(true); // parent parked
 
     // consume each completed sub; the last one releases + travels the parent → end → instance done
-    await sim._step('Task_mi', label + '/1'); // completion → consume (not last)
-    expect(simulation.getToken('Task_mi', label + '/1')).to.not.exist;
-    expect(simulation.getToken('Task_mi', label)).to.exist; // parent still parked, more subs remain
+    await sim._step(MI, label + '/1'); // completion → consume (not last)
+    expect(simulation.getToken(MI, label + '/1')).to.not.exist;
+    expect(simulation.getToken(MI, label)).to.exist; // parent still parked, more subs remain
 
-    await sim._step('Task_mi', label + '/2'); // completion → consume (last) → parent departs
-    expect(simulation.getTokens('Task_mi', label)).to.have.length(0); // parent traveled out
-    expect(tokenAt('Process_1', label)).to.not.exist;                 // end passed through → done
+    await sim._step(MI, label + '/2'); // completion → consume (last) → parent departs
+    expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
+    expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
   });
 
 });
