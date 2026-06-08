@@ -24,6 +24,11 @@ as the engine reports movements. The library decides *how* each node type animat
   instance is one call on its root.
 - **Color is per instance.** A new instance gets a fresh
   [`getDistinctColor`](animation-api.md#colors); a **child inherits its parent's color**.
+- **Homogeneous queue (FIFO).** When concurrent **same-instance** paths converge at one node (e.g. a
+  non-interrupting boundary fired twice), the tokens sharing an identity form a **FIFO queue** —
+  rendered as a stack of dots (a `+k` marker past `maxVisible`). `getEntry`/`getToken(node, label)`
+  return the **head**, so a trigger/advance acts on the first-arrived. *Limitation:* queued tokens are
+  interchangeable — no individual selection/targeting and no scrolling; advancing always takes the head.
 
 ## Lifecycle positions
 

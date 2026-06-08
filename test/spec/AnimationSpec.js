@@ -442,7 +442,7 @@ describe('animation', function() {
     });
 
 
-    it('merges when both move to a shared anchor', function() {
+    it('queues (FIFO) when both move to a shared anchor', function() {
       const tokens = get('animation');
 
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
@@ -450,9 +450,19 @@ describe('animation', function() {
 
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
 
+      // both rest at the same identity (center, no flow) → they coexist as a homogeneous queue,
+      // not collapsed into one (an explicit join is joinTokens / mergeTokens)
       tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_3' });
       tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_4' });
 
+      expect(tokens.getTokens(t => t.label === 'A')).to.have.length(2);
+
+      // rendered as a stack of two homogeneous dots (not deduped to one)
+      expect(document.querySelectorAll('.bts-token-count[data-node-id="Gateway_1"]:not(.bts-overflow)'))
+        .to.have.length(2);
+
+      // FIFO: removeToken takes the head; the other stays queued
+      tokens.removeToken('Gateway_1', 'A');
       expect(tokens.getTokens(t => t.label === 'A')).to.have.length(1);
     });
 
@@ -816,10 +826,11 @@ describe('animation', function() {
     });
 
 
-    it('OR-merges the selection on a join', function() {
+    it('keeps each token\'s own selection in a homogeneous queue (carried, not merged)', function() {
       const tokens = get('animation');
 
-      // one selected + one not, both heading to a shared anchor
+      // one selected + one not, both heading to a shared anchor → they queue (no merge), each
+      // keeps its own carried selection (an explicit join's OR-merge lives in SimulationAPI)
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_3' });
       tokens.createToken('Gateway_1', 'A', 'tomato', { sequenceFlow: 'Flow_4' });
       tokens.selectToken('Gateway_1', 'A', { sequenceFlow: 'Flow_3' });
@@ -827,9 +838,9 @@ describe('animation', function() {
       tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_3' });
       tokens.setState('Gateway_1', 'A', { position: pos('center-middle') }, { sequenceFlow: 'Flow_4' });
 
-      const merged = tokens.getTokens(t => t.label === 'A');
-      expect(merged).to.have.length(1);
-      expect(merged[0].selected).to.be.true; // survived even though Flow_4 was not selected
+      const queued = tokens.getTokens(t => t.label === 'A');
+      expect(queued).to.have.length(2);
+      expect(queued.filter(t => t.selected)).to.have.length(1); // the Flow_3 one stays selected
     });
 
 

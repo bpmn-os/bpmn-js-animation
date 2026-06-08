@@ -260,6 +260,30 @@ describe('simulator — boundary events', function() {
   });
 
 
+  it('queues concurrent same-instance arrivals at a catch event (FIFO)', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+
+    // fire the non-interrupting boundary twice → two same-instance paths reach CatchEvent_1
+    await sim.advanceToDeparted({ node: 'BoundaryEvent_2', label });
+    await sim.advanceToDeparted({ node: 'BoundaryEvent_2', label });
+
+    const queued = simulation.getTokens('CatchEvent_1', label);
+    expect(queued).to.have.length(2);                                    // both queued, not collided
+    expect(queued.every(t => t.state.sequenceFlow == null)).to.be.true;  // both anchored at center
+
+    // FIFO: triggering departs the head; the other stays queued, then departs on the next trigger
+    await sim.advanceToDeparted({ node: 'CatchEvent_1', label });
+    expect(simulation.getTokens('CatchEvent_1', label)).to.have.length(1);
+
+    await sim.advanceToDeparted({ node: 'CatchEvent_1', label });
+    expect(simulation.getTokens('CatchEvent_1', label)).to.have.length(0);
+  });
+
+
   it('an intermediate catch event is triggered by a token double-click', async function() {
     const sim = get('simulator');
     const eventBus = get('eventBus');

@@ -74,8 +74,15 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `` `node|label|sequenceFlow|A:2,B:1` `` (instance entries are non-zero, sorted; `_contextKey`).
     The rest flow lets same-label tokens **coexist** on distinct flows at one node (branches piling up
     at a merging gateway); `stackIndices` lets the same label coexist across **instances**.
-  - State maps: `_tokens` (`key -> Token`), `_nodeTokens` (`node -> Set<Token>`, render set, deduped by
-    `identityOf` = `label|flow|stackIndices`), `_nodeOverlays` (`node -> overlayId[]`, one per location
+  - State maps: `_tokens` (`key -> Token[]` — a **FIFO queue** per identity; length 1 in the normal
+    case, so transparent. Several tokens share an identity only when concurrent **same-instance** paths
+    converge at one node, e.g. a non-interrupting boundary fired twice; they're **homogeneous** —
+    rendered as a stack of dots (`+k` past `maxVisible`), operations take the **head** and advance FIFO
+    (`_head`/`_pushToken`/`_dropToken`/`_allTokens`). **Limitation:** queued homogeneous tokens are
+    interchangeable — no individual selection/targeting and no scroll; a double-click on any advances the
+    first-arrived. Rekeying onto an occupied identity (`_setState`/`sendToken`) now **queues**, not
+    merges — an explicit gateway join is `joinTokens`.), `_nodeTokens` (`node -> Set<Token>`, render set
+    of distinct token objects), `_nodeOverlays` (`node -> overlayId[]`, one per location
     cluster), `_activeAnimations` (`Token -> movement`), `_movements` (all live tween instances).
     **Per-instance, context-keyed (T5):** `_stackOrder` (`node -> Map<contextKey, key[]>` — instance
     **keys**, front first; size = key count), resolved against the current ancestor context (`_currentContext`).
