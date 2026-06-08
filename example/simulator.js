@@ -14,13 +14,15 @@ import '../assets/token-animation.css';
 import linearXML from '../test/diagrams/linear.bpmn?raw';
 import boundaryXML from '../test/diagrams/boundary.bpmn?raw';
 import inclusiveXML from '../test/diagrams/inclusive.bpmn?raw';
+import subprocessXML from '../test/diagrams/subprocess.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
-  linear: linearXML,       // start → task → end (the full lifecycle works end-to-end)
-  boundary: boundaryXML,   // task + interrupting boundary → terminate, + a non-interrupting boundary
-  inclusive: inclusiveXML, // inclusive split → 3 task branches → inclusive join
-  process: processXML      // parallel split + standard-loop task + multi-instance task; event-sub — partial
+  linear: linearXML,         // start → task → end (the full lifecycle works end-to-end)
+  boundary: boundaryXML,     // task + interrupting boundary → terminate, + a non-interrupting boundary
+  inclusive: inclusiveXML,   // inclusive split → 3 task branches → inclusive join
+  subprocess: subprocessXML, // a collapsed sub-process — entry drills in, runs its body, drills out
+  process: processXML        // parallel split + standard-loop task + multi-instance task; event-sub — partial
 };
 
 const viewer = new NavigatedViewer({

@@ -226,6 +226,14 @@ front of its stack(s) (animated, via [`moveToFront`](animation-api.md#instance-s
 just-touched token is the one on screen. Off by default; global. While a reveal arc is playing,
 `advanceToken` **waits for it** before moving, so an advance never overlaps the reveal gesture.
 
+### `setFocusContext(stackIndices | null)`
+
+Scope `autoFocus` to a single **instance** — the one the host last interacted with. While set, a
+token is brought to the front of a stacked node only when the context hasn't claimed that node for a
+*different* instance (nodes the context doesn't mention still focus). So a burst of concurrently
+auto-advancing instances — e.g. rapidly spawned process instances — no longer thrash which one is
+shown; the last-interacted instance keeps the front. Pass `null` to clear (focus every touch again).
+
 ### `setCue(node, label, animate, selector?)`
 
 Set a token's motion cue (`state.animate`) **without moving it** — e.g. `pulse-pause` while a
