@@ -259,4 +259,21 @@ describe('simulator — boundary events', function() {
     expect(tokenAt('BoundaryEvent_1', label)).to.exist;      // the interrupting listener is untouched
   });
 
+
+  it('an intermediate catch event is triggered by a token double-click', async function() {
+    const sim = get('simulator');
+    const eventBus = get('eventBus');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+    await sim.advanceToDeparted({ node: 'BoundaryEvent_2', label }); // path → CatchEvent_1
+    expect(posAt('CatchEvent_1', label)).to.equal('center');
+
+    // double-click the waiting catch token → it departs (receive icon, then travel through)
+    eventBus.fire('token.dblclick', { node: 'CatchEvent_1', label, sequenceFlow: null });
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    expect(tokenAt('CatchEvent_1', label)).to.not.exist; // triggered + departed
+  });
+
 });
