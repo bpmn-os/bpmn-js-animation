@@ -590,6 +590,8 @@ describe('simulator — sub-process', function() {
 
     expect(simulation.getToken('EscEnd', label)).to.not.exist;     // escalation caught (throwing token gone)
     expect(simulation.getToken('Activity_1', label)).to.not.exist; // scope interrupted downstream
+    // the error event-sub firing is **running** — it wasn't swept away by a premature scope completion
+    expect(simulation.getToken('Activity_0dak25o', label + '.e1')).to.exist;
   });
 
 });
