@@ -6,6 +6,8 @@ import linearXML from '../diagrams/linear.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
 import boundaryXML from '../diagrams/boundary.bpmn';
 import terminateXML from '../diagrams/terminate.bpmn';
+import inclusiveXML from '../diagrams/inclusive.bpmn';
+import loopXML from '../diagrams/loop.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -321,6 +323,120 @@ describe('simulator — terminate event', function() {
     expect(simulation.getTokens('Task_1', label)).to.have.length(0); // sibling killed
     expect(tokenAt('TerminateEnd', label)).to.not.exist;
     expect(tokenAt('Process_1', label)).to.not.exist;                // instance terminated
+  });
+
+});
+
+
+describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
+
+  // StartEvent_1 → Gateway_Split (inclusive, 3 outflows) → {Task_A | Task_B | Task_C} → Gateway_Join
+  beforeEach(bootstrap(inclusiveXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('waits at a diverging inclusive gateway, then forks along the toggled outflows', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    // the token reached the inclusive split and waits at center (pulse-pause) — no fork yet
+    expect(posAt('Gateway_Split', label)).to.equal('center');
+    expect(simulation.getToken('Gateway_Split', label).state.animate).to.equal('pulse-pause');
+    expect(simulation.getTokens('Task_A', label)).to.have.length(0);
+
+    // toggle two of the three outflows (inclusive = multi), then advance → forks along just those two
+    eventBus.fire('element.click', { element: er.get('Flow_a') });
+    eventBus.fire('element.click', { element: er.get('Flow_c') });
+    await sim.advanceToDeparted({ node: 'Gateway_Split', label });
+
+    expect(simulation.getTokens('Task_A', label)).to.have.length(1);
+    expect(simulation.getTokens('Task_C', label)).to.have.length(1);
+    expect(simulation.getTokens('Task_B', label)).to.have.length(0); // unchosen branch not taken
+  });
+
+  it('toggling an outflow off again removes it from the choice', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    eventBus.fire('element.click', { element: er.get('Flow_a') }); // on
+    eventBus.fire('element.click', { element: er.get('Flow_b') }); // on
+    eventBus.fire('element.click', { element: er.get('Flow_a') }); // off → only Flow_b remains
+    await sim.advanceToDeparted({ node: 'Gateway_Split', label });
+
+    expect(simulation.getTokens('Task_B', label)).to.have.length(1);
+    expect(simulation.getTokens('Task_A', label)).to.have.length(0);
+  });
+
+  it('joins the branches that have arrived at a converging inclusive gateway on a double-click', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    // spawn, take all three branches, and run each task through to its departure → the three
+    // branches arrive and rest on the join's incoming flows
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    eventBus.fire('element.click', { element: er.get('Flow_a') });
+    eventBus.fire('element.click', { element: er.get('Flow_b') });
+    eventBus.fire('element.click', { element: er.get('Flow_c') });
+    await sim.advanceToDeparted({ node: 'Gateway_Split', label });
+
+    for (const task of [ 'Task_A', 'Task_B', 'Task_C' ]) {
+      await sim.advanceToBusy({ node: task, label });
+      await sim.advanceToCompletion({ node: task, label });
+      await sim.advanceToDeparted({ node: task, label }); // travels to the join, rests on its inflow
+    }
+    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(3); // all three waiting
+
+    // double-click one arrived branch → joins all three (≤1 per inflow) and departs → end → done
+    await sim._step('Gateway_Join', label, 'Flow_a2');
+    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(0);
+    expect(tokenAt('Process_1', label)).to.not.exist; // single continuation passed through the end
+  });
+
+});
+
+
+describe('simulator — standard-loop activity', function() {
+
+  // StartEvent_1 → Task_loop (↻ standard loop) → EndEvent_1
+  beforeEach(bootstrap(loopXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('re-enters on a plain double-click, departs once an outflow is selected', async function() {
+    const sim = get('simulator');
+    const er = get('elementRegistry');
+    const eventBus = get('eventBus');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    expect(posAt('Task_loop', label)).to.equal('entry');
+
+    // entry → busy → completion; at completion the (single) outflow dims, awaiting a pick
+    await sim._step('Task_loop', label); // entry → busy
+    await sim._step('Task_loop', label); // busy → completion
+    expect(posAt('Task_loop', label)).to.equal('completion');
+    expect(er.getGraphics('Flow_2').classList.contains('bts-dim')).to.be.true;
+
+    // a plain double-click (no outflow selected) re-enters → back to the ready/entry position
+    await sim._step('Task_loop', label);
+    expect(posAt('Task_loop', label)).to.equal('entry');
+    expect(er.getGraphics('Flow_2').classList.contains('bts-dim')).to.be.false; // undimmed on re-entry
+
+    // run the iteration again; this time select the outflow before advancing → it departs
+    await sim._step('Task_loop', label); // entry → busy
+    await sim._step('Task_loop', label); // busy → completion
+    eventBus.fire('element.click', { element: er.get('Flow_2') });
+    await sim._step('Task_loop', label); // completion → depart (a flow is selected)
+
+    expect(tokenAt('Task_loop', label)).to.not.exist;  // left the activity
+    expect(tokenAt('Process_1', label)).to.not.exist;  // end passed through → instance finished
+    expect(er.getGraphics('Flow_2').classList.contains('bts-dim')).to.be.false;
   });
 
 });

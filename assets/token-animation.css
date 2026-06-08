@@ -120,6 +120,19 @@
   pointer-events: none;
 }
 
+/* outflow-ambiguity Fallback: while a token waits at an exclusive/inclusive/complex gateway, all its
+   outflows go **semi-transparent** (`.bts-dim`, toggled by the simulator) to invite a pick; a flow the
+   user **selects** drops the class and renders at full opacity (black) again. No colour, no pulse —
+   opacity on `.djs-visual` dims the line **and** its arrowhead, and reverts cleanly (the path's own
+   inline stroke/fill is never touched). */
+.djs-connection.bts-dim .djs-visual {
+  opacity: 0.25;
+}
+/* clicking a flow selects it in diagram-js — hide that bounding-box outline (we dim/undim instead) */
+.djs-connection.selected .djs-outline {
+  display: none;
+}
+
 @keyframes bts-bounce {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-5px); }

@@ -20,6 +20,7 @@
     <bpmn2:sequenceFlow id="Flow_00uuuqq" sourceRef="BoundaryEvent_1" targetRef="EndEvent_1" />
     <bpmn2:endEvent id="EndEvent_1">
       <bpmn2:incoming>Flow_00uuuqq</bpmn2:incoming>
+      <bpmn2:terminateEventDefinition id="TerminateEventDefinition_1" />
     </bpmn2:endEvent>
     <bpmn2:boundaryEvent id="BoundaryEvent_2" cancelActivity="false" attachedToRef="Activity_1">
       <bpmn2:outgoing>Flow_ni</bpmn2:outgoing>

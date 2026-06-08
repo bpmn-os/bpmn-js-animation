@@ -13,13 +13,13 @@ import '../assets/token-animation.css';
 
 import linearXML from '../test/diagrams/linear.bpmn?raw';
 import boundaryXML from '../test/diagrams/boundary.bpmn?raw';
-import terminateXML from '../test/diagrams/terminate.bpmn?raw';
+import inclusiveXML from '../test/diagrams/inclusive.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
   linear: linearXML,       // start → task → end (the full lifecycle works end-to-end)
-  boundary: boundaryXML,   // task with both an interrupting + a non-interrupting boundary event
-  terminate: terminateXML, // parallel split → one branch terminates the whole instance
+  boundary: boundaryXML,   // task + interrupting boundary → terminate, + a non-interrupting boundary
+  inclusive: inclusiveXML, // inclusive split → 3 task branches → inclusive join
   process: processXML      // parallel split + loop task; MI / event-sub — partial (upcoming)
 };
 
