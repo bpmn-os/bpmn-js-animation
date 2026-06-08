@@ -131,13 +131,13 @@
 /* continuous pulse oscillates **around** the resting size (avg scale = 1, the `none` size) rather
    than only growing — so a pulsing dot isn't bigger on average than a still one. Size only, no fade. */
 @keyframes bts-pulse {
-  0%, 100% { transform: scale(0.8); }
-  50%      { transform: scale(1.2); }
+  0%, 100% { transform: scale(0.9); }
+  50%      { transform: scale(1.1); }
 }
 @keyframes bts-pulse-pause {
   0%, 45%, 100% { transform: scale(1); } /* shrink → grow → back to original, then pause */
-  15%           { transform: scale(0.8); }
-  30%           { transform: scale(1.2); }
+  15%           { transform: scale(0.9); }
+  30%           { transform: scale(1.1); }
 }
 /* a single flip = 180° (one edge-crossing); the dot is a symmetric circle, so the 180°→0° reset
    between iterations is invisible. (360° would cross edge-on twice — a double flip.) */

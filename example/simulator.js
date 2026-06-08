@@ -12,11 +12,13 @@ import SimulatorModule from '../lib/index.js';
 import '../assets/token-animation.css';
 
 import linearXML from '../test/diagrams/linear.bpmn?raw';
+import parallelJoinXML from '../test/diagrams/parallel-join.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
-  linear: linearXML,     // start → task → end (the full lifecycle works end-to-end)
-  process: processXML    // gateways / MI / boundary / event-sub — partial (upcoming slices)
+  linear: linearXML,            // start → task → end (the full lifecycle works end-to-end)
+  'parallel-join': parallelJoinXML, // parallel split → join (fork/join, automatic)
+  process: processXML           // MI / boundary / event-sub — partial (upcoming slices)
 };
 
 const viewer = new NavigatedViewer({
@@ -45,7 +47,9 @@ bus.on('element.dblclick', e => {
     log(`spawn @ ${e.element.id}`);
   }
 });
-bus.on('token.dblclick', e => log(`advance ${e.label} @ ${e.node}`));
+// note: fires on every double-click; the simulator may no-op it (e.g. a (sub)process at busy,
+// which completes via its children, not by a click), so this is "dbl-clicked", not "advanced"
+bus.on('token.dblclick', e => log(`dbl-click ${e.label} @ ${e.node}`));
 
 $('#diagram').addEventListener('change', e => load(e.target.value));
 $('#clear').addEventListener('click', () => {
