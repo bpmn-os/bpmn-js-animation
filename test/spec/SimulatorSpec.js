@@ -772,4 +772,51 @@ describe('simulator — collaboration (pools)', function() {
     expect(simulation.getToken('JobActivity', label + '/2')).to.exist;
   });
 
+  it('the MI outer token at JobActivity is tied to the front pool instance', async function() {
+    const sim = get('simulator');
+    const a = get('animation');
+    get('simulation').autoFocus(true); // the simulator's real default (TestHelper resets it off)
+
+    const i1 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    await flush();
+    const i2 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    await flush();
+
+    // two pool instances; i2 is the one on screen
+    expect(a.getStackSize('Participant_1c07lhk')).to.equal(2);
+    expect(a.getCurrentStack('Participant_1c07lhk')).to.equal(i2);
+
+    // both MI outer tokens exist in the model, one per instance...
+    expect(tokenAt('JobActivity', i1)).to.exist;
+    expect(tokenAt('JobActivity', i2)).to.exist;
+
+    // ...but only the **front** instance's MI outer token is rendered (gated by the pool stack)
+    const dots = document.querySelectorAll('.bts-token-count[data-node-id="JobActivity"]');
+    expect(dots.length, 'only the front pool instance shows its MI outer token').to.equal(1);
+  });
+
+  it('spawns MI subs for the FRONT pool instance when several are stacked', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+    get('simulation').autoFocus(true);
+
+    await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I1
+    await flush();
+    await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I2
+    await flush();
+    const i3 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I3, front
+    await flush();
+
+    const inflow = simulation.getEntry('JobActivity', i3).sequenceFlow;
+
+    // two double-clicks on the front instance's MI outer token → two DISTINCT subs (no I3/1 collision)
+    await sim._step('JobActivity', i3, inflow);
+    await flush();
+    await sim._step('JobActivity', i3, inflow);
+    await flush();
+
+    expect(simulation.getToken('JobActivity', i3 + '/1'), 'first sub of the front instance').to.exist;
+    expect(simulation.getToken('JobActivity', i3 + '/2'), 'second sub of the front instance').to.exist;
+  });
+
 });
