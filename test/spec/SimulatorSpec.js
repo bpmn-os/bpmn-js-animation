@@ -574,19 +574,22 @@ describe('simulator — sub-process', function() {
     expect(tokenAt('Process_1', label)).to.not.exist;  // boundary → End_err → instance done
   });
 
-  it('an escalation end is caught by the escalation boundary', async function() {
+  it('an escalation end is caught by the (non-interrupting) escalation boundary, which propagates on', async function() {
     const sim = get('simulator');
+    const simulation = get('simulation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
     await sim._step('Activity_1', label);
 
-    eventBus.fire('element.click', { element: er.get('Flow_b') }); // the escalation-end branch
+    // escalation-end branch → EscEnd throws → caught by the escalation boundary (which in this model
+    // continues to an error end caught by the process's interrupting error event-sub)
+    eventBus.fire('element.click', { element: er.get('Flow_b') });
     await sim._step('Gateway_1', label);
 
-    expect(tokenAt('Activity_1', label)).to.not.exist;
-    expect(tokenAt('Process_1', label)).to.not.exist;
+    expect(simulation.getToken('EscEnd', label)).to.not.exist;     // escalation caught (throwing token gone)
+    expect(simulation.getToken('Activity_1', label)).to.not.exist; // scope interrupted downstream
   });
 
 });
