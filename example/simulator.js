@@ -12,13 +12,11 @@ import SimulatorModule from '../lib/index.js';
 import '../assets/token-animation.css';
 
 import linearXML from '../test/diagrams/linear.bpmn?raw';
-import parallelJoinXML from '../test/diagrams/parallel-join.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
-  linear: linearXML,            // start → task → end (the full lifecycle works end-to-end)
-  'parallel-join': parallelJoinXML, // parallel split → join (fork/join, automatic)
-  process: processXML           // MI / boundary / event-sub — partial (upcoming slices)
+  linear: linearXML,   // start → task → end (the full lifecycle works end-to-end)
+  process: processXML  // parallel split + loop task; MI / boundary / event-sub — partial (upcoming)
 };
 
 const viewer = new NavigatedViewer({
@@ -35,6 +33,10 @@ function log(msg) {
 }
 
 async function load(name) {
+  if (!DIAGRAMS[name]) {
+    name = 'linear';
+  }
+  $('#diagram').value = name; // keep the dropdown in sync with what's actually on the canvas
   await viewer.importXML(DIAGRAMS[name]);
   viewer.get('canvas').zoom('fit-viewport', 'auto');
   log(`loaded "${name}" — double-click the start event to spawn an instance`);
@@ -57,4 +59,6 @@ $('#clear').addEventListener('click', () => {
   log('cleared tokens');
 });
 
-load('linear');
+// load whatever the dropdown currently shows (browsers persist <select> state across reloads),
+// so the canvas and the dropdown never disagree
+load($('#diagram').value);

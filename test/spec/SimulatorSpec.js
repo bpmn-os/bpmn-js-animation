@@ -61,7 +61,7 @@ describe('simulator', function() {
 
   describe('task lifecycle (entered → busy → completion → departed)', function() {
 
-    it('steps through the sweep on each advance, then departs to the end event', async function() {
+    it('steps through the sweep on each advance, then departs (end passes through)', async function() {
       const sim = get('simulator');
 
       const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
@@ -73,10 +73,12 @@ describe('simulator', function() {
       await sim.advanceToCompletion({ node: 'Task_1', label });
       expect(posAt('Task_1', label)).to.equal('completion');
 
-      // depart → travel the unique outflow → auto-enter the end event (center)
+      // depart → travel the unique outflow → the end event passes through automatically
+      // (auto flip + consume) → the instance terminates
       await sim.advanceToDeparted({ node: 'Task_1', label });
       expect(tokenAt('Task_1', label)).to.not.exist;
-      expect(posAt('EndEvent_1', label)).to.equal('center');
+      expect(tokenAt('EndEvent_1', label)).to.not.exist;   // passed through, not resting
+      expect(tokenAt('Process_1', label)).to.not.exist;    // terminated
     });
 
   });
@@ -84,23 +86,20 @@ describe('simulator', function() {
 
   describe('end event + completion (D3)', function() {
 
-    it('flips + consumes a no-outflow token and terminates the instance', async function() {
+    it('passes an end event through automatically (flip + consume) and terminates the instance', async function() {
       const sim = get('simulator');
 
       const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
       await sim.advanceToBusy({ node: 'Task_1', label });
       await sim.advanceToCompletion({ node: 'Task_1', label });
+      expect(tokenAt('Process_1', label)).to.exist; // still running
+
+      // depart the task → travel → arrive at the end event → it passes through automatically
+      // (no dbl-click): flip + consume, and with no tokens left the instance terminates
       await sim.advanceToDeparted({ node: 'Task_1', label });
 
-      // the end-event token rests at center, the process is still running
-      expect(posAt('EndEvent_1', label)).to.equal('center');
-      expect(tokenAt('Process_1', label)).to.exist;
-
-      // depart the end event (no outflow) → flip + consume → instance completes + terminates
-      await sim.advanceToDeparted({ node: 'EndEvent_1', label });
-
-      expect(tokenAt('EndEvent_1', label)).to.not.exist;
-      expect(tokenAt('Process_1', label)).to.not.exist; // process box gone (terminated)
+      expect(tokenAt('EndEvent_1', label)).to.not.exist;     // not resting — passed through
+      expect(tokenAt('Process_1', label)).to.not.exist;      // process box gone (terminated)
     });
 
   });
@@ -172,37 +171,19 @@ describe('simulator — parallel gateways (fork / join)', function() {
   beforeEach(bootstrap(parallelJoinXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
-  it('forks every outflow at a diverging parallel gateway and joins at the converging one', async function() {
+  it('forks at the split, joins at the join, and flows through to a clean termination', async function() {
     const sim = get('simulator');
     const simulation = get('simulation');
 
+    // no tasks/catch events to wait on → the whole structure is automatic: the split forks both
+    // branches, they travel and join into one continuation, which passes through the end event
+    // (auto flip + consume) → the instance terminates with nothing stranded.
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-    // the parallel structure is automatic: split forks both branches, they travel and join,
-    // and the single continuation reaches the end event (resting at center)
-    expect(posAt('EndEvent_1', label)).to.equal('center');
-
-    // nothing left stranded on the gateways
     expect(simulation.getTokens('Gateway_Split', label)).to.have.length(0);
-    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(0);
-
-    // the join collapsed the two branches back into one thread (root has a single child)
-    const root = simulation.getToken('Process_1', label);
-    expect(simulation.getChildren(root)).to.have.length(1);
-  });
-
-  it('completes + terminates the instance once the merged token is consumed', async function() {
-    const sim = get('simulator');
-    const simulation = get('simulation');
-
-    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
-    expect(tokenAt('Process_1', label)).to.exist; // still running
-
-    // consume the end-event token (flip + consume) → instance completes, process box terminates
-    await sim.advanceToDeparted({ node: 'EndEvent_1', label });
-
-    expect(tokenAt('EndEvent_1', label)).to.not.exist;
-    expect(tokenAt('Process_1', label)).to.not.exist;
+    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(0); // join consumed both branches
+    expect(tokenAt('EndEvent_1', label)).to.not.exist;                     // end passed through
+    expect(tokenAt('Process_1', label)).to.not.exist;                      // terminated
   });
 
 });

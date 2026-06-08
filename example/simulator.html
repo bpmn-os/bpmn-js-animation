@@ -32,10 +32,9 @@
   <div id="app">
     <div id="toolbar">
       <label>diagram
-        <select id="diagram">
+        <select id="diagram" autocomplete="off">
           <option value="linear">linear (start → task → end)</option>
-          <option value="parallel-join">parallel split → join (fork/join)</option>
-          <option value="process">process (MI/boundary — partial)</option>
+          <option value="process">process (split + loop task; MI/boundary — partial)</option>
         </select>
       </label>
       <span class="sep"></span>
