@@ -117,37 +117,37 @@ describe('SimulationAPI', function() {
     afterEach(cleanup);
 
     it('creates a token for a participant (pool) instance', function() {
-      const token = get('simulation').createToken({ node: 'Participant_1', label: 'I1' });
+      const token = get('simulation').createToken({ node: 'Participant_1c07lhk', label: 'I1' });
 
       expect(token.label).to.equal('I1');
-      expect(token.stackIndices).to.deep.equal({ Participant_1: 'I1' });
-      expect(get('animation').getStackSize('Participant_1')).to.equal(1);
+      expect(token.stackIndices).to.deep.equal({ Participant_1c07lhk: 'I1' });
+      expect(get('animation').getStackSize('Participant_1c07lhk')).to.equal(1);
     });
 
     it('stacks instances per participant independently', function() {
-      get('simulation').createToken({ node: 'Participant_1', label: 'A1' });
-      get('simulation').createToken({ node: 'Participant_1', label: 'A2' });
-      get('simulation').createToken({ node: 'Participant_2', label: 'B1' });
+      get('simulation').createToken({ node: 'Participant_1c07lhk', label: 'A1' });
+      get('simulation').createToken({ node: 'Participant_1c07lhk', label: 'A2' });
+      get('simulation').createToken({ node: 'Participant_0gkimz7', label: 'B1' });
 
-      expect(get('animation').getStackSize('Participant_1')).to.equal(2);
-      expect(get('animation').getStackSize('Participant_2')).to.equal(1);
+      expect(get('animation').getStackSize('Participant_1c07lhk')).to.equal(2);
+      expect(get('animation').getStackSize('Participant_0gkimz7')).to.equal(1);
     });
 
     it('creates distinct start-event children per participant instance (scroll-safe)', async function() {
       const sim = get('simulation');
-      sim.createToken({ node: 'Participant_1', label: 'A1' });
-      sim.createToken({ node: 'Participant_1', label: 'A2' });
+      sim.createToken({ node: 'Participant_1c07lhk', label: 'A1' });
+      sim.createToken({ node: 'Participant_1c07lhk', label: 'A2' });
 
-      const c1 = sim.createToken({ node: 'StartEvent_1', label: 'A1' }); // child of A1 (front)
-      expect(c1.stackIndices).to.include({ Participant_1: 'A1' });
+      const c1 = sim.createToken({ node: 'StartEventItem', label: 'A1' }); // child of A1 (front)
+      expect(c1.stackIndices).to.include({ Participant_1c07lhk: 'A1' });
 
-      await get('animation').moveToFront('Participant_1', 'A2'); // scroll to A2
-      const c2 = sim.createToken({ node: 'StartEvent_1', label: 'A2' });
-      expect(c2.stackIndices).to.include({ Participant_1: 'A2' });
+      await get('animation').moveToFront('Participant_1c07lhk', 'A2'); // scroll to A2
+      const c2 = sim.createToken({ node: 'StartEventItem', label: 'A2' });
+      expect(c2.stackIndices).to.include({ Participant_1c07lhk: 'A2' });
 
       // both coexist, addressable, distinct
-      expect(sim.getToken('StartEvent_1', 'A1')).to.equal(c1);
-      expect(sim.getToken('StartEvent_1', 'A2')).to.equal(c2);
+      expect(sim.getToken('StartEventItem', 'A1')).to.equal(c1);
+      expect(sim.getToken('StartEventItem', 'A2')).to.equal(c2);
     });
 
   });

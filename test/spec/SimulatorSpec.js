@@ -13,6 +13,7 @@ import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
 import subprocessXML from '../diagrams/subprocess.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
 import linkXML from '../diagrams/link.bpmn';
+import collaborationXML from '../diagrams/collaboration.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -726,6 +727,49 @@ describe('simulator — standard-loop activity', function() {
       expect(tokenAt('Task_2', label).state.animate).to.equal('bounce');
     });
 
+  });
+
+});
+
+
+describe('simulator — collaboration (pools)', function() {
+
+  // two pools; the Order pool's start (StartEventItem) sits in Participant_1c07lhk and feeds the
+  // sequential MI sub-process JobActivity
+  beforeEach(bootstrap(collaborationXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('spawns an instance from a pool start event (job-shop model)', async function() {
+    const sim = get('simulator');
+    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    await flush();
+
+    // the pool is the box (busy), the start has departed, and the token reached the MI sub-process
+    expect(posAt('Participant_1c07lhk', label)).to.equal('busy');
+    expect(tokenAt('StartEventItem', label)).to.not.exist;
+    expect(tokenAt('JobActivity', label)).to.exist;
+  });
+
+  it('spawns successive sub-instances of the MI sub-process on repeated double-clicks', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    await flush();
+
+    // the MI outer token rests on the sub-process's incoming flow
+    const inflow = simulation.getEntry('JobActivity', label).sequenceFlow;
+
+    // first double-click → first sub-instance
+    await sim._step('JobActivity', label, inflow);
+    await flush();
+    expect(simulation.getToken('JobActivity', label + '/1')).to.exist;
+
+    // second double-click → a SECOND, distinctly-labelled sub-instance (this is where a duplicate-label
+    // error <label/1 already exists> was reported)
+    await sim._step('JobActivity', label, inflow);
+    await flush();
+    expect(simulation.getToken('JobActivity', label + '/2')).to.exist;
   });
 
 });
