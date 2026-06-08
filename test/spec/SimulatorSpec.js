@@ -530,24 +530,61 @@ describe('simulator — event sub-process (non-interrupting)', function() {
 
 describe('simulator — sub-process', function() {
 
-  // StartEvent_1 → Activity_1 (collapsed sub-process: inner StartEvent_2) → EndEvent_1
+  // StartEvent_1 → Activity_1 (collapsed sub-process: StartEvent_2 → Gateway_1 (exclusive) →
+  // {ErrEnd | EscEnd | NormEnd}, + error/escalation boundary events) → EndEvent_1
   beforeEach(bootstrap(subprocessXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
-  it('enters on busy (runs the inner start event), completes when its body empties, then departs', async function() {
+  it('enters on busy (runs the inner start to the gateway), takes the normal end → completes, departs', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
     expect(posAt('Activity_1', label)).to.equal('entry'); // SP arrived → entry/bounce
 
-    // double-click → busy seeds + auto-runs the inner start; it has no outflow → consumed → body empties
+    // double-click → busy seeds + auto-runs the inner start, which rests at the exclusive gateway
     await sim._step('Activity_1', label);
-    expect(simulation.getToken('StartEvent_2', label)).to.not.exist; // inner ran + consumed
-    expect(posAt('Activity_1', label)).to.equal('completion');       // body empty → SP at completion/bounce
+    expect(posAt('Gateway_1', label)).to.equal('center'); // awaiting an outflow pick (Fallback)
+
+    // pick the untyped (normal) end and depart → NormEnd → the SP body empties → SP completion
+    eventBus.fire('element.click', { element: er.get('Flow_c') });
+    await sim._step('Gateway_1', label);
+    expect(posAt('Activity_1', label)).to.equal('completion');
 
     // double-click → the SP departs its outflow → travels to EndEvent_1 → instance done
     await sim._step('Activity_1', label);
+    expect(tokenAt('Activity_1', label)).to.not.exist;
+    expect(tokenAt('Process_1', label)).to.not.exist;
+  });
+
+  it('an error end inside the SP throws → caught by the error boundary (interrupting → host consumed)', async function() {
+    const sim = get('simulator');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim._step('Activity_1', label); // busy → inner start → exclusive gateway
+
+    // pick the error-end branch and depart → ErrEnd throws → bubbles to ErrorBoundary_1 on Activity_1
+    eventBus.fire('element.click', { element: er.get('Flow_a') });
+    await sim._step('Gateway_1', label);
+
+    expect(tokenAt('Activity_1', label)).to.not.exist; // sub-process interrupted (host consumed)
+    expect(tokenAt('Process_1', label)).to.not.exist;  // boundary → End_err → instance done
+  });
+
+  it('an escalation end is caught by the escalation boundary', async function() {
+    const sim = get('simulator');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim._step('Activity_1', label);
+
+    eventBus.fire('element.click', { element: er.get('Flow_b') }); // the escalation-end branch
+    await sim._step('Gateway_1', label);
+
     expect(tokenAt('Activity_1', label)).to.not.exist;
     expect(tokenAt('Process_1', label)).to.not.exist;
   });
