@@ -3,7 +3,7 @@
 Interactive **BPMN token animation** for [bpmn-js](https://github.com/bpmn-io/bpmn-js) and the **API** it's built upon.
 
 Renders tokens on a BPMN diagram and moves them through a process: spawn instances, advance
-tasks, fork and join gateways, run sub-processes and **multi-instance activities**, fire boundary and
+tasks, fork and join gateways, run sub-processes and multi-instance activities, fire boundary and
 event sub-processes, throw and catch errors and escalations, jump link events, and more.
 
 ## Motivation
@@ -11,21 +11,21 @@ event sub-processes, throw and catch errors and escalations, jump link events, a
 This project is based on [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation), 
 kudos to the bpmn-io team. It reuses the core token-flow animation, but takes a deliberately different approach:
 
-- token-simulation shows **all tokens of all instances in one view**, driven by on-canvas **buttons**,
-  and **mixes animation and simulation** into one module;
-- this project separates the ** API** that you can drive programmatically from an **interactive simulator**
-  built on top of it. The simulator has **no buttons**, you just **double-click** a start event to spawn an instance
-  and **double-click a token** to advance it; where the model is ambiguous (a diverging gateway, a loop), 
-  you **click the sequence flow(s)** to choose, then double-click;
+- token-simulation shows all tokens of all instances in one holistic view, driven by on-canvas buttons,
+  and combines animation with simulation into one module;
+- this project separates the API that you can drive programmatically from an interactive simulator
+  built on top of it. The simulator has no buttons, you just double-click a start event to spawn an instance
+  and double-click a token to advance it; where the model is ambiguous (a diverging gateway, a loop), 
+  you select the sequence flow(s) to choose, then double-click the token;
 - process instances, multi-instance activities, and non-interrupting event sub-processes are shown as stacks.
-  Only the tokens in the front instance are visible; another instance is brought forward by **double-clicking the
-  stack** (Shift+double-click steps back).
+  Only the tokens in the front instance are visible; another instance is brought forward by double-clicking the
+  stack (Shift+double-click steps back).
 
 ## Demo
 
-In the **[demo](https://bpmn-os.github.io/bpmn-js-animation/)** you can load a diagram (or pick a bundled
+In the [demo](https://bpmn-os.github.io/bpmn-js-animation/) you can load a diagram (or pick a bundled
 example), then double-click the start event and the tokens. The low-level simulation log can be followed
-in the browser **console**.
+in the browser console.
 
 ## Install
 
@@ -78,8 +78,8 @@ Every observed event and the resulting token action is logged to the browser **c
 
 ## Simulation API
 
-To drive tokens **programmatically** with your own UI, automated tests, or a different interaction model,
-use the **`simulation API`** directly. It's a high-level, BPMN-shaped vocabulary (`createToken`,
+To drive tokens programmatically with your own UI, automated tests, or a different interaction model,
+use the simulation API directly. It's a high-level, BPMN-shaped vocabulary (`createToken`,
 `advanceToken`, `forkToken` / `joinTokens`, `consumeToken`, `jumpToken`, …) that addresses tokens by
 readable `(node, label)` names and applies prescribed per-type behaviour.
 
