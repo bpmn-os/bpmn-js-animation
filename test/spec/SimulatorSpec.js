@@ -10,6 +10,7 @@ import inclusiveXML from '../diagrams/inclusive.bpmn';
 import loopXML from '../diagrams/loop.bpmn';
 import miXML from '../diagrams/mi-task.bpmn';
 import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
+import subprocessXML from '../diagrams/subprocess.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -475,6 +476,33 @@ describe('simulator — multi-instance activity', function() {
     await sim._step(MI, label + '/2'); // completion → consume (last) → parent departs
     expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
     expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
+  });
+
+});
+
+
+describe('simulator — sub-process', function() {
+
+  // StartEvent_1 → Activity_1 (collapsed sub-process: inner StartEvent_2) → EndEvent_1
+  beforeEach(bootstrap(subprocessXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('enters on busy (runs the inner start event), completes when its body empties, then departs', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    expect(posAt('Activity_1', label)).to.equal('entry'); // SP arrived → entry/bounce
+
+    // double-click → busy seeds + auto-runs the inner start; it has no outflow → consumed → body empties
+    await sim._step('Activity_1', label);
+    expect(simulation.getToken('StartEvent_2', label)).to.not.exist; // inner ran + consumed
+    expect(posAt('Activity_1', label)).to.equal('completion');       // body empty → SP at completion/bounce
+
+    // double-click → the SP departs its outflow → travels to EndEvent_1 → instance done
+    await sim._step('Activity_1', label);
+    expect(tokenAt('Activity_1', label)).to.not.exist;
+    expect(tokenAt('Process_1', label)).to.not.exist;
   });
 
 });
