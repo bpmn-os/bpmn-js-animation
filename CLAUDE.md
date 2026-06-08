@@ -92,7 +92,9 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `setState(node,label,state,selector?)`, `removeToken(node,label,selector?,gesture?)`,
     `selectToken(node,label,selector?)` / `deselectToken(…)` — `selector` = `{ sequenceFlow?,
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
-    `getSelectedNodes() → string[]`, `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
+    `getSelectedNodes() → string[]`, `setFlowDimmed(flowId,on=true)` (a `.bts-dim` semi-transparent class on
+    a sequence flow — the simulator fades a diverging gateway's unchosen outflows; reverted by `clear`),
+    `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
     set a node's ordered instance **keys**, front first — removing one never shifts the others),
     `getStacks(node) → key[]` (count = `.length`), `getCurrentStack(node) → key`
     (the front instance's key), `getCurrentStacks(node) → {id:key}` (the membership for the on-screen
@@ -274,6 +276,12 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     in-flight gesture (the bug that made a fire-and-forget consume's dot **vanish instantly**). A whole
     subtree gestures **simultaneously** (one synchronous `_tearDown` loop). Cleared by `clear`. **Never block
     a reposition/travel on a consume** — fire the gesture and proceed in the same tick.
+    **`removeToken` returns a Promise** that resolves when the flip-fade has finished; `_tearDown` collects
+    these and `consumeToken` **awaits them before its stack-decrement** — so a **container never collapses
+    out from under a still-fading dot**: the `moveToBack` arc, the `setStacks` drop (which removes the
+    **implicit-process box** at size 0), and the **MI** parent release all run *after* the gesture. The
+    model identity is already gone, so this delays only the **visual** container teardown, never
+    addressability — and an unstacked consume (a shed boundary) is fire-and-forget, so it still never blocks.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration

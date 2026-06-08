@@ -211,10 +211,13 @@ it first), though descendants on flows **are** torn down by the cascade. Termina
 is `consumeToken` on its root.
 
 The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the
-moment this returns (don't await it to observe the removal). Pass `gesture: true` to flip-fade each
+moment this is called (don't await it to observe the removal). Pass `gesture: true` to flip-fade each
 removed dot on the way out: the whole subtree gestures **simultaneously** on **detached "ghost"
-clones** that play out and self-remove independently of the model — so a consume never blocks the
-caller, and the gesture survives any concurrent re-render.
+clones** that play out and self-remove independently of the model — so the gesture survives any
+concurrent re-render. A **stacked** consume (a process root, an MI sub) **waits for the flip-fade to
+finish before collapsing its container** — the implicit-process box / instance stack / `moveToBack`
+arc all run after the dot has faded, so the box never vanishes out from under a still-fading dot.
+The returned Promise resolves once that visual teardown is done.
 
 ### `autoFocus(on = true)`
 
@@ -235,6 +238,12 @@ disambiguates a branch/instance; omit to use the single token there.
 Play a **one-shot** dot gesture on a resting token (delegates to [`animation.playTokenEffect`](animation-api.md))
 — e.g. a `flip` when an event triggers, or a `fade-out` sequenced before `consumeToken`. Resolves
 when the gesture ends.
+
+### `setFlowDimmed(flowId, on = true)`
+
+Dim / undim a **sequence flow** (semi-transparent line + arrowhead; reverts cleanly) — delegates to
+[`animation.setFlowDimmed`](animation-api.md). Used to fade a diverging gateway's unchosen outflows
+while the user picks. `clear` undims any left dimmed.
 
 ### `whenFocused()` → `Promise`
 
