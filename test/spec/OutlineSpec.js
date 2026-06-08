@@ -46,4 +46,12 @@ describe('native stack-aware selection outline', function() {
     expect(width('Task_1')).to.equal(base);
   });
 
+  // The full module includes the `simulator`, which marks the container `.bts-simulation` so our CSS
+  // hides the native selection box (a token-simulation-style view) — the outline geometry still tracks
+  // the stack (above), it's just not painted. Selection state itself is untouched.
+  it('the simulator marks the container so the native box is hidden', function() {
+    const container = get('canvas').getContainer();
+    expect(container.classList.contains('bts-simulation')).to.be.true;
+  });
+
 });

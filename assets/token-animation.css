@@ -146,6 +146,18 @@
   display: none;
 }
 
+/* The interactive **simulator** is always in "simulation mode" (a drop-in for bpmn-js-token-simulation),
+   so it marks the canvas container `.bts-simulation` and hides the native selection box + modeling
+   affordances — clicking a node still selects it (state intact, ecosystem unaffected) but draws no frame,
+   matching token-simulation. The lower-level `animation`/`simulation` services do NOT set the class, so a
+   host driving them keeps native selection (stack-aware via our OutlineProvider). */
+.bts-simulation .djs-outline,
+.bts-simulation .djs-bendpoint,
+.bts-simulation .djs-segment-dragger,
+.bts-simulation .djs-resizer {
+  display: none !important;
+}
+
 @keyframes bts-bounce {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-5px); }

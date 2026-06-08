@@ -128,12 +128,23 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `data-selected`). It **carries across a move** and **OR-merges on a join** (the merged
     token stays selected if any input was — done where identities collapse in `setState`;
     `color` is left last-writer-wins).
-    `setNodeSelected(node,selected?)` draws the **modeller-style blue boundary** on an element
-    by appending our own `.bts-node-outline` rect (5px offset, rounded) into its `getGraphics`
-    and adding a `bts-selected` marker class — we *don't* rely on diagram-js's Outline module
-    (a bare viewer may not load it). The outline is **stack-aware**: `_drawNodeOutline` grows it by the
-    stack extent (`_stackExtent` = visible copies × `STACK_OFFSET`) so it wraps the whole stack, and
-    `setStackSize` re-syncs it when the size changes. Tracked in `_selectedNodes`; cleared by `clear`.
+    **Node selection is stack-aware two ways.** (1) **Native** (the default path): the constructor
+    registers a diagram-js **`outline.registerProvider`** whose `updateOutline` **grows the native
+    `.djs-outline`** for a stacked node (by `_stackExtent` + `_stackMarkerWidth`) and returns `false`
+    (native default sizing) otherwise — so **host/`selection`-service selection just works**, the whole
+    bpmn-js ecosystem (property panel, …) stays in charge, and only the frame geometry differs for stacks
+    (tested in `test/spec/OutlineSpec.js`). The interactive `Simulator` itself does **no** node selection
+    (it drives tokens + flow dimming only — it no longer even injects `selection`) and is a token-
+    simulation-style view: on `diagram.init` it marks the canvas container **`.bts-simulation`**, and our
+    CSS hides the native selection box (`.djs-outline`) + modeling affordances — so clicking a node still
+    selects it (state intact, ecosystem unaffected) but **no frame is drawn**. Only the full `simulator`
+    sets the class; a host driving the lower-level `animation`/`simulation` keeps the visible (stack-aware)
+    native box. (2) **Programmatic**
+    (`setNodeSelected(node,selected?)`): draws our **own** `.bts-node-outline` rect (5px offset, rounded)
+    into `getGraphics` + a `bts-selected` marker — an explicit highlight **independent of** the selection
+    service (a host outlines a node without selecting it; the example uses it, hiding the native frame to
+    avoid a double). Also stack-aware (`_drawNodeOutline` grows by `_stackExtent`; `setStackSize`
+    re-syncs). Tracked in `_selectedNodes`; cleared by `clear`.
   - **Instance stack** (`setStackSize(node,size,ancestorStackIndices?)` / `getStackSize`): renders a node as a
     diagonally-offset **stack of its own shape** — the real node on top, with `size-1` opaque clones of
     `.djs-visual` (ids stripped, `pointer-events:none`, class `bts-stack-shape`) inserted as **leading children**
