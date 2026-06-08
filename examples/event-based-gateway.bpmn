@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+  <bpmn2:process id="Process_1" isExecutable="true">
+    <bpmn2:startEvent id="StartEvent_1">
+      <bpmn2:outgoing>Flow_s</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    <bpmn2:sequenceFlow id="Flow_s" sourceRef="StartEvent_1" targetRef="Gateway_1" />
+    <bpmn2:eventBasedGateway id="Gateway_1">
+      <bpmn2:incoming>Flow_s</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_a</bpmn2:outgoing>
+      <bpmn2:outgoing>Flow_b</bpmn2:outgoing>
+    </bpmn2:eventBasedGateway>
+    <bpmn2:sequenceFlow id="Flow_a" sourceRef="Gateway_1" targetRef="Catch_A" />
+    <bpmn2:sequenceFlow id="Flow_b" sourceRef="Gateway_1" targetRef="Catch_B" />
+    <bpmn2:intermediateCatchEvent id="Catch_A">
+      <bpmn2:incoming>Flow_a</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_a2</bpmn2:outgoing>
+      <bpmn2:messageEventDefinition id="MessageEventDefinition_1" />
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:intermediateCatchEvent id="Catch_B">
+      <bpmn2:incoming>Flow_b</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_b2</bpmn2:outgoing>
+      <bpmn2:timerEventDefinition id="TimerEventDefinition_1" />
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:sequenceFlow id="Flow_a2" sourceRef="Catch_A" targetRef="End_A" />
+    <bpmn2:sequenceFlow id="Flow_b2" sourceRef="Catch_B" targetRef="End_B" />
+    <bpmn2:endEvent id="End_A">
+      <bpmn2:incoming>Flow_a2</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:endEvent id="End_B">
+      <bpmn2:incoming>Flow_b2</bpmn2:incoming>
+    </bpmn2:endEvent>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="150" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1_di" bpmnElement="Gateway_1">
+        <dc:Bounds x="240" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_A_di" bpmnElement="Catch_A">
+        <dc:Bounds x="350" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_B_di" bpmnElement="Catch_B">
+        <dc:Bounds x="350" y="280" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_A_di" bpmnElement="End_A">
+        <dc:Bounds x="470" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_B_di" bpmnElement="End_B">
+        <dc:Bounds x="470" y="280" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_s_di" bpmnElement="Flow_s">
+        <di:waypoint x="186" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_a_di" bpmnElement="Flow_a">
+        <di:waypoint x="265" y="193" />
+        <di:waypoint x="265" y="138" />
+        <di:waypoint x="350" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b_di" bpmnElement="Flow_b">
+        <di:waypoint x="265" y="243" />
+        <di:waypoint x="265" y="298" />
+        <di:waypoint x="350" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_a2_di" bpmnElement="Flow_a2">
+        <di:waypoint x="386" y="138" />
+        <di:waypoint x="470" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b2_di" bpmnElement="Flow_b2">
+        <di:waypoint x="386" y="298" />
+        <di:waypoint x="470" y="298" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>

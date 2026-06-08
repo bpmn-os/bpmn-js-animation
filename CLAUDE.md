@@ -11,14 +11,18 @@ BPMN execution engine. It is the "visualization only" counterpart to
 the host application decides when tokens are created, moved, split, and removed.
 
 Shipped as ES modules under `lib/`; consumers bundle it. No build step for the
-library. `example/` is a vite playground for local development (not published).
+library. `demo/` is the vite app — the interactive **simulator** (load a diagram /
+pick a bundled `examples/` model, drive tokens by double-click, watch the **console**
+log each event + action). It's the package's sole example app, published to GitHub
+Pages on push to `main` (`.github/workflows/deploy.yml`). `examples/` holds the
+curated showcase models.
 
 ## Commands
 
 ```sh
-npm install      # deps (incl. dev: bpmn-js + vite for the example)
-npm run dev      # vite dev server for example/ (open the printed localhost URL)
-npm run build    # production bundle of the example (sanity-checks all imports)
+npm install      # deps (incl. dev: bpmn-js + vite for the demo)
+npm run dev      # vite dev server for demo/ (open the printed localhost URL)
+npm run build    # production bundle of the demo → dist/ (sanity-checks all imports)
 ```
 
 ## Docs (keep in sync)
@@ -112,7 +116,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     sequence it before a depart/consume; reuses `_playOnce`, shared with the ghost below), `getTokens(filter?)` (insertion order),
     `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
-    `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
+    `test/TestHelper.js` over the key-based API above.) `moveToFront`/`moveToBack`
     reorder the node's **`stackOrder`** in the current context (front = the shown instance) **and own
     the arc gesture** (so `autoFocus` animates too) — see below; `scrollStack` is thin sugar over them.
     `setState`/`removeToken`/`selectToken`/`deselectToken` take a trailing `sequenceFlow` to
@@ -347,5 +351,5 @@ puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 `animation: { animationDuration: 0 }` (instant landings, synchronous-ish) + `await`; the
 auto-settle test uses a non-zero duration so a transition is genuinely in flight.
 
-The **vite example** (`example/`, `npm run dev`) remains the visual check (placement,
-smoothness, colors, hover).
+The **`demo/`** app (`npm run dev`) remains the visual check (placement, smoothness, colors,
+hover) — and the interactive simulator itself; it logs each event + token action to the console.

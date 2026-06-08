@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+  <bpmn2:error id="Error_1" name="ProcessError" errorCode="P1" />
   <bpmn2:process id="Process_1" isExecutable="true">
     <bpmn2:startEvent id="StartEvent_1">
       <bpmn2:outgoing>Flow_start</bpmn2:outgoing>
@@ -43,8 +44,34 @@
     </bpmn2:endEvent>
     <bpmn2:subProcess id="EventSub_1" triggeredByEvent="true">
       <bpmn2:startEvent id="EvtStart_1" isInterrupting="false">
-        <bpmn2:escalationEventDefinition id="EscDef_evt" />
+        <bpmn2:outgoing>Flow_t1</bpmn2:outgoing>
+        <bpmn2:timerEventDefinition id="TimerDef_1" />
       </bpmn2:startEvent>
+      <bpmn2:sequenceFlow id="Flow_t1" sourceRef="EvtStart_1" targetRef="Task_T1" />
+      <bpmn2:task id="Task_T1" name="Wait">
+        <bpmn2:incoming>Flow_t1</bpmn2:incoming>
+        <bpmn2:outgoing>Flow_t2</bpmn2:outgoing>
+      </bpmn2:task>
+      <bpmn2:sequenceFlow id="Flow_t2" sourceRef="Task_T1" targetRef="ErrEnd_1" />
+      <bpmn2:endEvent id="ErrEnd_1" name="throw error">
+        <bpmn2:incoming>Flow_t2</bpmn2:incoming>
+        <bpmn2:errorEventDefinition id="ErrDef_throw" errorRef="Error_1" />
+      </bpmn2:endEvent>
+    </bpmn2:subProcess>
+    <bpmn2:subProcess id="EventSub_2" triggeredByEvent="true">
+      <bpmn2:startEvent id="ErrStart_2">
+        <bpmn2:outgoing>Flow_e1</bpmn2:outgoing>
+        <bpmn2:errorEventDefinition id="ErrDef_catch" errorRef="Error_1" />
+      </bpmn2:startEvent>
+      <bpmn2:sequenceFlow id="Flow_e1" sourceRef="ErrStart_2" targetRef="Task_T2" />
+      <bpmn2:task id="Task_T2" name="Handle error">
+        <bpmn2:incoming>Flow_e1</bpmn2:incoming>
+        <bpmn2:outgoing>Flow_e2</bpmn2:outgoing>
+      </bpmn2:task>
+      <bpmn2:sequenceFlow id="Flow_e2" sourceRef="Task_T2" targetRef="End_2" />
+      <bpmn2:endEvent id="End_2">
+        <bpmn2:incoming>Flow_e2</bpmn2:incoming>
+      </bpmn2:endEvent>
     </bpmn2:subProcess>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -104,11 +131,51 @@
         <di:waypoint x="410" y="56" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="EventSub_1_di" bpmnElement="EventSub_1" isExpanded="true">
-        <dc:Bounds x="350" y="360" width="220" height="100" />
+        <dc:Bounds x="350" y="360" width="330" height="120" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EvtStart_1_di" bpmnElement="EvtStart_1">
-        <dc:Bounds x="372" y="400" width="36" height="36" />
+        <dc:Bounds x="372" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="367" y="445" width="48" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_T1_di" bpmnElement="Task_T1">
+        <dc:Bounds x="450" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ErrEnd_1_di" bpmnElement="ErrEnd_1">
+        <dc:Bounds x="600" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="591" y="445" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_t1_di" bpmnElement="Flow_t1">
+        <di:waypoint x="408" y="420" />
+        <di:waypoint x="450" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t2_di" bpmnElement="Flow_t2">
+        <di:waypoint x="550" y="420" />
+        <di:waypoint x="600" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EventSub_2_di" bpmnElement="EventSub_2" isExpanded="true">
+        <dc:Bounds x="350" y="510" width="330" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ErrStart_2_di" bpmnElement="ErrStart_2">
+        <dc:Bounds x="372" y="552" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_T2_di" bpmnElement="Task_T2">
+        <dc:Bounds x="450" y="530" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_2_di" bpmnElement="End_2">
+        <dc:Bounds x="600" y="552" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_e1_di" bpmnElement="Flow_e1">
+        <di:waypoint x="408" y="570" />
+        <di:waypoint x="450" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e2_di" bpmnElement="Flow_e2">
+        <di:waypoint x="550" y="570" />
+        <di:waypoint x="600" y="570" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn2:definitions>

@@ -63,11 +63,17 @@ For full control over placement, movement, selection, icons, and instance stacks
 ## Development
 
 ```sh
-npm install     # deps (incl. dev: bpmn-js + vite for the example)
-npm run dev     # vite playground (example/) — the visual check
+npm install     # deps (incl. dev: bpmn-js + vite for the demo)
+npm run dev     # vite dev server for the demo/ simulator app — the visual check
 npm test        # karma + mocha in headless Chrome
-npm run build   # production bundle of the example (sanity-checks all imports)
+npm run build   # production bundle of the demo (sanity-checks all imports; output in dist/)
 ```
+
+The **`demo/`** app is the interactive simulator (the drop-in for `bpmn-js-token-simulation`): start
+it, **Load diagram** or pick a bundled **example** (curated models in **`examples/`** covering the
+supported elements), then double-click the start event and the tokens. It logs each observed event and
+the resulting token action to the browser **console**. It is published to GitHub Pages on every push to
+`main` (`.github/workflows/deploy.yml`).
 
 ## License
 

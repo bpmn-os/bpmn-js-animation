@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bpmn-js-animation — interactive simulator</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      padding: 8px; border-bottom: 1px solid #ccc; background: #fafafa;
+    }
+    #toolbar button, #toolbar select {
+      padding: 5px 10px; border: 1px solid #bbb; border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 13px;
+    }
+    #toolbar button:hover { background: #eee; }
+    #toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
+    #toolbar .hint { font-size: 13px; color: #555; }
+    #toolbar .spacer { flex: 1; }
+    #main { flex: 1; position: relative; min-height: 0; }
+    #canvas { position: absolute; inset: 0; }
+    #placeholder {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #999; font-size: 15px; pointer-events: none; text-align: center; padding: 0 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <button id="load">Load diagram…</button>
+      <input type="file" id="file" accept=".bpmn,.xml" hidden />
+      <select id="examples" autocomplete="off" title="load a bundled example">
+        <option value="">Examples…</option>
+      </select>
+      <span class="sep"></span>
+      <button id="clear">Clear tokens</button>
+      <span class="spacer"></span>
+      <span class="hint">double-click the <b>start event</b> of a process to spawn · double-click a <b>token</b> to advance it</span>
+    </div>
+    <div id="main">
+      <div id="canvas"></div>
+      <div id="placeholder">Load a diagram or pick an example to begin.<br />Open the browser console to follow the simulation log.</div>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

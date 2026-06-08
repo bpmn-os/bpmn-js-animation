@@ -1,9 +1,16 @@
 import { defineConfig } from 'vite';
 
-// Dev-only config for the example playground (not part of the published package).
-// Serves example/index.html and is allowed to read the sibling lib/ + assets/.
+// Builds the `demo/` app (the interactive simulator) — the package's sole example app, deployed to
+// GitHub Pages. `root: 'demo'` serves demo/index.html; `fs.allow: ['..']` lets it read the sibling
+// lib/ + assets/ + examples/. `base` is the gh-pages sub-path (https://bpmn-os.github.io/<repo>/) in
+// CI; build output goes to the repo-root dist/ for the Pages workflow to upload.
 export default defineConfig({
-  root: 'example',
+  root: 'demo',
+  base: process.env.GITHUB_ACTIONS ? '/bpmn-js-animation/' : '/',
+  build: {
+    outDir: '../dist',
+    emptyOutDir: true
+  },
   server: {
     fs: {
       allow: [ '..' ]

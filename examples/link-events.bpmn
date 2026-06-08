@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="sample-diagram" targetNamespace="http://bpmn.io/schema/bpmn" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd">
+  <bpmn2:process id="Process_1" isExecutable="true">
+    <bpmn2:startEvent id="StartEvent_1">
+      <bpmn2:outgoing>Flow_start</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    <bpmn2:sequenceFlow id="Flow_start" sourceRef="StartEvent_1" targetRef="Task_1" />
+    <bpmn2:task id="Task_1" name="Before">
+      <bpmn2:incoming>Flow_start</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_throw</bpmn2:outgoing>
+    </bpmn2:task>
+    <bpmn2:sequenceFlow id="Flow_throw" sourceRef="Task_1" targetRef="LinkThrow_A" />
+    <bpmn2:intermediateThrowEvent id="LinkThrow_A" name="A">
+      <bpmn2:incoming>Flow_throw</bpmn2:incoming>
+      <bpmn2:linkEventDefinition id="LinkDef_throw" name="A" />
+    </bpmn2:intermediateThrowEvent>
+    <bpmn2:intermediateCatchEvent id="LinkCatch_A" name="A">
+      <bpmn2:outgoing>Flow_after</bpmn2:outgoing>
+      <bpmn2:linkEventDefinition id="LinkDef_catch" name="A" />
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:sequenceFlow id="Flow_after" sourceRef="LinkCatch_A" targetRef="Task_2" />
+    <bpmn2:task id="Task_2" name="After">
+      <bpmn2:incoming>Flow_after</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_end</bpmn2:outgoing>
+    </bpmn2:task>
+    <bpmn2:sequenceFlow id="Flow_end" sourceRef="Task_2" targetRef="EndEvent_1" />
+    <bpmn2:endEvent id="EndEvent_1">
+      <bpmn2:incoming>Flow_end</bpmn2:incoming>
+    </bpmn2:endEvent>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_1_di" bpmnElement="Task_1">
+        <dc:Bounds x="250" y="78" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="LinkThrow_A_di" bpmnElement="LinkThrow_A">
+        <dc:Bounds x="412" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="426" y="143" width="7" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="LinkCatch_A_di" bpmnElement="LinkCatch_A">
+        <dc:Bounds x="162" y="240" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="176" y="283" width="7" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_2_di" bpmnElement="Task_2">
+        <dc:Bounds x="250" y="218" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="412" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_start_di" bpmnElement="Flow_start">
+        <di:waypoint x="196" y="118" />
+        <di:waypoint x="250" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_throw_di" bpmnElement="Flow_throw">
+        <di:waypoint x="350" y="118" />
+        <di:waypoint x="412" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_after_di" bpmnElement="Flow_after">
+        <di:waypoint x="198" y="258" />
+        <di:waypoint x="250" y="258" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_end_di" bpmnElement="Flow_end">
+        <di:waypoint x="350" y="258" />
+        <di:waypoint x="412" y="258" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>
