@@ -9,6 +9,7 @@ import terminateXML from '../diagrams/terminate.bpmn';
 import inclusiveXML from '../diagrams/inclusive.bpmn';
 import loopXML from '../diagrams/loop.bpmn';
 import miXML from '../diagrams/mi-task.bpmn';
+import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -474,6 +475,33 @@ describe('simulator — multi-instance activity', function() {
     await sim._step(MI, label + '/2'); // completion → consume (last) → parent departs
     expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
     expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
+  });
+
+});
+
+
+describe('simulator — event-based gateway race', function() {
+
+  // StartEvent_1 → Gateway_1 (event-based) → { Catch_A → End_A | Catch_B → End_B }
+  beforeEach(bootstrap(eventBasedXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('forks to both catch events; triggering one flip-fades the losing sibling', async function() {
+    const sim = get('simulator');
+    const simulation = get('simulation');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    // the gateway forked to both catch events — both wait (bounce)
+    expect(simulation.getToken('Catch_A', label)).to.exist;
+    expect(simulation.getToken('Catch_B', label)).to.exist;
+    expect(simulation.getToken('Catch_A', label).state.animate).to.equal('bounce');
+
+    // trigger Catch_A → the losing sibling Catch_B is cancelled, Catch_A proceeds → End_A → done
+    await sim._step('Catch_A', label);
+    expect(simulation.getToken('Catch_B', label)).to.not.exist; // losing sibling flip-faded
+    expect(tokenAt('Catch_A', label)).to.not.exist;             // winner departed
+    expect(tokenAt('Process_1', label)).to.not.exist;           // End_A passed through → instance done
   });
 
 });
