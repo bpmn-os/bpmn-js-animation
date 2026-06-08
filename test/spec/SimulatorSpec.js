@@ -4,6 +4,7 @@ import { bootstrap, cleanup, get } from '../TestHelper';
 
 import linearXML from '../diagrams/linear.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
+import boundaryXML from '../diagrams/boundary.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -184,6 +185,78 @@ describe('simulator — parallel gateways (fork / join)', function() {
     expect(simulation.getTokens('Gateway_Join', label)).to.have.length(0); // join consumed both branches
     expect(tokenAt('EndEvent_1', label)).to.not.exist;                     // end passed through
     expect(tokenAt('Process_1', label)).to.not.exist;                      // terminated
+  });
+
+});
+
+
+describe('simulator — boundary events', function() {
+
+  // Activity_1 carries BOTH: BoundaryEvent_1 (interrupting, top edge) → EndEvent_1, and
+  // BoundaryEvent_2 (non-interrupting, bottom edge) → CatchEvent_1 → EndEvent_3.
+  beforeEach(bootstrap(boundaryXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  it('arms both listeners when the activity becomes busy (not at entry)', async function() {
+    const sim = get('simulator');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    expect(posAt('Activity_1', label)).to.equal('entry');
+    expect(tokenAt('BoundaryEvent_1', label)).to.not.exist;
+    expect(tokenAt('BoundaryEvent_2', label)).to.not.exist;
+
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+    expect(tokenAt('BoundaryEvent_1', label)).to.exist; // both armed at busy
+    expect(tokenAt('BoundaryEvent_2', label)).to.exist;
+  });
+
+
+  it('sheds both listeners on the activity\'s normal departure', async function() {
+    const sim = get('simulator');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+
+    await sim.advanceToCompletion({ node: 'Activity_1', label });
+    await sim.advanceToDeparted({ node: 'Activity_1', label }); // departs → W1 sheds the boundaries
+
+    expect(tokenAt('BoundaryEvent_1', label)).to.not.exist;
+    expect(tokenAt('BoundaryEvent_2', label)).to.not.exist;
+  });
+
+
+  it('interrupting fire cancels the host (and its other listeners) and terminates the instance', async function() {
+    const sim = get('simulator');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+
+    // fire the interrupting boundary → flip + depart + consume the host (and the other listener);
+    // the path runs to its end event and passes through → the instance terminates
+    await sim.advanceToDeparted({ node: 'BoundaryEvent_1', label });
+
+    expect(tokenAt('Activity_1', label)).to.not.exist;       // host cancelled
+    expect(tokenAt('BoundaryEvent_2', label)).to.not.exist;  // the other listener torn down too
+    expect(tokenAt('Process_1', label)).to.not.exist;        // terminated
+  });
+
+
+  it('non-interrupting fire re-arms the listener, leaves the host running, path waits at the catch', async function() {
+    const sim = get('simulator');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    await sim.advanceToBusy({ node: 'Activity_1', label });
+    const armed = tokenAt('BoundaryEvent_2', label);
+
+    await sim.advanceToDeparted({ node: 'BoundaryEvent_2', label });
+
+    // host still running; a FRESH listener is armed; the boundary path rests at the catch event
+    expect(posAt('Activity_1', label)).to.equal('busy');
+    const rearmed = tokenAt('BoundaryEvent_2', label);
+    expect(rearmed).to.exist;
+    expect(rearmed).to.not.equal(armed);              // a new token, not the departed one
+    expect(posAt('CatchEvent_1', label)).to.equal('center'); // path waits at the intermediate catch
+    expect(tokenAt('BoundaryEvent_1', label)).to.exist;      // the interrupting listener is untouched
   });
 
 });

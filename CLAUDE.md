@@ -94,7 +94,7 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
     `throwIcon(node,label,selector?) → Promise`, `catchIcon(node,label,selector?) → Promise`,
     `playTokenEffect(node,label,effect,selector?) → Promise` (a **one-shot** dot gesture —
-    `.bts-once-<effect>` for one duration then stripped; transient, unlike the looping `state.animate`;
+    `.bts-once-<effect>` for a third of a token-move (quick feedback) then stripped; transient, unlike the looping `state.animate`;
     sequence it before a depart/consume), `getTokens(filter?)` (insertion order),
     `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
