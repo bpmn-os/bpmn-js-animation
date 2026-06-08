@@ -12,6 +12,7 @@ import miXML from '../diagrams/mi-task.bpmn';
 import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
 import subprocessXML from '../diagrams/subprocess.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
+import linkXML from '../diagrams/link.bpmn';
 
 // flush the fire-and-forget event handlers (a macrotask drains the pending microtask chain)
 function flush() {
@@ -658,6 +659,34 @@ describe('simulator — standard-loop activity', function() {
     expect(tokenAt('Task_loop', label)).to.not.exist;  // left the activity
     expect(tokenAt('Process_1', label)).to.not.exist;  // end passed through → instance finished
     expect(er.getGraphics('Flow_2').classList.contains('bts-dim')).to.be.false;
+  });
+
+
+  describe('link events', function() {
+
+    beforeEach(bootstrap(linkXML, { animation: { animationDuration: 0 } }));
+    afterEach(cleanup);
+
+    it('teleports a token from a link throw to its matching catch, then continues', async function() {
+      const sim = get('simulator');
+
+      const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+      // run Task_1 and depart it — the token travels into the link throw, which auto-jumps to the
+      // matching catch and continues, all in one chain
+      await sim.advanceToBusy({ node: 'Task_1', label });
+      await sim.advanceToCompletion({ node: 'Task_1', label });
+      await sim.advanceToDeparted({ node: 'Task_1', label });
+      await flush();
+
+      // neither the throw nor the catch holds the token any more — it resumed past the catch at Task_2,
+      // carrying the same identity (no sequence flow ever ran between throw and catch)
+      expect(tokenAt('LinkThrow_A', label)).to.not.exist;
+      expect(tokenAt('LinkCatch_A', label)).to.not.exist;
+      expect(posAt('Task_2', label)).to.equal('entry');
+      expect(tokenAt('Task_2', label).state.animate).to.equal('bounce');
+    });
+
   });
 
 });

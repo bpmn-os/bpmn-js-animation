@@ -15,6 +15,7 @@ import linearXML from '../test/diagrams/linear.bpmn?raw';
 import boundaryXML from '../test/diagrams/boundary.bpmn?raw';
 import inclusiveXML from '../test/diagrams/inclusive.bpmn?raw';
 import subprocessXML from '../test/diagrams/subprocess.bpmn?raw';
+import linkXML from '../test/diagrams/link.bpmn?raw';
 import processXML from './process.bpmn?raw';
 
 const DIAGRAMS = {
@@ -22,6 +23,7 @@ const DIAGRAMS = {
   boundary: boundaryXML,     // task + interrupting boundary → terminate, + a non-interrupting boundary
   inclusive: inclusiveXML,   // inclusive split → 3 task branches → inclusive join
   subprocess: subprocessXML, // a collapsed sub-process — entry drills in, runs its body, drills out
+  link: linkXML,             // a link throw teleports the token to its matching link catch (no flow between)
   process: processXML        // parallel split + standard-loop task + multi-instance task; event-sub — partial
 };
 

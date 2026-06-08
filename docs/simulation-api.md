@@ -219,6 +219,14 @@ finish before collapsing its container** — the implicit-process box / instance
 arc all run after the dot has faded, so the box never vanishes out from under a still-fading dot.
 The returned Promise resolves once that visual teardown is done.
 
+### `jumpToken(fromNode, label, toNode)` → `token`
+
+**Teleport** a token from `fromNode` to `toNode`, preserving its identity and tree position — the
+same token object, with its color, selection, instance membership, and children carried across, now
+anchored at `toNode`'s **center**. No sequence flow runs between them. This is the **link-event**
+primitive: a link throw vanishes the token and it reappears at the matching link catch. (Delegates to
+[`animation.moveToken`](animation-api.md).)
+
 ### `autoFocus(on = true)`
 
 When on, every call that touches a token **reveals that token's instance** — bringing it to the
@@ -252,6 +260,12 @@ when the gesture ends.
 Dim / undim a **sequence flow** (semi-transparent line + arrowhead; reverts cleanly) — delegates to
 [`animation.setFlowDimmed`](animation-api.md). Used to fade a diverging gateway's unchosen outflows
 while the user picks. `clear` undims any left dimmed.
+
+### `setNodeDimmed(nodeId, on = true)`
+
+Dim / undim a **node** (semi-transparent shape; same `.bts-dim` mechanism as `setFlowDimmed`) —
+delegates to [`animation.setNodeDimmed`](animation-api.md). Used to fade the candidate **link catch**
+events of an ambiguous link throw while the user picks the jump target. `clear` undims any left dimmed.
 
 ### `whenFocused()` → `Promise`
 

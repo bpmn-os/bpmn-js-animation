@@ -94,6 +94,11 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     stackIndices? }`. `getSelectedTokens() → Token[]`, `setNodeSelected(node,selected=true)`,
     `getSelectedNodes() → string[]`, `setFlowDimmed(flowId,on=true)` (a `.bts-dim` semi-transparent class on
     a sequence flow — the simulator fades a diverging gateway's unchosen outflows; reverted by `clear`),
+    `setNodeDimmed(nodeId,on=true)` (the same `.bts-dim` on a **node** — fades candidate link-catch events;
+    thin wrapper over `setFlowDimmed`, shares its tracking + `clear`),
+    `moveToken(fromNode,label,toNode,selector?,state?) → Token` (**teleport** a token to another node
+    **preserving identity** — re-key + re-render both, no flow travel; the **link-event** primitive, a link
+    throw → its matching catch),
     `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
     set a node's ordered instance **keys**, front first — removing one never shifts the others),
     `getStacks(node) → key[]` (count = `.length`), `getCurrentStack(node) → key`
@@ -241,6 +246,17 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     split** — the host creates a token on each flow. (Entering a specific instance of a stacked target / leaving
     a stack is host-managed: `removeToken` + `createToken` per instance, or `setState` with the full
     `stackIndices`.)
+  - **`moveToken(fromNode,label,toNode,selector?,state?)`** — **teleport**, the dual of `sendToken`: no
+    flow travels, the **same Token object** is re-keyed from `fromNode` to `toNode` (drop from the old key +
+    node set, set `token.node`, merge `state`, push under the new key, re-render both). Identity / color /
+    `selected` / `stackIndices` / children all carried. Drives **link events** (a link throw → its matching
+    catch); the host anchors the landing `state` (SimulationAPI passes `position: CENTER`, `sequenceFlow:
+    null`). The Simulator side: `advanceToDeparted` routes a link **throw** (`c.link !== undefined`, no
+    outflow) to `_jumpLink` → one matching catch auto-jumps (`_jumpTo`: throw icon out fire-and-forget +
+    `jumpToken` + route the landed token through `triggerCatchEvent`, which flies the catch icon in and
+    departs); several matches reuse the diverging-gateway Fallback over the candidate **catch nodes**
+    (`setNodeDimmed` dims them, a click picks, a double-click jumps). Matching catches exclude **label**
+    elements (they share the catch's `businessObject`, so they'd classify identically and double the match).
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** the node's **rule-visible** tokens (`_isVisible` — filter + the instance rule) are
