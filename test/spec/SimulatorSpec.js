@@ -378,31 +378,70 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
     expect(simulation.getTokens('Task_A', label)).to.have.length(0);
   });
 
-  it('joins the branches that have arrived at a converging inclusive gateway on a double-click', async function() {
+  // tokens of `label` resting on a converging gateway's incoming flows (i.e. waiting branches)
+  function waitingAt(node, label) {
+    return get('simulation').getTokens(node, label).filter(t => t.state.sequenceFlow).length;
+  }
+
+  it('auto-joins a converging inclusive gateway once no more branches can arrive', async function() {
+    const sim = get('simulator');
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+    const eventBus = get('eventBus');
+    const er = get('elementRegistry');
+
+    eventBus.fire('element.click', { element: er.get('Flow_a') });
+    eventBus.fire('element.click', { element: er.get('Flow_b') });
+    eventBus.fire('element.click', { element: er.get('Flow_c') });
+    await sim.advanceToDeparted({ node: 'Gateway_Split', label });
+
+    // run A and B to the join — it does NOT fire yet, because C is still upstream (can reach Flow_c2)
+    for (const task of [ 'Task_A', 'Task_B' ]) {
+      await sim.advanceToBusy({ node: task, label });
+      await sim.advanceToCompletion({ node: task, label });
+      await sim.advanceToDeparted({ node: task, label });
+    }
+    expect(waitingAt('Gateway_Join', label)).to.equal(2); // A & B waiting; not joined
+
+    // run C → its arrival fills the last inflow → the OR-join fires **automatically** (no double-click)
+    await sim.advanceToBusy({ node: 'Task_C', label });
+    await sim.advanceToCompletion({ node: 'Task_C', label });
+    await sim.advanceToDeparted({ node: 'Task_C', label });
+
+    expect(waitingAt('Gateway_Join', label)).to.equal(0);  // merged into one continuation
+    expect(tokenAt('Process_1', label)).to.not.exist;      // it passed through the end → instance done
+  });
+
+  it('an interrupting boundary that removes a still-upstream branch readies the OR-join', async function() {
     const sim = get('simulator');
     const simulation = get('simulation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
-    // spawn, take all three branches, and run each task through to its departure → the three
-    // branches arrive and rest on the join's incoming flows
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
     eventBus.fire('element.click', { element: er.get('Flow_a') });
     eventBus.fire('element.click', { element: er.get('Flow_b') });
     eventBus.fire('element.click', { element: er.get('Flow_c') });
     await sim.advanceToDeparted({ node: 'Gateway_Split', label });
 
-    for (const task of [ 'Task_A', 'Task_B', 'Task_C' ]) {
+    // A and C reach the join and wait; B stays busy (still upstream, arming its timer boundary)
+    for (const task of [ 'Task_A', 'Task_C' ]) {
       await sim.advanceToBusy({ node: task, label });
       await sim.advanceToCompletion({ node: task, label });
-      await sim.advanceToDeparted({ node: task, label }); // travels to the join, rests on its inflow
+      await sim.advanceToDeparted({ node: task, label });
     }
-    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(3); // all three waiting
+    await sim.advanceToBusy({ node: 'Task_B', label }); // B busy → boundary armed
+    await flush();
 
-    // double-click one arrived branch → joins all three (≤1 per inflow) and departs → end → done
-    await sim._step('Gateway_Join', label, 'Flow_a2');
-    expect(simulation.getTokens('Gateway_Join', label)).to.have.length(0);
-    expect(tokenAt('Process_1', label)).to.not.exist; // single continuation passed through the end
+    // the join is held: B can still reach the empty Flow_b2 inflow
+    expect(waitingAt('Gateway_Join', label)).to.equal(2);
+
+    // fire B's **interrupting** timer boundary → B is cancelled (consumed). No live token can now reach
+    // Flow_b2, so the OR-join becomes ready and fires with the two arrived branches.
+    await sim.advanceToDeparted({ node: 'Event_096uk4c', label });
+    await flush();
+
+    expect(waitingAt('Gateway_Join', label)).to.equal(0); // joined A & C, departed
+    expect(tokenAt('Task_B', label)).to.not.exist;         // the interrupted branch is gone
   });
 
 });
