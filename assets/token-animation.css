@@ -49,6 +49,27 @@
 .bts-token-count.bts-anim-flip         { animation: bts-flip 1.2s infinite ease-in-out; }
 .bts-token-count.bts-anim-flip-pause   { animation: bts-flip-pause 1.8s infinite ease-in-out; }
 
+/* one-shot dot gestures — `playTokenEffect(node, label, '<effect>')` → `.bts-once-<effect>`,
+   played **once** (duration set inline to animationDuration), then removed. Transient,
+   unlike the looping `.bts-anim-*` cues; used by the interactive simulator for a flip on
+   trigger / a fade-out before consume. `flip` reuses the single-flip keyframe (180°, the
+   snap-back to 0° is invisible on the symmetric dot). */
+.bts-token-count.bts-once-flip {
+  animation-name: bts-flip;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-in-out;
+}
+.bts-token-count.bts-once-fade-out {
+  animation-name: bts-once-fade-out;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards; /* stay invisible until the caller consumes the token */
+}
+@keyframes bts-once-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* an anchored token on a process/activity uses the larger badge size (25px); the
    default (20px, matching the moving token) is used on flows, events and gateways */
 .bts-token-count.bts-on-activity {

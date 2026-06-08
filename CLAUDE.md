@@ -92,7 +92,10 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     instance — node's own + stacked ancestors' front keys),
     `moveToFront(node,key) → Promise` / `moveToBack(node,key) → Promise`, `getProcessBox() → string|null`,
     `scrollStack(node,direction='forward'|'backward') → Promise`, `getMaxVisible() → number`,
-    `throwIcon(node,label,selector?) → Promise`, `catchIcon(node,label,selector?) → Promise`, `getTokens(filter?)` (insertion order),
+    `throwIcon(node,label,selector?) → Promise`, `catchIcon(node,label,selector?) → Promise`,
+    `playTokenEffect(node,label,effect,selector?) → Promise` (a **one-shot** dot gesture —
+    `.bts-once-<effect>` for one duration then stripped; transient, unlike the looping `state.animate`;
+    sequence it before a depart/consume), `getTokens(filter?)` (insertion order),
     `clear`, `setAnimationDuration`. (The count/index conveniences
     `setStackSize`/`getStackSize`/`setStackIndex` are **not** service methods — they live as shims in
     `test/TestHelper.js` + `example/app.js` over the key-based API above.) `moveToFront`/`moveToBack`
@@ -242,8 +245,11 @@ A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one se
     larger 25px badge (`.bts-on-activity`, set per cluster via `big`). Per dot: `background: color`, `title =
     label`, `.bts-anim-<animate>` when `animate`, `.bts-selected` when `selected`, `.bts-hidden` (`display:none`) when `hidden`,
     `data-left`/`-top`/`-hoffset`/`-voffset`/`-sequence-flow`/`-animate`/`-selected`/`-hidden`. Capped per cluster at
-    `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). Delegated click
-    fires `token.click {node,label,sequenceFlow,stackIndices}` or `token.overflow.click {node,hidden}`. A **stacked**
+    `config.animation.maxVisible` (default 3; `max+1` shown rather than a "+1" marker). The delegated
+    handler fires `token.click {node,label,sequenceFlow,stackIndices}` / `token.overflow.click {node,hidden}`
+    on click, and **`token.dblclick`** (same payload as `token.click`) on a **double-click of the dot** —
+    the interactive simulator's advance gesture; the dot is an HTML overlay, distinct from the SVG shape
+    that `element.dblclick` (stack-scroll) fires on, so they never collide. A **stacked**
     node therefore shows exactly its **current front instance's** tokens (those whose `stackIndices` match
     the front), in insertion order — no special branch.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a
@@ -271,7 +277,8 @@ The **low-level tween** at the bottom of `lib/AnimationAPI.js` (below the banner
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
-`.bts-selected` / `.bts-on-activity` / `.bts-node-outline` / `.bts-stack-*` styles.
+`.bts-once-*` (one-shot `playTokenEffect` gestures) / `.bts-selected` / `.bts-on-activity` /
+`.bts-node-outline` / `.bts-stack-*` styles.
 
 ## Testing
 

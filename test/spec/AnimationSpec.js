@@ -597,6 +597,37 @@ describe('animation', function() {
     });
 
 
+    it('fires token.dblclick with { node, label, sequenceFlow }', function() {
+      const tokens = get('animation');
+
+      let fired;
+      get('eventBus').on('token.dblclick', e => (fired = e));
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+      dotAt('Task_1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+      expect(fired).to.exist;
+      expect(fired.node).to.equal('Task_1');
+      expect(fired.label).to.equal('A');
+      expect(fired.sequenceFlow).to.equal(null);
+    });
+
+
+    it('does not fire token.dblclick on the overflow marker', function() {
+      const tokens = get('animation');
+
+      let fired = false;
+      get('eventBus').on('token.dblclick', () => (fired = true));
+
+      for (let i = 1; i <= 5; i++) {
+        tokens.createToken('Gateway_1', 'S' + i, 'tomato');
+      }
+      marker().dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+      expect(fired).to.be.false;
+    });
+
+
     it('fires token.overflow.click with the hidden tokens', function() {
       const tokens = get('animation');
 
@@ -612,6 +643,45 @@ describe('animation', function() {
       expect(fired).to.exist;
       expect(fired.node).to.equal('Gateway_1');
       expect(fired.hidden).to.have.length(2);
+    });
+
+  });
+
+
+  describe('playTokenEffect (one-shot dot gesture)', function() {
+
+    it('applies the .bts-once-<effect> class to the dot, then strips it when done', async function() {
+      const tokens = get('animation');
+
+      tokens.createToken('Task_1', 'A', 'tomato');
+
+      const promise = tokens.playTokenEffect('Task_1', 'A', 'flip');
+
+      // applied synchronously to the resting dot
+      expect(dotAt('Task_1').classList.contains('bts-once-flip')).to.be.true;
+
+      await promise;
+
+      // stripped on finish (the dot itself stays — caller decides what's next)
+      expect(dotAt('Task_1').classList.contains('bts-once-flip')).to.be.false;
+      expect(dotAt('Task_1')).to.exist;
+    });
+
+
+    it('resolves as a no-op when the token is not drawn', async function() {
+      const tokens = get('animation');
+
+      // an existing node, but no token resting on it
+      await tokens.playTokenEffect('Task_1', 'ghost', 'flip');
+
+      expect(dotAt('Task_1')).to.not.exist;
+    });
+
+
+    it('throws for an unknown node', function() {
+      const tokens = get('animation');
+
+      expect(() => tokens.playTokenEffect('NopeNode', 'A', 'flip')).to.throw(/unknown node/);
     });
 
   });

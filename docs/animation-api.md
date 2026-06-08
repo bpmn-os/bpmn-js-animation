@@ -84,6 +84,7 @@ state = {
 | `getSelectedTokens()` | The selected tokens (`Token[]`). |
 | `setNodeSelected(node, selected?)` / `getSelectedNodes()` | Draw a modeller-style blue boundary on an element (stack-aware); list selected node ids. |
 | `throwIcon(node, label, selector?)` / `catchIcon(node, label, selector?)` | Play the element's own **icon**, emitted **from / into the token** `(node, label, selector)` — the icon starts centered on the token's dot and flies out up-right + fades out (**throw**), or flies in from up-left + fades in to land on the dot (**catch**). Native color, shared duration. `→ Promise`; no-op if no token rests there or the element has no icon. Direction is your choice — the library reads no BPMN semantics. |
+| `playTokenEffect(node, label, effect, selector?)` | Play a **one-shot** CSS effect on the resting token's dot — e.g. `'flip'` (a single flip) or `'fade-out'` — applied as a `.bts-once-<effect>` class for one `animationDuration`, then stripped. Unlike `state.animate` (a persistent, **looping** cue), this is a transient gesture you **sequence** in front of a depart/consume, e.g. `playTokenEffect(n, l, 'fade-out').then(() => removeToken(n, l))`. `→ Promise`; no-op if the token isn't drawn (parked/`hidden`, or behind a `+N` marker). |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state, selected, stackIndices }`), in insertion order. |
 | `clear()` | Remove all tokens. |
 | `setAnimationDuration(ms)` / `getAnimationDuration()` | Global animation duration — token moves **and** `throwIcon`/`catchIcon`. `0` makes transitions instant. |
@@ -93,6 +94,9 @@ state = {
 - `token.click` — `{ node, label, sequenceFlow, stackIndices }` (`stackIndices` is the clicked
   **instance** — pass it back as the selector to address that token, since a stacked node shows
   only its front instance).
+- `token.dblclick` — same payload as `token.click`; fired on a **double-click of the token dot**
+  (the interactive simulator's advance gesture). The dot is an HTML overlay, a distinct target
+  from the SVG shape `element.dblclick` (stack-scroll) fires on, so the two never collide.
 - `token.overflow.click` — `{ node, hidden }` (the `+N` marker; `hidden` lists the
   `{ node, label, stackIndices }` not shown).
 
