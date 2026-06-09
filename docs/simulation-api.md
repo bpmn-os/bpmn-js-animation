@@ -50,13 +50,16 @@ entered / running / done) is your convention.
 
 ### `createToken({ node, label, animate? })` → `token`
 
-Create a token. Four cases, by node kind:
+Create a token. The behaviour is chosen by node kind:
 
 - **Process / Participant** — start a new instance: bump the node's instance stack and create
   the **root** token at `entry` with a fresh distinct color. For a pool-less `bpmn:Process`
   this also draws the [implicit process box](animation-api.md#implicit-process-box).
 - **Start event** of a Process / SubProcess (not an event sub-process) — create a **child** of
   the token at the enclosing scope, with the **same label** and color, at `center`.
+- **Activity** (non-MI, inside a scope) — create a **child** of the enclosing-scope token,
+  inheriting its color, at `entry`. Used to seed an ad-hoc sub-process's no-incoming-flow body
+  activities (each a ready token the user then advances).
 - **Boundary event** — create a **child** of the token at the **attached activity**, cloned
   from it (same label/color), at `center`. See [Boundary events](#boundary-events) below.
 - **MI activity** — create a **sub-instance** (`label` = the sub's id), a child of the outer
@@ -151,8 +154,10 @@ simulation.createToken({ node: 'EvtStart_1', label: 'I1.e2' });    // firing 2 (
 await simulation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops the e1 firing key
 ```
 
-> Interrupting event sub-processes (replace the parent scope's other tokens) are a follow-up; the
-> built case is non-interrupting.
+**Interrupting** firings are the same spawn followed by `consumeToken` on the enclosing scope's
+other tokens (the simulator does exactly this) — the firing departs its start event first so it
+survives, then the scope siblings are torn down. The library exposes the distinction via
+`classify(element).interrupting`; both kinds spawn identically.
 
 ### `advanceToken({ node, label, sequenceFlow?, position?, animate? })` → `Promise<token>`
 
@@ -165,8 +170,9 @@ One verb, three forms — chosen by which argument you pass:
   symbol **center**, taking it off whatever flow it rested on. At a converging gateway this anchors
   a single arrived branch; [`joinTokens`](#jointokens-node-label--promisetoken) collapses several.
 - **Within an activity/container** (`position` — a sweep value) — glide from the token's current
-  position to the target, **through every skipped intermediate**. Forward-only. `animate` (a motion
-  cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
+  position to the target, **through every skipped intermediate**. Forward-only, except a
+  **standard-loop** activity may glide **backward** to an earlier position (a loop iteration redoing
+  part of the lifecycle). `animate` (a motion cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
 
 ```javascript
 await simulation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
@@ -199,16 +205,18 @@ membership, inheriting any children). Carry it onward with `advanceToken`.
 > A converging *exclusive* gateway is an uncontrolled merge, not a join — there each token just
 > passes through with `advanceToken` (center-anchor).
 
-### `consumeToken({ node, label, gesture? })` → `Promise<token[]>`
+### `consumeToken({ node, label, sequenceFlow?, gesture? })` → `Promise<token[]>`
 
 Remove the **anchored** target token **and its whole subtree** (descendants on flows included).
 Resolves with the removed tokens. If the target sits at a **stacked host** (a process /
 participant root, or a multi-instance activity instance), the host's instance stack is
 decremented — consuming the last process instance removes its box.
 
-The target must be *anchored*; a token in transit on a flow can't be consumed directly (anchor
-it first), though descendants on flows **are** torn down by the cascade. Terminating an instance
-is `consumeToken` on its root.
+By default the target must be *anchored* — a token in transit on a flow isn't consumed directly
+(anchor it first), though descendants on flows **are** torn down by the cascade. To target a token
+**resting on a flow** instead, pass its `sequenceFlow` explicitly (e.g. consuming a parked MI
+outer-thread token when its scope is interrupted). Terminating an instance is `consumeToken` on its
+root.
 
 The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the
 moment this is called (don't await it to observe the removal). Pass `gesture: true` to flip-fade each
@@ -226,6 +234,28 @@ same token object, with its color, selection, instance membership, and children 
 anchored at `toNode`'s **center**. No sequence flow runs between them. This is the **link-event**
 primitive: a link throw vanishes the token and it reappears at the matching link catch. (Delegates to
 [`animation.moveToken`](animation-api.md).)
+
+### `departToken(node, label, sequenceFlow)` → `token`
+
+Move a token onto an outgoing flow (the **depart**) **without travelling** — the dot comes to rest
+at the flow's near end. Pair it with `advanceToken({ sequenceFlow })` to then travel the branch,
+letting the host act **in between** (consume the host activity, re-arm a listener) while the token is
+already on the flow and no longer the anchored token at the node. A **boundary** token also detaches
+from its host here, reparenting to the enclosing scope, so it survives a concurrent host consume.
+
+### `throwIcon(node, label, selector?)` → `Promise` / `catchIcon(node, label, selector?)` → `Promise`
+
+Play the node's **own icon**, anchored to its resting token (delegates to
+[`animation.throwIcon`](animation-api.md) / [`catchIcon`](animation-api.md)). `throwIcon` flies the
+icon out from the dot and fades it (a throw event / send task passing through); `catchIcon` flies it
+in to land on the dot (a catch event being triggered). No-op if no token rests there or the element
+has no icon. Direction is the host's choice — no BPMN semantics are read.
+
+### `playTokenEffectOn(token, effect)` → `Promise`
+
+Like [`playTokenEffect`](#playtokeneffectnode-label-effect-selector--promise) but addresses a
+**specific token object** directly (not by `(node, label)`) — used to gesture a whole subtree at
+once. No-op if the token is gone.
 
 ### `autoFocus(on = true)`
 
@@ -282,6 +312,7 @@ instance has scrolled to the front. `consumeToken` also plays the reveal arc in 
 | `getTokens(node, label)` | every token of instance `label` at `node` (0, 1, or several branches) |
 | `getEntry(node, label, sequenceFlow?)` | the internal bookkeeping record (prefer `getToken`) |
 | `getChildren(token)` | the token's child tokens (one tree per instance) |
+| `getParent(token)` | the token's parent — its enclosing scope (a sub-process / process-root token), or `null` |
 
 ### `clear()`
 
@@ -289,14 +320,17 @@ Reset all simulation state and clear the underlying animation.
 
 ## Status
 
-Built and tested today: `createToken` (process / participant / start event / **boundary event** /
+Built and tested: `createToken` (process / participant / start event / **boundary event** /
 **MI activity** / **event-sub firing**), `advanceToken` (flow travel / center-anchor / activity
 sweep), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token**
-stack-decrement covering process roots, MI subs, **and event-sub firings**), `autoFocus`, and the
-lookups. Most node types are covered by composing these (end events = advance-center + consume;
-tasks = activity sweep with an `animate` cue; start = createToken; boundary / MI / event-sub = createToken
-+ the choreographies above).
+stack-decrement covering process roots, MI subs, **and event-sub firings**), `jumpToken` (link
+events), `departToken`, the **icon cues** (`throwIcon` / `catchIcon` — used for throw/catch events
+and send/receive tasks), `autoFocus`, and the lookups. Most node types are covered by composing these
+(end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start =
+createToken; boundary / MI / event-sub = createToken + the choreographies above). **Sub-processes**
+(collapsed or expanded) run as an activity sweep that completes when their body empties — the
+simulator drills the canvas in/out for a collapsed plane. **Interrupting** event sub-processes and
+boundary events compose from a spawn + a scope/host `consumeToken` (see above).
 
-Not yet built: **interrupting** event sub-processes, expanded sub-process entry, and the prescribed
-icon cues (throw/catch, send/receive). For those — and for full manual control — drop down to the
-[`animation`](animation-api.md) service.
+Not modelled: compensation, call activities, and transaction sub-processes. For full manual control
+beyond these choreographies, drop down to the [`animation`](animation-api.md) service.

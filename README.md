@@ -109,8 +109,8 @@ See [documentation](docs/simulation-api.md) for further details.
 ## Supported BPMN elements
 
 Tasks (including send / receive), exclusive / parallel / inclusive / complex and event-based gateways,
-sub-processes (collapsed, with drill in / out), multi-instance activities, boundary events, event
-sub-processes, terminate, error & escalation propagation, and link events.
+sub-processes (expanded, and collapsed with drill in / out), multi-instance activities, boundary
+events, event sub-processes, terminate, error & escalation propagation, and link events.
 
 **Not supported**: compensation, call activities, transaction sub-processes.
 
