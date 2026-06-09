@@ -14,6 +14,14 @@
       <bpmn2:incoming>Flow_2</bpmn2:incoming>
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="Flow_2" sourceRef="Task_loop" targetRef="EndEvent_1" />
+    <bpmn2:boundaryEvent id="BoundaryEvent_1" cancelActivity="false" attachedToRef="Task_loop">
+      <bpmn2:outgoing>Flow_3</bpmn2:outgoing>
+      <bpmn2:timerEventDefinition />
+    </bpmn2:boundaryEvent>
+    <bpmn2:sequenceFlow id="Flow_3" sourceRef="BoundaryEvent_1" targetRef="EndEvent_2" />
+    <bpmn2:endEvent id="EndEvent_2">
+      <bpmn2:incoming>Flow_3</bpmn2:incoming>
+    </bpmn2:endEvent>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
@@ -33,6 +41,16 @@
       <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
         <di:waypoint x="340" y="118" />
         <di:waypoint x="400" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BoundaryEvent_1_di" bpmnElement="BoundaryEvent_1">
+        <dc:Bounds x="272" y="140" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_2_di" bpmnElement="EndEvent_2">
+        <dc:Bounds x="272" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="290" y="176" />
+        <di:waypoint x="290" y="240" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

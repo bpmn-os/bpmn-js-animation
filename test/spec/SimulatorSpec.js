@@ -702,6 +702,36 @@ describe('simulator — standard-loop activity', function() {
   });
 
 
+  it('keeps its boundary event armed across a loop re-entry (sheds it only on depart)', async function() {
+    const sim = get('simulator');
+    const er = get('elementRegistry');
+    const eventBus = get('eventBus');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    // entry → busy arms the (non-interrupting) boundary listener
+    await sim._step('Task_loop', label); // entry → busy
+    expect(tokenAt('BoundaryEvent_1', label), 'armed at busy').to.exist;
+
+    await sim._step('Task_loop', label); // busy → completion
+
+    // re-enter (plain double-click): the boundary listener must survive — one activity execution
+    await sim._step('Task_loop', label);
+    expect(posAt('Task_loop', label)).to.equal('entry');
+    expect(tokenAt('BoundaryEvent_1', label), 'still armed across the loop').to.exist;
+
+    // run the next iteration to busy: re-arming is idempotent, no duplicate listener
+    await sim._step('Task_loop', label); // entry → busy
+    expect(get('simulation').getTokens('BoundaryEvent_1', label)).to.have.length(1);
+
+    // depart the loop → now the boundary is shed
+    await sim._step('Task_loop', label); // busy → completion
+    eventBus.fire('element.click', { element: er.get('Flow_2') });
+    await sim._step('Task_loop', label); // completion → depart
+    expect(tokenAt('BoundaryEvent_1', label), 'shed once the activity departs').to.not.exist;
+  });
+
+
   describe('link events', function() {
 
     beforeEach(bootstrap(linkXML, { animation: { animationDuration: 0 } }));
