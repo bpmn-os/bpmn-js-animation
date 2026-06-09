@@ -1239,6 +1239,63 @@ describe('animation', function() {
     });
 
 
+    describe('in-flight visibility on a hidden instance', function() {
+
+      const moving = () => document.querySelector('.bts-animation-tokens .bts-token');
+
+      it('hides a node glide on a non-front instance', async function() {
+        cleanup();
+        await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 2); // front = instance 0
+        tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('center-middle') }, { Task_1: 1 });
+
+        // glide instance 1's token (the hidden, back instance) — its moving dot must not show on top
+        tokens.setState('Task_1', 'B', { position: pos('top-left') }, { stackIndices: { Task_1: 1 } });
+
+        expect(moving(), 'glide in flight').to.exist;
+        expect(moving().style.display, 'hidden: instance 1 is not on screen').to.equal('none');
+      });
+
+
+      it('shows a node glide on the front instance', async function() {
+        cleanup();
+        await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 2); // front = instance 0
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+
+        tokens.setState('Task_1', 'A', { position: pos('top-left') }, { stackIndices: { Task_1: 0 } });
+
+        expect(moving(), 'glide in flight').to.exist;
+        expect(moving().style.display, 'visible: instance 0 is on screen').to.not.equal('none');
+      });
+
+
+      it('re-syncs a mid-glide dot when the front instance changes', async function() {
+        cleanup();
+        await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
+
+        const tokens = get('animation');
+
+        tokens.setStackSize('Task_1', 2); // front = instance 0
+        tokens.createToken('Task_1', 'A', 'tomato', { position: pos('center-middle') }, { Task_1: 0 });
+        tokens.setState('Task_1', 'A', { position: pos('top-left') }, { stackIndices: { Task_1: 0 } });
+
+        expect(moving().style.display, 'visible while instance 0 is front').to.not.equal('none');
+
+        // bring instance 1 to the front mid-glide -> instance 0's moving dot must hide
+        tokens.setStackIndex('Task_1', 1);
+        expect(moving().style.display, 'hidden once instance 0 falls behind').to.equal('none');
+      });
+
+    });
+
+
     describe('container stacking', function() {
 
       it('static stack copies are outline-only (no children)', function() {
