@@ -18,6 +18,11 @@ as the engine reports movements. The library decides *how* each node type animat
 - A token is addressed by **`(node, label)`**, where **`label` is the instance id** (e.g.
   `"Instance_1#1"`, `"order-42"`). A node id plus an instance label is enough to find the
   token and its membership.
+- **`node` is any BPMN element id — name a process by its *process* id.** In a collaboration a
+  `bpmn:Process` has no shape of its own (its `bpmn:Participant` pool does); pass the **process** id
+  (`"OrderProcess"`) anywhere a `node` is expected and it resolves to the participant automatically.
+  A bare (pool-less) process and every flow node are already real shapes, so this is a no-op for them
+  — you address processes by process id everywhere, never by participant id.
 - Tokens form **one tree per process instance**. The process/participant `createToken` is the
   **root**; every token created inside that instance (a start-event child, a fork branch) is a
   descendant. `consumeToken` on a token cascades to its whole subtree — so terminating an
@@ -271,6 +276,18 @@ token is brought to the front of a stacked node only when the context hasn't cla
 *different* instance (nodes the context doesn't mention still focus). So a burst of concurrently
 auto-advancing instances — e.g. rapidly spawned process instances — no longer thrash which one is
 shown; the last-interacted instance keeps the front. Pass `null` to clear (focus every touch again).
+
+### `moveToFront(node, label)` → `Promise` / `moveToBack(node, label)` → `Promise` / `scrollStack(node, direction?)` → `Promise`
+
+**Choose which stacked instance is on screen**, explicitly (the manual counterpart to `autoFocus`).
+A stacked process / participant / MI activity renders only its **front** instance's tokens, and the
+simulation API resolves "spawn into this instance" against that front — so when you drive several
+instances programmatically, bring the target to the front *before* the operation. `moveToFront` /
+`moveToBack` reorder by instance **label**; `scrollStack(node, 'forward'|'backward')` steps to the
+next / previous. The order updates **synchronously** (a later spawn resolves against the new front);
+the scroll arc resolves the Promise. Delegates to the [`animation`](animation-api.md#instance-stacks)
+service (which also exposes the `getStacks` / `getCurrentStacks` readers); no-op when the node isn't stacked. (`autoFocus` automates this on touch — reach for these when you need deterministic
+control instead.)
 
 ### `setCue(node, label, animate, selector?)`
 

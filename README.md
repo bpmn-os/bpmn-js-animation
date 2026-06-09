@@ -1,94 +1,65 @@
 # bpmn-js-animation
 
-Interactive **BPMN token animation** for [bpmn-js](https://github.com/bpmn-io/bpmn-js) and the **API** it's built upon.
+Animation for BPMN powered by [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 
-Renders tokens on a BPMN diagram and moves them through a process: spawn instances, advance
-tasks, fork and join gateways, run sub-processes and multi-instance activities, fire boundary and
-event sub-processes, throw and catch errors and escalations, jump link events, and more.
+![Example](docs/playback.gif)
 
 ## Motivation
 
-This project is based on [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation), 
-kudos to the bpmn-io team. It reuses the core token-flow animation, but takes a deliberately different approach:
+This project allows to animate BPMN execution using tokens flowing through the model.
+It is inspired by [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation),
+and reuses the fundamental token-flow animation, but takes a deliberately different approach:
 
-- token-simulation shows all tokens of all instances in one holistic view, driven by on-canvas buttons,
-  and combines animation with simulation into one module;
-- this project separates the API that you can drive programmatically from an interactive simulator
-  built on top of it. The simulator has no buttons, you just double-click a start event to spawn an instance
-  and double-click a token to advance it; where the model is ambiguous (a diverging gateway, a loop), 
-  you select the sequence flow(s) to choose, then double-click the token;
-- process instances, multi-instance activities, and non-interrupting event sub-processes are shown as stacks.
-  Only the tokens in the front instance are visible; another instance is brought forward by double-clicking the
-  stack (Shift+double-click steps back).
+- The main goal of this project is to provide an API that can be used to programmatically
+  animate process execution logs produced by external execution engines.
+- The design assumes that multiple instances of processes and activities can run simultaneously
+  and independently. To help viewers understand the instance-specific context, every instance is shown
+  in its own environment and viewers can scroll through these stacked environments by
+  (shift) double-clicking them.
+- Besides the API, a user-controlled simulator is provided. The simulator is buttonless and simulation
+  is primarily controlled by double-clicking tokens.
 
-## Demo
-
-In the [demo](https://bpmn-os.github.io/bpmn-js-animation/) you can load a diagram (or pick a bundled
-example), then double-click the start event and the tokens. The low-level simulation log can be followed
-in the browser console.
-
-## Install
+The package is installed once and offers two entry points — an API module and a simulator module —
+that are wired into a bpmn-js viewer depending on how you intend to use it (see below).
 
 ```sh
 npm install bpmn-js-animation
 ```
 
+## Simulation API
+
+The API allows to control token simulation programmatically using a small set of provided high-level
+functions (`createToken`, `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`, …).
+Tokens are identified by BPMN node and label. To guarantee unambiguous identification, process execution
+must guarantee that at no time there are multiple tokens at the same node with the same label.
+Process models free of race conditions satisfy this property. Should there be multiple tokens at the
+same node with the same label, these tokens are visualised next to each other as a queue, and user
+selection of such tokens may not resolve to the correct identity should the host application aim to
+show additional token-specific information, e.g. in a property panel.
+
+### Installation
+
+Add the **`AnimationModule`** (the `animation` + `simulation` services, without the interactive
+simulator) to a bpmn-js viewer and import the stylesheet:
+
 ```javascript
-import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
-import SimulatorModule from 'bpmn-js-animation';
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
+import { AnimationModule } from 'bpmn-js-animation';
 
 import 'bpmn-js-animation/assets/token-animation.css';
 
-const viewer = new BpmnViewer({
+const viewer = new NavigatedViewer({
   container: '#canvas',
-  additionalModules: [ SimulatorModule ]
+  additionalModules: [ AnimationModule ]
 });
 
 await viewer.importXML(diagramXML);
-// that's it, double-click a start event to spawn an instance, double-click tokens to advance them
+const simulation = viewer.get('simulation');
 ```
 
-## Simulator
-
-The simulator is **double-click driven**; a token's animation tells you what it is waiting for.
-
-| Cue | Meaning | What to do |
-| --- | --- | --- |
-| **bounce** | the token is waiting for **you** | **double-click it** to advance to its next step |
-| **pulse** | a process / sub-process is **running** | nothing, it completes on its own once its contents finish |
-| **pulse-pause** | a **decision** that the simulator can't make without a data layer | pick / spawn, then double-click (see below) |
-
-- **Spawn an instance**: double-click a process (or pool) **start event**. A new instance appears;
-  earlier ones stack behind it.
-- **Advance a token**: double-click it. A task runs entry → busy → completion → out; an event or
-  gateway passes through; a **catch event or boundary** fires.
-- **Diverging gateway** (exclusive / inclusive / complex): its outflows **dim**; **click** the flow(s)
-  you want (one for exclusive, several for inclusive), then **double-click the token** to depart. A
-  parallel or event-based gateway forks automatically.
-- **Standard-loop activity**: at completion the outflows dim: **double-click** with nothing selected to
-  run **another iteration**, or **click an outflow then double-click** to leave the loop.
-- **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow: **double-click**
-  it to spawn a sub-instance, then advance each sub; the activity departs when the last sub completes.
-- **Inclusive (OR) join**: fires automatically the moment no other branch can still arrive (proper BPMN
-  non-local merge semantics).
-- **Errors / escalations**: an error or escalation end event throws; the simulator bubbles it to a
-  matching boundary or event sub-process, innermost first.
-
-Every observed event and the resulting token action is logged to the browser **console**.
-
-## Simulation API
-
-To drive tokens programmatically with your own UI, automated tests, or a different interaction model,
-use the simulation API directly. It's a high-level, BPMN-shaped vocabulary (`createToken`,
-`advanceToken`, `forkToken` / `joinTokens`, `consumeToken`, `jumpToken`, …) that addresses tokens by
-readable `(node, label)` names and applies prescribed per-type behaviour.
-
-For example, run one instance through `start → task → end` (each call animates and resolves when the
-motion settles):
+An example animating a process instance through `start → task → end`:
 
 ```javascript
-const simulation = viewer.get('simulation');
-
 // an instance: a token on the process box, and one at the start event
 simulation.createToken({ node: 'Process_1', label: 'order-42' });
 simulation.createToken({ node: 'StartEvent_1', label: 'order-42' });
@@ -104,7 +75,75 @@ await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // cen
 await simulation.consumeToken({ node: 'EndEvent_1', label: 'order-42' });
 ```
 
-See [documentation](docs/simulation-api.md) for further details.
+A **live demo** that replays a recorded execution log through the API — a small collaboration with
+two pools — runs at
+[bpmn-os.github.io/bpmn-js-animation/playback.html](https://bpmn-os.github.io/bpmn-js-animation/playback.html).
+Its complete source is a single file, [`demo/playback.js`](demo/playback.js): a tiny interpreter over
+the step log in [`demo/playback.json`](demo/playback.json) (each step is just `{ node, label, pos }`).
+
+Further details can be found in the [Simulation API documentation](docs/simulation-api.md), and the
+[Animation API documentation](docs/animation-api.md) describes the low-level primitives underneath.
+
+## Interactive simulator
+
+A **demo** of the interactive simulator can be found
+[here](https://bpmn-os.github.io/bpmn-js-animation/).
+
+### Installation
+
+Add the **default export** (the `SimulatorModule` — the `animation` + `simulation` + `simulator`
+services) to a bpmn-js viewer and import the stylesheet:
+
+```javascript
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
+import SimulatorModule from 'bpmn-js-animation';
+
+import 'bpmn-js-animation/assets/token-animation.css';
+
+const viewer = new NavigatedViewer({
+  container: '#canvas',
+  additionalModules: [ SimulatorModule ]
+});
+
+await viewer.importXML(diagramXML);
+// that's it — double-click a start event to spawn an instance, double-click tokens to advance them
+```
+
+### Usage
+
+- You can spawn a new instance by double-clicking on the start event of a process.
+- Every activity goes through three stages: start, middle, and end. At each stage you can
+  double-click the token to advance.
+- You can double-click on a process to scroll between its instances (shift-double-click steps back).
+
+![Example](docs/simple_process.gif)
+
+- You can select the sequence flows out of a diverging gateway by clicking on it.
+- You can double-click on the token resting at a catching event to trigger the event.
+
+![Example](docs/gateways.gif)
+
+The simulator is **double-click driven**; a token's animation tells you what it is waiting for:
+
+| Cue | Meaning | What to do |
+| --- | --- | --- |
+| **bounce** | the token is waiting for **you** | **double-click it** to advance to its next step |
+| **pulse** | a process / sub-process is **running** | nothing, it completes on its own once its contents finish |
+| **pulse-pause** | a **decision** that the simulator can't make without a data layer | pick / spawn, then double-click |
+
+- **Diverging gateway** (exclusive / inclusive / complex): its outflows **dim**; **click** the flow(s)
+  you want (one for exclusive, several for inclusive), then **double-click the token** to depart. A
+  parallel or event-based gateway forks automatically.
+- **Standard-loop activity**: at completion the outflows dim — **double-click** with nothing selected to
+  run **another iteration**, or **click an outflow then double-click** to leave the loop.
+- **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow — **double-click**
+  it to spawn a sub-instance, then advance each sub; the activity departs when the last sub completes.
+- **Inclusive (OR) join**: fires automatically the moment no other branch can still arrive (proper BPMN
+  non-local merge semantics).
+- **Errors / escalations**: an error or escalation end event throws; the simulator bubbles it to a
+  matching boundary or event sub-process, innermost first.
+
+Every observed event and the resulting token action is logged to the browser **console**.
 
 ## Supported BPMN elements
 
@@ -118,13 +157,10 @@ events, event sub-processes, terminate, error & escalation propagation, and link
 
 ```sh
 npm install     # deps (incl. dev: bpmn-js + vite for the demo)
-npm run dev     # vite dev server for the demo/ simulator app
+npm run dev     # vite dev server — the simulator at / and the API playback at /playback.html
 npm test        # karma + mocha in headless Chrome
-npm run build   # production bundle of the demo → dist/ (sanity-checks all imports)
+npm run build   # production bundle of both demo pages → dist/ (sanity-checks all imports)
 ```
-
-The **`demo/`** app is the simulator above; **`examples/`** holds the showcase models. The demo is
-published to GitHub Pages on every push to `main` (`.github/workflows/deploy.yml`).
 
 ## Disclaimer
 

@@ -29,7 +29,7 @@ the **same scheme as bpmn-js-token-simulation**. The package never assigns color
 one per identity and pass it in.
 
 ```javascript
-import AnimationModule, { getRandomColor, getDistinctColor } from 'bpmn-js-animation';
+import { AnimationModule, getRandomColor, getDistinctColor } from 'bpmn-js-animation';
 
 const a = getRandomColor();        // one random color, e.g. "#3b82c4"
 const b = getDistinctColor(0);     // the 0th of a fixed, contrast-filtered palette (cycles)

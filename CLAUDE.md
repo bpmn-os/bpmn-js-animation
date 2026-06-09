@@ -43,7 +43,9 @@ without `@private` tags; the hand-curated guides read better.)
 
 ## Architecture
 
-The package entry (`lib/index.js`) exports the module as default **plus named color
+The package entry (`lib/index.js`) exports the full module (all three services) as **default**
+(the interactive simulator), a named **`AnimationModule`** (`animation` + `simulation` only, no
+`simulator` — for driving tokens programmatically), **plus named color
 helpers `getRandomColor` / `getDistinctColor`** (`lib/color.js`) — callers mint a color
 per identity and pass it in; the package never assigns colors itself. Both wrap the
 **`randomcolor`** library — the **same coloring scheme as bpmn-js-token-simulation**:
