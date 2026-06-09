@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bpmn-js-animation — execution-log playback</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      padding: 8px; border-bottom: 1px solid #ccc; background: #fafafa;
+    }
+    #toolbar button {
+      padding: 5px 10px; border: 1px solid #bbb; border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 13px;
+    }
+    #toolbar button:hover { background: #eee; }
+    #toolbar button:disabled { opacity: 0.5; cursor: default; }
+    #toolbar .title { font-weight: bold; font-size: 14px; margin-right: 4px; }
+    #toolbar .spacer { flex: 1; }
+    #toolbar .hint { font-size: 13px; color: #555; }
+    #toolbar a { font-size: 13px; color: #06c; }
+    #main { flex: 1; position: relative; min-height: 0; }
+    #canvas { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <span class="title">Execution-log playback</span>
+      <button id="play">▶ Play</button>
+      <button id="pause" hidden title="pause / resume the playback">⏸ Pause</button>
+      <span class="hint">replays an execution log via the <b>simulation API</b></span>
+    </div>
+    <div id="main">
+      <div id="canvas"></div>
+    </div>
+  </div>
+  <script type="module" src="./playback.js"></script>
+</body>
+</html>
