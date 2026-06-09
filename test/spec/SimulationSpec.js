@@ -138,16 +138,16 @@ describe('SimulationAPI', function() {
       sim.createToken({ node: 'Participant_1c07lhk', label: 'A1' });
       sim.createToken({ node: 'Participant_1c07lhk', label: 'A2' });
 
-      const c1 = sim.createToken({ node: 'StartEventItem', label: 'A1' }); // child of A1 (front)
+      const c1 = sim.createToken({ node: 'StartEventOrder', label: 'A1' }); // child of A1 (front)
       expect(c1.stackIndices).to.include({ Participant_1c07lhk: 'A1' });
 
       await get('animation').moveToFront('Participant_1c07lhk', 'A2'); // scroll to A2
-      const c2 = sim.createToken({ node: 'StartEventItem', label: 'A2' });
+      const c2 = sim.createToken({ node: 'StartEventOrder', label: 'A2' });
       expect(c2.stackIndices).to.include({ Participant_1c07lhk: 'A2' });
 
       // both coexist, addressable, distinct
-      expect(sim.getToken('StartEventItem', 'A1')).to.equal(c1);
-      expect(sim.getToken('StartEventItem', 'A2')).to.equal(c2);
+      expect(sim.getToken('StartEventOrder', 'A1')).to.equal(c1);
+      expect(sim.getToken('StartEventOrder', 'A2')).to.equal(c2);
     });
 
   });

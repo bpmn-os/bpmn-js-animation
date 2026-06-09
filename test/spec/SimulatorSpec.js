@@ -764,19 +764,19 @@ describe('simulator — standard-loop activity', function() {
 
 describe('simulator — collaboration (pools)', function() {
 
-  // two pools; the Order pool's start (StartEventItem) sits in Participant_1c07lhk and feeds the
+  // two pools; the Order pool's start (StartEventOrder) sits in Participant_1c07lhk and feeds the
   // sequential MI sub-process JobActivity
   beforeEach(bootstrap(collaborationXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
   it('spawns an instance from a pool start event (job-shop model)', async function() {
     const sim = get('simulator');
-    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
 
     // the pool is the box (busy), the start has departed, and the token reached the MI sub-process
     expect(posAt('Participant_1c07lhk', label)).to.equal('busy');
-    expect(tokenAt('StartEventItem', label)).to.not.exist;
+    expect(tokenAt('StartEventOrder', label)).to.not.exist;
     expect(tokenAt('JobActivity', label)).to.exist;
   });
 
@@ -784,7 +784,7 @@ describe('simulator — collaboration (pools)', function() {
     const sim = get('simulator');
     const simulation = get('simulation');
 
-    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
 
     // the MI outer token rests on the sub-process's incoming flow
@@ -807,9 +807,9 @@ describe('simulator — collaboration (pools)', function() {
     const a = get('animation');
     get('simulation').autoFocus(true); // the simulator's real default (TestHelper resets it off)
 
-    const i1 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    const i1 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
-    const i2 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem');
+    const i2 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
 
     // two pool instances; i2 is the one on screen
@@ -830,11 +830,11 @@ describe('simulator — collaboration (pools)', function() {
     const simulation = get('simulation');
     get('simulation').autoFocus(true);
 
-    await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I1
+    await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder'); // I1
     await flush();
-    await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I2
+    await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder'); // I2
     await flush();
-    const i3 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventItem'); // I3, front
+    const i3 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder'); // I3, front
     await flush();
 
     const inflow = simulation.getEntry('JobActivity', i3).sequenceFlow;
