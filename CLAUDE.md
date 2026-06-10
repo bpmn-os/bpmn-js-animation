@@ -36,9 +36,9 @@ same commit** (a renamed/removed/added method, changed signature, or new behavio
 
 - **`README.md`** — purpose & what, install, a minimal basic-usage snippet, links to the guides.
   Keep it short; detailed API tables belong in `docs/`, not here.
-- **`docs/simulation-api.md`** — the high-level `simulation` service (the supported surface).
-- **`docs/animation-api.md`** — the low-level `animation` service.
-- **`docs/animator-api.md`** — the `animator` (playback) tool: `replay` + the event-log format + the
+- **`docs/animation.md`** — the high-level `animation` service (the supported surface).
+- **`docs/primitives.md`** — the low-level `primitives` service.
+- **`docs/animator.md`** — the `animator` (playback) tool: `replay` + the event-log format + the
   `simulator`'s recording (`startRecording` / `getRecording`).
 
 `CLAUDE.md` (this file) is the **internal architecture/invariant** doc — a different audience;
@@ -50,8 +50,8 @@ without `@private` tags; the hand-curated guides read better.)
 ## Architecture
 
 The package entry (`lib/index.js`) exports **four composable modules** — the **default** is the full
-drop-in (`animation` + `simulation` + **both** tools, `simulator` + `animator`); named
-**`AnimationModule`** (`animation` + `simulation` only — the bare enabling API), **`SimulatorModule`**
+drop-in (`primitives` + `animation` + **both** tools, `simulator` + `animator`); named
+**`AnimationModule`** (`primitives` + `animation` only — the bare enabling API), **`SimulatorModule`**
 (`+ simulator`, interactive + record), and **`AnimatorModule`** (`+ animator`, playback) let you take
 just what you need (each tool works without the other). **Plus named color
 helpers `getRandomColor` / `getDistinctColor`** (`lib/color.js`) — callers mint a color
@@ -62,22 +62,22 @@ values kept under a YIQ cutoff), so concurrent instances read distinctly; a **ch
 inherits its parent's color** (no per-instance "related shade" ring). `randomcolor` is the
 package's one runtime dependency added for this; a `seed` option pins the palette for tests.
 
-**Service layering (4):** `animation` (low-level visual primitive) → `simulation` (the BPMN-shaped
+**Service layering (4):** `primitives` (low-level visual primitive) → `animation` (the BPMN-shaped
 **enabling vocabulary** composed over it; the supported surface — *pure*, no record/replay) → two
-opinionated **tools** that turn something into `simulation` calls: `simulator` (gestures → verbs;
+opinionated **tools** that turn something into `animation` calls: `simulator` (gestures → verbs;
 **owns record**) and `animator` (a log → verbs; **owns replay**). The two tools are **independent**
 (neither depends on the other) and share only the **event-log format** in `lib/eventLog.js`
 (`describeEvent`/`eventCall`/`startsImmediately` + `POSITIONAL_FIELDS`). Record is the simulator
-wrapping the shared `simulation` instance's verbs; replay re-issues a log against `simulation` (using
+wrapping the shared `animation` instance's verbs; replay re-issues a log against `animation` (using
 the public `focusToken` seam + `animation.drillTo` to follow instance + plane). The "animate an
-external execution log" goal is the **animator** consuming a log; `simulation` itself stays a clean
+external execution log" goal is the **animator** consuming a log; `animation` itself stays a clean
 vocabulary.
 
-The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animation and node animation.
-(The earlier split into `tokens` + `animation` services was merged — `createToken`/
+The low-level `primitives` service (`lib/primitives.js`) owns both token animation and node animation.
+(The earlier split into `tokens` + `primitives` services was merged — `createToken`/
 `setState`/etc. *are* animation concerns, and one service beats a fuzzy boundary.)
 
-- **`animation`** (`lib/AnimationAPI.js`) — the whole public API + renderer + low-level tween.
+- **`primitives`** (`lib/primitives.js`) — the whole public API + renderer + low-level tween.
   - **Token** = `{ node, label, color, state, selected, stackIndices }`. `state = { position,
     sequenceFlow, animate, hidden }` is a pure visual descriptor (no lifecycle meaning baked in): `position` is a
     point `{ left, top, hoffset, voffset }` on/around the shape — `left`/`top` are **fractions** (may exceed
@@ -90,7 +90,7 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
     while its instances run (set via `setState`). **`stackIndices`**
     (T5) is the token's per-instance membership — a map `{ stackedNodeId: instanceKey }` over the stacked
     nodes in its own/ancestor chain. **An instance key is the stable id of an instance** — the count-based
-    `setStackSize` keys instances by their numeric index `0..n-1`, while `setStacks` (and SimulationAPI,
+    `setStackSize` keys instances by their numeric index `0..n-1`, while `setStacks` (and Animation,
     which keys by **instance label**) names them. (Omitted/`{}` when nothing is stacked; omitted entry ⇒ 0
     for count-based stacks. `_contextKey` keeps only truthy entries, so `0`/`null` normalize away to the same
     identity — a non-stacked ancestor must never carry a positive index; its real `getCurrentStack` is 0.)
@@ -162,7 +162,7 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
     simulation-style view: on `diagram.init` it marks the canvas container **`.bts-simulation`**, and our
     CSS hides the native selection box (`.djs-outline`) + modeling affordances — so clicking a node still
     selects it (state intact, ecosystem unaffected) but **no frame is drawn**. Only the full `simulator`
-    sets the class; a host driving the lower-level `animation`/`simulation` keeps the visible (stack-aware)
+    sets the class; a host driving the lower-level `primitives`/`animation` keeps the visible (stack-aware)
     native box. (2) **Programmatic**
     (`setNodeSelected(node,selected?)`): draws our **own** `.bts-node-outline` rect (5px offset, rounded)
     into `getGraphics` + a `bts-selected` marker — an explicit highlight **independent of** the selection
@@ -177,7 +177,7 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
     `size>=1` and `0`/`null` clears it; the first instance is the node itself (or the process box), so only the
     `size-1` extras become copies — **size 1 = a single instance, no copies** (`getStackSize` returns 1).
     **Instances are identified by stable keys** (`_stackOrder` is a `key[]`): `setStackSize` keys them by
-    numeric index `0..n-1`, while **`setStacks(node, keys, ctx?)`** sets explicit keys (SimulationAPI uses
+    numeric index `0..n-1`, while **`setStacks(node, keys, ctx?)`** sets explicit keys (Animation uses
     each instance's **label**). So removing one instance drops its *specific* key (`setStacks` minus that
     key) — survivors keep their keys and stay rendered, no positional gap (this is how `consume` shrinks a
     process stack). `getStacks(node) → key[]` reads the order. Static
@@ -285,7 +285,7 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
     flow travels, the **same Token object** is re-keyed from `fromNode` to `toNode` (drop from the old key +
     node set, set `token.node`, merge `state`, push under the new key, re-render both). Identity / color /
     `selected` / `stackIndices` / children all carried. Drives **link events** (a link throw → its matching
-    catch); the host anchors the landing `state` (SimulationAPI passes `position: CENTER`, `sequenceFlow:
+    catch); the host anchors the landing `state` (Animation passes `position: CENTER`, `sequenceFlow:
     null`). The Simulator side: `advanceToDeparted` routes a link **throw** (`c.link !== undefined`, no
     outflow) to `_jumpLink` → one matching catch auto-jumps (`_jumpTo`: throw icon out fire-and-forget +
     `jumpToken` + route the landed token through `triggerCatchEvent`, which flies the catch icon in and
@@ -333,7 +333,7 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
     **implicit-process box** at size 0), and the **MI** parent release all run *after* the gesture. The
     model identity is already gone, so this delays only the **visual** container teardown, never
     addressability — and an unstacked consume (a shed boundary) is fire-and-forget, so it still never blocks.
-  - **Low-level tween:** `TokenAnimation` lives at the **bottom of `AnimationAPI.js`, below a
+  - **Low-level tween:** `TokenAnimation` lives at the **bottom of `primitives.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
     (`config.animation.animationDuration` / `setAnimationDuration`, default 1000ms — *not*
@@ -349,12 +349,12 @@ The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animat
   entered/completed and the event/gateway placement rules are caller convention).
 - **Color is caller-supplied and carried** by the token; a move keeps it. **`selected`
   is carried the same way** (kept across a move, OR-merged on a join).
-- **Engine-free.** Do not reintroduce a simulator dependency. The `animation` service
+- **Engine-free.** Do not reintroduce a simulator dependency. The `primitives` service
   resets on `diagram.clear`/`diagram.destroy`.
 
 ## Vendored code
 
-The **low-level tween** at the bottom of `lib/AnimationAPI.js` (below the banner) derives from
+The **low-level tween** at the bottom of `lib/primitives.js` (below the banner) derives from
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
 re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /

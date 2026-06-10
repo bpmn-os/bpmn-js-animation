@@ -1,12 +1,12 @@
-# AnimationAPI (`animation` service)
+# Primitives (`primitives` service)
 
 The low-level visual primitive: place a colored dot (a **token**) on a node, move it along a
 flow, set its resting position, stack a node into instances. No BPMN semantics are baked in —
-*you* map your meaning onto positions. The high-level [`simulation`](simulation-api.md) service
-is built on top of this; use `animation` directly when you want full control.
+*you* map your meaning onto positions. The high-level [`animation`](animation.md) service
+is built on top of this; use `primitives` directly when you want full control.
 
 ```javascript
-const animation = viewer.get('animation');
+const animation = viewer.get('primitives');
 ```
 
 ## Token identity & color
@@ -89,7 +89,7 @@ state = {
 | `setNodeDimmed(nodeId, on?)` | Dim / undim a **node** — the same `.bts-dim` mechanism as `setFlowDimmed`, on a flow node's shape. Used to fade the candidate **link catch** events of an ambiguous link throw while the user picks the jump target. `clear` undims any left dimmed. |
 | `throwIcon(node, label, selector?)` / `catchIcon(node, label, selector?)` | Play the element's own **icon**, emitted **from / into the token** `(node, label, selector)` — the icon starts centered on the token's dot and flies out up-right + fades out (**throw**), or flies in from up-left + fades in to land on the dot (**catch**). Native color, shared duration. `→ Promise`; no-op if no token rests there or the element has no icon. Direction is your choice — the library reads no BPMN semantics. |
 | `playTokenEffect(node, label, effect, selector?)` | Play a **one-shot** CSS effect on the resting token's dot — e.g. `'flip'` (a single flip) or `'fade-out'` — applied as a `.bts-once-<effect>` class for one `animationDuration`, then stripped. Unlike `state.animate` (a persistent, **looping** cue), this is a transient gesture you **sequence** in front of a depart/consume, e.g. `playTokenEffect(n, l, 'fade-out').then(() => removeToken(n, l))`. `→ Promise`; no-op if the token isn't drawn (parked/`hidden`, or behind a `+N` marker). |
-| `drillTo(node)` | Drill the canvas to `node`'s **plane** — a token inside a **collapsed sub-process** lives on a separate plane, so call this to follow the action into the body (drills **in**) and back out to the root plane (drills **out**). No-op when `node` is already on the active plane, is unknown, or the viewer has no planes (older bpmn-js / expanded sub-processes share a plane). The plane counterpart to instance auto-focus; the [`animator`](animator-api.md)'s replay uses it. |
+| `drillTo(node)` | Drill the canvas to `node`'s **plane** — a token inside a **collapsed sub-process** lives on a separate plane, so call this to follow the action into the body (drills **in**) and back out to the root plane (drills **out**). No-op when `node` is already on the active plane, is unknown, or the viewer has no planes (older bpmn-js / expanded sub-processes share a plane). The plane counterpart to instance auto-focus; the [`animator`](animator.md)'s replay uses it. |
 | `getTokens(filter?)` | List tokens (each `{ node, label, color, state, selected, stackIndices }`), in insertion order. |
 | `clear()` | Remove all tokens. |
 | `setAnimationDuration(ms)` / `getAnimationDuration()` | Global animation duration — token moves **and** `throwIcon`/`catchIcon`. `0` makes transitions instant. |
@@ -159,13 +159,13 @@ stacked node shows exactly its current front instance's tokens. You declare the 
 front and the library resolves what to show against the current front keys — no callback:
 
 ```javascript
-animation.setStacks('SubProcess_1', [ 'a', 'b', 'c' ]);  // three instances, 'a' in front
+primitives.setStacks('SubProcess_1', [ 'a', 'b', 'c' ]);  // three instances, 'a' in front
 
 // each instance's tokens, tagged with the instance key
-animation.createToken('SubTask_1', 'order-42', color, state, { SubProcess_1: 'a' });
-animation.createToken('SubTask_1', 'order-77', color, state, { SubProcess_1: 'b' });
+primitives.createToken('SubTask_1', 'order-42', color, state, { SubProcess_1: 'a' });
+primitives.createToken('SubTask_1', 'order-77', color, state, { SubProcess_1: 'b' });
 
-await animation.moveToFront('SubProcess_1', 'b'); // now shows instance 'b' (animated)
+await primitives.moveToFront('SubProcess_1', 'b'); // now shows instance 'b' (animated)
 ```
 
 A token's instance membership is **fixed** (a move keeps it); only the node's display order

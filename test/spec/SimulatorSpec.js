@@ -22,12 +22,12 @@ function flush() {
 
 // the bookkeeping position of the (single) token of instance `label` at `node`, or undefined
 function posAt(node, label) {
-  const entry = get('simulation').getEntry(node, label);
+  const entry = get('animation').getEntry(node, label);
   return entry && (entry.sequenceFlow ? `flow:${entry.sequenceFlow}` : entry.position);
 }
 
 function tokenAt(node, label) {
-  return get('simulation').getToken(node, label);
+  return get('animation').getToken(node, label);
 }
 
 
@@ -149,7 +149,7 @@ describe('simulator', function() {
       const eventBus = get('eventBus');
 
       // a bare process root rests at entry (the spawn glide to busy hasn't run)
-      get('simulation').createToken({ node: 'Process_1', label: 'X' });
+      get('animation').createToken({ node: 'Process_1', label: 'X' });
       expect(posAt('Process_1', 'X')).to.equal('entry');
 
       eventBus.fire('token.dblclick', { node: 'Process_1', label: 'X', sequenceFlow: null });
@@ -183,7 +183,7 @@ describe('simulator — parallel gateways (fork / join)', function() {
 
   it('forks at the split, joins at the join, and flows through to a clean termination', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     // no tasks/catch events to wait on → the whole structure is automatic: the split forks both
     // branches, they travel and join into one continuation, which passes through the end event
@@ -271,7 +271,7 @@ describe('simulator — boundary events', function() {
 
   it('queues concurrent same-instance arrivals at a catch event (FIFO)', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
     await sim.advanceToBusy({ node: 'Activity_1', label });
@@ -320,7 +320,7 @@ describe('simulator — terminate event', function() {
 
   it('a terminate end event kills the whole instance (every sibling token)', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     // the split forks; one branch reaches the terminate end event → it kills the other branch
     // (waiting at Task_1) and the process box along with it
@@ -342,7 +342,7 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
 
   it('waits at a diverging inclusive gateway, then forks along the toggled outflows', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
@@ -365,7 +365,7 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
 
   it('toggling an outflow off again removes it from the choice', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
@@ -381,7 +381,7 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
 
   // tokens of `label` resting on a converging gateway's incoming flows (i.e. waiting branches)
   function waitingAt(node, label) {
-    return get('simulation').getTokens(node, label).filter(t => t.state.sequenceFlow).length;
+    return get('animation').getTokens(node, label).filter(t => t.state.sequenceFlow).length;
   }
 
   it('auto-joins a converging inclusive gateway once no more branches can arrive', async function() {
@@ -414,7 +414,7 @@ describe('simulator — outflow-ambiguity Fallback (inclusive)', function() {
 
   it('an interrupting boundary that removes a still-upstream branch readies the OR-join', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
@@ -455,7 +455,7 @@ describe('consume — synchronous model drop, async ghost flip-fade', function()
   afterEach(cleanup);
 
   it('drops the token from the model at once and flip-fades a detached ghost that self-removes', async function() {
-    const animation = get('animation');
+    const animation = get('primitives');
     const container = get('canvas').getContainer();
 
     animation.createToken('Task_1', 'I1', 'red');
@@ -487,7 +487,7 @@ describe('simulator — multi-instance activity', function() {
 
   it('spawns subs from the pulse-pausing parent, runs + consumes them, departs on the last', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
@@ -536,13 +536,13 @@ describe('simulator — event sub-process (non-interrupting)', function() {
 
   it('arms the event sub on spawn; the armed waiter does not block the process start or completion', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
     // the process start fired automatically (untyped) and the event sub is armed (a waiting firing)
     expect(tokenAt('StartEvent_1', label)).to.not.exist;
-    expect(get('animation').getStacks(EVTSP)).to.have.length(1);
+    expect(get('primitives').getStacks(EVTSP)).to.have.length(1);
 
     // run the normal flow to the end — the throw events pass through, the process completes despite
     // the armed event-sub waiter (a token at a start event doesn't count toward completion)
@@ -556,12 +556,12 @@ describe('simulator — event sub-process (non-interrupting)', function() {
     const sim = get('simulator');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
-    const armed = get('animation').getStacks(EVTSP)[0]; // the armed firing key
+    const armed = get('primitives').getStacks(EVTSP)[0]; // the armed firing key
     expect(armed).to.exist;
 
     // double-click the armed (typed) start → it fires (trivial body, consumed) and re-arms a new waiter
     await sim._step(ESTART, armed);
-    const after = get('animation').getStacks(EVTSP);
+    const after = get('primitives').getStacks(EVTSP);
     expect(after).to.have.length(1);        // still one armed waiter
     expect(after[0]).to.not.equal(armed);   // …but a fresh firing (re-armed)
   });
@@ -617,7 +617,7 @@ describe('simulator — sub-process', function() {
 
   it('an escalation end is caught by the (non-interrupting) escalation boundary, which propagates on', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
     const eventBus = get('eventBus');
     const er = get('elementRegistry');
 
@@ -646,7 +646,7 @@ describe('simulator — event-based gateway race', function() {
 
   it('forks to both catch events; triggering one flip-fades the losing sibling', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
@@ -722,7 +722,7 @@ describe('simulator — standard-loop activity', function() {
 
     // run the next iteration to busy: re-arming is idempotent, no duplicate listener
     await sim._step('Task_loop', label); // entry → busy
-    expect(get('simulation').getTokens('BoundaryEvent_1', label)).to.have.length(1);
+    expect(get('animation').getTokens('BoundaryEvent_1', label)).to.have.length(1);
 
     // depart the loop → now the boundary is shed
     await sim._step('Task_loop', label); // busy → completion
@@ -782,7 +782,7 @@ describe('simulator — collaboration (pools)', function() {
 
   it('spawns successive sub-instances of the MI sub-process on repeated double-clicks', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
+    const simulation = get('animation');
 
     const label = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
@@ -804,8 +804,8 @@ describe('simulator — collaboration (pools)', function() {
 
   it('the MI outer token at JobActivity is tied to the front pool instance', async function() {
     const sim = get('simulator');
-    const a = get('animation');
-    get('simulation').autoFocus(true); // the simulator's real default (TestHelper resets it off)
+    const a = get('primitives');
+    get('animation').autoFocus(true); // the simulator's real default (TestHelper resets it off)
 
     const i1 = await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder');
     await flush();
@@ -827,8 +827,8 @@ describe('simulator — collaboration (pools)', function() {
 
   it('spawns MI subs for the FRONT pool instance when several are stacked', async function() {
     const sim = get('simulator');
-    const simulation = get('simulation');
-    get('simulation').autoFocus(true);
+    const simulation = get('animation');
+    get('animation').autoFocus(true);
 
     await sim.spawnInstance('Participant_1c07lhk', 'StartEventOrder'); // I1
     await flush();

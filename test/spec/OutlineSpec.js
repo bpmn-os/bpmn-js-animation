@@ -33,16 +33,16 @@ describe('native stack-aware selection outline', function() {
 
   it('grows the native outline to wrap a stack', function() {
     const base = width('Task_1');
-    get('animation').setStackSize('Task_1', 3);
+    get('primitives').setStackSize('Task_1', 3);
     expect(width('Task_1')).to.be.greaterThan(base);
   });
 
   it('restores the default size when the stack is cleared', function() {
     const base = width('Task_1');
-    get('animation').setStackSize('Task_1', 3);
+    get('primitives').setStackSize('Task_1', 3);
     expect(width('Task_1')).to.be.greaterThan(base);
 
-    get('animation').setStackSize('Task_1', 0);
+    get('primitives').setStackSize('Task_1', 0);
     expect(width('Task_1')).to.equal(base);
   });
 

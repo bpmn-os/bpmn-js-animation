@@ -1,15 +1,15 @@
-# SimulationAPI (`simulation` service)
+# Animation (`animation` service)
 
 The high-level, BPMN-shaped surface for driving token flow. It **composes** the low-level
-[`animation`](animation-api.md) service into a small vocabulary and owns the bookkeeping that
+[`primitives`](primitives.md) service into a small vocabulary and owns the bookkeeping that
 lets you address tokens by readable `(node, label)` names — so the host never computes
 `stackIndices` or builds selectors.
 
 ```javascript
-const simulation = viewer.get('simulation');
+const simulation = viewer.get('animation');
 ```
 
-SimulationAPI is **driven by a simulation engine's token log**: the host calls these functions
+Animation is **driven by a simulation engine's token log**: the host calls these functions
 as the engine reports movements. The library decides *how* each node type animates — never
 *when*. It is the sole writer of tokens and resets on `diagram.clear` / `diagram.destroy`.
 
@@ -28,7 +28,7 @@ as the engine reports movements. The library decides *how* each node type animat
   descendant. `consumeToken` on a token cascades to its whole subtree — so terminating an
   instance is one call on its root.
 - **Color is per instance.** A new instance gets a fresh
-  [`getDistinctColor`](animation-api.md#colors); a **child inherits its parent's color**.
+  [`getDistinctColor`](primitives.md#colors); a **child inherits its parent's color**.
 - **Homogeneous queue (FIFO).** When concurrent **same-instance** paths converge at one node (e.g. a
   non-interrupting boundary fired twice), the tokens sharing an identity form a **FIFO queue** —
   rendered as a stack of dots (a `+k` marker past `maxVisible`). `getEntry`/`getToken(node, label)`
@@ -59,7 +59,7 @@ Create a token. The behaviour is chosen by node kind:
 
 - **Process / Participant** — start a new instance: bump the node's instance stack and create
   the **root** token at `entry` with a fresh distinct color. For a pool-less `bpmn:Process`
-  this also draws the [implicit process box](animation-api.md#implicit-process-box).
+  this also draws the [implicit process box](primitives.md#implicit-process-box).
 - **Start event** of a Process / SubProcess (not an event sub-process) — create a **child** of
   the token at the enclosing scope, with the **same label** and color, at `center`.
 - **Activity** (non-MI, inside a scope) — create a **child** of the enclosing-scope token,
@@ -75,8 +75,8 @@ Create a token. The behaviour is chosen by node kind:
   inheriting its color, at `center`. See [Event sub-processes](#event-sub-processes) below.
 
 ```javascript
-simulation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
-simulation.createToken({ node: 'StartEvent_1', label: 'order-42' });   // its child at the start event
+animation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
+animation.createToken({ node: 'StartEvent_1', label: 'order-42' });   // its child at the start event
 ```
 
 Throws if a token `(node, label)` already exists, or the scope/host has no token of that label.
@@ -97,11 +97,11 @@ cleanup:
 
 ```javascript
 // while the activity is busy, a boundary listener arms
-simulation.createToken({ node: 'BoundaryEvent_1', label: 'order-42' });
+animation.createToken({ node: 'BoundaryEvent_1', label: 'order-42' });
 
 // interrupting fire:
-await simulation.advanceToken({ node: 'BoundaryEvent_1', label: 'order-42', sequenceFlow: 'Flow_err' });
-await simulation.consumeToken({ node: 'Activity_1', label: 'order-42' }); // the listener token lives on
+await animation.advanceToken({ node: 'BoundaryEvent_1', label: 'order-42', sequenceFlow: 'Flow_err' });
+await animation.consumeToken({ node: 'Activity_1', label: 'order-42' }); // the listener token lives on
 ```
 
 The interrupting/non-interrupting distinction is the **host's** to act on (the library exposes it
@@ -125,17 +125,17 @@ out) — and from there fans out into *N* sub-instances:
 
 ```javascript
 // outer thread "I1" rests on the MI activity's incoming flow (advanceToken'd there)
-simulation.createToken({ node: 'MI_1', label: 'I1#1' });   // fan out
-simulation.createToken({ node: 'MI_1', label: 'I1#2' });
-await simulation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'busy' }); // sub runs → parks "I1", closes the window
+animation.createToken({ node: 'MI_1', label: 'I1#1' });   // fan out
+animation.createToken({ node: 'MI_1', label: 'I1#2' });
+await animation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'busy' }); // sub runs → parks "I1", closes the window
 
 // ... run each sub to completion, then collapse:
 for (const sub of [ 'I1#1', 'I1#2' ]) {
-  await simulation.advanceToken({ node: 'MI_1', label: sub, position: 'completion' });
-  await simulation.consumeToken({ node: 'MI_1', label: sub });
+  await animation.advanceToken({ node: 'MI_1', label: sub, position: 'completion' });
+  await animation.consumeToken({ node: 'MI_1', label: sub });
 }
 // "I1" is now un-parked on the outgoing flow:
-await simulation.advanceToken({ node: 'MI_1', label: 'I1', sequenceFlow: 'Flow_out' });
+await animation.advanceToken({ node: 'MI_1', label: 'I1', sequenceFlow: 'Flow_out' });
 ```
 
 ### Event sub-processes
@@ -152,11 +152,11 @@ a child of the **enclosing scope's on-screen instance** token, **stacked** on th
   is untouched.
 
 ```javascript
-simulation.createToken({ node: 'Process_1', label: 'I1' });        // scope instance
-simulation.createToken({ node: 'EvtStart_1', label: 'I1.e1' });    // firing 1 (stacked)
-simulation.createToken({ node: 'EvtStart_1', label: 'I1.e2' });    // firing 2 (concurrent)
+animation.createToken({ node: 'Process_1', label: 'I1' });        // scope instance
+animation.createToken({ node: 'EvtStart_1', label: 'I1.e1' });    // firing 1 (stacked)
+animation.createToken({ node: 'EvtStart_1', label: 'I1.e2' });    // firing 2 (concurrent)
 // run each firing's internal flow, then end it:
-await simulation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops the e1 firing key
+await animation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops the e1 firing key
 ```
 
 **Interrupting** firings are the same spawn followed by `consumeToken` on the enclosing scope's
@@ -180,10 +180,10 @@ One verb, three forms — chosen by which argument you pass:
   part of the lifecycle). `animate` (a motion cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
 
 ```javascript
-await simulation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
-await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'entry' });
-await simulation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completion', animate: 'pulse' });
-await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // center-anchor
+await animation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
+await animation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'entry' });
+await animation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completion', animate: 'pulse' });
+await animation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // center-anchor
 ```
 
 ### `forkToken({ node, label, sequenceFlow })` → `Promise<token>`
@@ -195,10 +195,10 @@ branch *on* the outflow (no travel), so the remaining outflows can be forked too
 moves the original onto its flow; **later** forks clone onto theirs.
 
 ```javascript
-await simulation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
-await simulation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
-await simulation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
-await simulation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
+await animation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
+await animation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
+await animation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
+await animation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
 ```
 
 ### `joinTokens({ node, label })` → `Promise<token>`
@@ -238,7 +238,7 @@ The returned Promise resolves once that visual teardown is done.
 same token object, with its color, selection, instance membership, and children carried across, now
 anchored at `toNode`'s **center**. No sequence flow runs between them. This is the **link-event**
 primitive: a link throw vanishes the token and it reappears at the matching link catch. (Delegates to
-[`animation.moveToken`](animation-api.md).)
+[`animation.moveToken`](primitives.md).)
 
 ### `departToken(node, label, sequenceFlow)` → `token`
 
@@ -251,7 +251,7 @@ from its host here, reparenting to the enclosing scope, so it survives a concurr
 ### `throwIcon(node, label, selector?)` → `Promise` / `catchIcon(node, label, selector?)` → `Promise`
 
 Play the node's **own icon**, anchored to its resting token (delegates to
-[`animation.throwIcon`](animation-api.md) / [`catchIcon`](animation-api.md)). `throwIcon` flies the
+[`animation.throwIcon`](primitives.md) / [`catchIcon`](primitives.md)). `throwIcon` flies the
 icon out from the dot and fades it (a throw event / send task passing through); `catchIcon` flies it
 in to land on the dot (a catch event being triggered). No-op if no token rests there or the element
 has no icon. Direction is the host's choice — no BPMN semantics are read.
@@ -265,7 +265,7 @@ once. No-op if the token is gone.
 ### `autoFocus(on = true)`
 
 When on, every call that touches a token **reveals that token's instance** — bringing it to the
-front of its stack(s) (animated, via [`moveToFront`](animation-api.md#instance-stacks)) so the
+front of its stack(s) (animated, via [`moveToFront`](primitives.md#instance-stacks)) so the
 just-touched token is the one on screen. Off by default; global. While a reveal arc is playing,
 `advanceToken` **waits for it** before moving, so an advance never overlaps the reveal gesture.
 
@@ -285,7 +285,7 @@ simulation API resolves "spawn into this instance" against that front — so whe
 instances programmatically, bring the target to the front *before* the operation. `moveToFront` /
 `moveToBack` reorder by instance **label**; `scrollStack(node, 'forward'|'backward')` steps to the
 next / previous. The order updates **synchronously** (a later spawn resolves against the new front);
-the scroll arc resolves the Promise. Delegates to the [`animation`](animation-api.md#instance-stacks)
+the scroll arc resolves the Promise. Delegates to the [`animation`](primitives.md#instance-stacks)
 service (which also exposes the `getStacks` / `getCurrentStacks` readers); no-op when the node isn't stacked. (`autoFocus` automates this on touch — reach for these when you need deterministic
 control instead.)
 
@@ -298,20 +298,20 @@ disambiguates a branch/instance; omit to use the single token there.
 
 ### `playTokenEffect(node, label, effect, selector?)` → `Promise`
 
-Play a **one-shot** dot gesture on a resting token (delegates to [`animation.playTokenEffect`](animation-api.md))
+Play a **one-shot** dot gesture on a resting token (delegates to [`primitives.playTokenEffect`](primitives.md))
 — e.g. a `flip` when an event triggers, or a `fade-out` sequenced before `consumeToken`. Resolves
 when the gesture ends.
 
 ### `setFlowDimmed(flowId, on = true)`
 
 Dim / undim a **sequence flow** (semi-transparent line + arrowhead; reverts cleanly) — delegates to
-[`animation.setFlowDimmed`](animation-api.md). Used to fade a diverging gateway's unchosen outflows
+[`primitives.setFlowDimmed`](primitives.md). Used to fade a diverging gateway's unchosen outflows
 while the user picks. `clear` undims any left dimmed.
 
 ### `setNodeDimmed(nodeId, on = true)`
 
 Dim / undim a **node** (semi-transparent shape; same `.bts-dim` mechanism as `setFlowDimmed`) —
-delegates to [`animation.setNodeDimmed`](animation-api.md). Used to fade the candidate **link catch**
+delegates to [`primitives.setNodeDimmed`](primitives.md). Used to fade the candidate **link catch**
 events of an ambiguous link throw while the user picks the jump target. `clear` undims any left dimmed.
 
 ### `whenFocused()` → `Promise`
@@ -326,13 +326,13 @@ instance has scrolled to the front. `consumeToken` also plays the reveal arc in 
 Reveal a token's instance(s): bring the token's stacked node — and the stacked ancestors in its scope
 chain — to the **front** of their stacks, so the token is the visible copy. Returns the `whenFocused`
 arc. The manual counterpart to `autoFocus` (which does this automatically after every touch); the
-[`animator`](animator-api.md) uses it to follow the active instance during replay. No-op when nothing
+[`animator`](animator.md) uses it to follow the active instance during replay. No-op when nothing
 in the token's chain is stacked.
 
 > **Recording & replay moved.** Capturing and replaying an event log is no longer part of this
 > vocabulary — it's owned by the two tools that sit on top of it: the **simulator** records
 > (`startRecording` / `getRecording`) and the **animator** replays (`animator.replay`). See the
-> [Animator (playback) guide](animator-api.md), which also documents the log format.
+> [Animator (playback) guide](animator.md), which also documents the log format.
 
 ### Lookups
 
@@ -359,9 +359,9 @@ and send/receive tasks), `autoFocus`, and the lookups. Most node types are cover
 (end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start =
 createToken; boundary / MI / event-sub = createToken + the choreographies above). **Sub-processes**
 (collapsed or expanded) run as an activity sweep that completes when their body empties — the
-simulator (and the [`animator`](animator-api.md)'s `autoFocus` replay) drills the canvas in/out for a
+simulator (and the [`animator`](animator.md)'s `autoFocus` replay) drills the canvas in/out for a
 collapsed plane. **Interrupting** event sub-processes and
 boundary events compose from a spawn + a scope/host `consumeToken` (see above).
 
 Not modelled: compensation, call activities, and transaction sub-processes. For full manual control
-beyond these choreographies, drop down to the [`animation`](animation-api.md) service.
+beyond these choreographies, drop down to the [`primitives`](primitives.md) service.

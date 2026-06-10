@@ -30,14 +30,14 @@ describe('event-log playback (examples/collaboration.json)', function() {
     animator.autoFocus(true);
     await animator.replay(eventLog);
 
-    const anim = get('animation');
+    const anim = get('primitives');
     expect(anim.getTokens(), 'all tokens consumed').to.have.length(0);
     expect(anim.getStacks(ORDER_POOL), 'order pool empty').to.eql([]);
     expect(anim.getStacks(MACHINE_POOL), 'machine pool empty').to.eql([]);
   });
 
   it('records BPMN events as flat objects, and round-trips through replay', async function() {
-    const sim = get('simulation');
+    const sim = get('animation');
     const simulator = get('simulator'); // owns record
     const animator = get('animator');   // owns replay
 
@@ -57,6 +57,6 @@ describe('event-log playback (examples/collaboration.json)', function() {
     sim.clear();
     animator.autoFocus(true);
     await animator.replay(recorded);
-    expect(get('simulation').getToken('ConditionalEvent', 'M1'), 'M1 waits at the conditional').to.exist;
+    expect(get('animation').getToken('ConditionalEvent', 'M1'), 'M1 waits at the conditional').to.exist;
   });
 });

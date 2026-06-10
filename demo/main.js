@@ -6,7 +6,7 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
-// The full drop-in (default export): animation + simulation + both tools — the `simulator` (interactive
+// The full drop-in (default export): primitives + animation + both tools — the `simulator` (interactive
 // driving, owns record) and the `animator` (playback, owns replay). One viewer serves both modes: in
 // **Simulate** the simulator drives + records every BPMN event; in **Play** the animator replays a log.
 // The two modes are separate — toggling clears the diagram (no take-over).
@@ -43,8 +43,8 @@ const $ = s => document.querySelector(s);
 // --- state -------------------------------------------------------------------------------------
 
 let viewer = null;
-let simulation = null; // the enabling vocabulary (drive tokens, lookups, clear)
-let animation = null;  // low-level (token polling for the console diff)
+let animation = null; // the enabling vocabulary (drive tokens, lookups, clear)
+let primitives = null;  // low-level (token polling for the console diff)
 let simulator = null;  // interactive tool — owns record
 let animator = null;   // playback tool — owns replay
 let prev = new Map(); // token -> its `where(...)` description last frame (the diff baseline)
@@ -71,7 +71,7 @@ function where(token) {
   if (token.state.sequenceFlow) {
     return `flow ${token.state.sequenceFlow}`;
   }
-  const entry = simulation.getEntry(token.node, token.label, token.state.sequenceFlow || undefined);
+  const entry = animation.getEntry(token.node, token.label, token.state.sequenceFlow || undefined);
   const phase = entry && entry.position;
   return phase ? `${token.node} (${phase})` : token.node;
 }
@@ -82,9 +82,9 @@ function logEvent(msg) {
 
 // Diff the live token set against the previous frame and log created / advanced / consumed tokens.
 function poll() {
-  if (animation) {
+  if (primitives) {
     const cur = new Map();
-    for (const token of animation.getTokens()) {
+    for (const token of primitives.getTokens()) {
       cur.set(token, where(token));
     }
     for (const [ token, desc ] of cur) {
@@ -142,7 +142,7 @@ async function load(xml, name, log) {
   playing = false;
   if (viewer) {
     viewer.destroy();
-    viewer = simulation = animation = simulator = animator = null;
+    viewer = animation = primitives = simulator = animator = null;
   }
   prev = new Map();
 
@@ -160,8 +160,8 @@ async function load(xml, name, log) {
   }
 
   viewer = next;
-  simulation = next.get('simulation');
   animation = next.get('animation');
+  primitives = next.get('primitives');
   simulator = next.get('simulator'); // owns record
   animator = next.get('animator');   // owns replay
   wireEvents(next.get('eventBus'));
@@ -195,8 +195,8 @@ function setMode(m) {
     playSource = resolvePlaySource();
   }
   mode = m;
-  if (simulation) {
-    simulation.clear(); // toggling clears the diagram — each mode starts from a clean slate
+  if (animation) {
+    animation.clear(); // toggling clears the diagram — each mode starts from a clean slate
     prev = new Map();
     if (m === 'simulate') {
       simulator.startRecording(); // record the interactive run
@@ -243,7 +243,7 @@ examplesEl.addEventListener('change', e => {
 //   Simulator → clear tokens + reset the recording;
 //   Playback  → stop the replay (abort if running) + clear, leaving it idle (▶ Start replays anew).
 $('#refresh').addEventListener('click', async () => {
-  if (!simulation) {
+  if (!animation) {
     return;
   }
   if (mode === 'play') {
@@ -252,12 +252,12 @@ $('#refresh').addEventListener('click', async () => {
       setPaused(false); // …resolve a pending pause so the gate runs and aborts
       await playRun;
     }
-    simulation.clear();
+    animation.clear();
     prev = new Map();
     console.log('%c● playback stopped', 'color:#000;font-weight:bold');
     return;
   }
-  simulation.clear();
+  animation.clear();
   simulator.startRecording();
   prev = new Map();
   console.log('%c● cleared tokens — recording reset', 'color:#000;font-weight:bold');
@@ -265,7 +265,7 @@ $('#refresh').addEventListener('click', async () => {
 
 // Simulate: download the current recording (the events that produced the on-screen state)
 $('#download').addEventListener('click', () => {
-  if (!simulation) {
+  if (!animation) {
     return;
   }
   const log = simulator.getRecording();
@@ -321,7 +321,7 @@ let playRun = Promise.resolve(); // resolves when the current replay has fully u
 // (Re)start the replay from the top — shared by ▶ Start and ↻ Restart. Restart works mid-replay
 // (the button stays enabled): it aborts the in-flight run, waits for it to unwind, then replays anew.
 async function startPlayback() {
-  if (!simulation) {
+  if (!animation) {
     return;
   }
   if (!playSource.length) {
@@ -339,7 +339,7 @@ async function startPlayback() {
   $('#play').disabled = true;
   $('#pause').hidden = false;
   animator.autoFocus($('#autofocus').checked);
-  simulation.clear(); // replay from a clean diagram
+  animation.clear(); // replay from a clean diagram
   prev = new Map();
   console.log(`%c● replaying ${playSource.length} events…`, styleEvent);
   playRun = (async () => {

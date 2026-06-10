@@ -12,7 +12,7 @@ import diagramXML from '../diagram.bpmn';
 const POS = { position: { left: 0.5, top: 0.5 } };
 
 function add(node, label) {
-  get('animation').createToken(node, label, getRandomColor(), POS);
+  get('primitives').createToken(node, label, getRandomColor(), POS);
 }
 function clickToken(node, label, shiftKey) {
   get('eventBus').fire('token.click', {
@@ -20,7 +20,7 @@ function clickToken(node, label, shiftKey) {
     originalEvent: { shiftKey: !!shiftKey }
   });
 }
-const selectedLabels = () => get('animation').getTokens(t => t.selected).map(t => t.label).sort();
+const selectedLabels = () => get('primitives').getTokens(t => t.selected).map(t => t.label).sort();
 
 
 describe('click to select token', function() {

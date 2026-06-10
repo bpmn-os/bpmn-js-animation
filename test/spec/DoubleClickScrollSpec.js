@@ -17,7 +17,7 @@ function fireDblClick(id, shiftKey) {
 // replace scrollStack with a recorder (timing-independent)
 function spyScroll() {
   const calls = [];
-  get('animation').scrollStack = (node, dir) => {
+  get('primitives').scrollStack = (node, dir) => {
     calls.push([ node, dir ]);
     return Promise.resolve();
   };
@@ -33,7 +33,7 @@ describe('double-click to scroll', function() {
     afterEach(cleanup);
 
     it('scrolls a stacked node forward, Shift = backward', function() {
-      get('animation').setStackSize('Task_1', 3);
+      get('primitives').setStackSize('Task_1', 3);
       const calls = spyScroll();
 
       fireDblClick('Task_1');
@@ -57,7 +57,7 @@ describe('double-click to scroll', function() {
     afterEach(cleanup);
 
     it('does not scroll on double-click', function() {
-      get('animation').setStackSize('Task_1', 3);
+      get('primitives').setStackSize('Task_1', 3);
       const calls = spyScroll();
 
       fireDblClick('Task_1');
