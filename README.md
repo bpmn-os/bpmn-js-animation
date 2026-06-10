@@ -9,13 +9,13 @@ Animation for BPMN powered by [bpmn-js](https://github.com/bpmn-io/bpmn-js).
 This project allows to animate BPMN execution using tokens flowing through the model.
 It is inspired by [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation), and reuses the fundamental token-flow animation, but takes a deliberately different approach:
 
-- The main goal is an **API to programmatically animate process execution logs** produced by external execution engines.
+- The main goal is an API to programmatically animate process execution controlled by external execution engines.
 - The design assumes that multiple instances of processes and activities run simultaneously and independently. To help viewers understand the instance-specific context, every instance is shown in its own environment, and viewers can scroll through these stacked environments by (shift) double-clicking them.
-- Besides the API, a user-controlled **simulator** is provided. The simulator is buttonless and is driven by double-clicking tokens.
+- Besides the API and an animator using json-logs, an interactive simulator is provided. The simulator is buttonless and is driven by double-clicking tokens.
 
 ## Installation
 
-Add a module to a bpmn-js viewer and import the stylesheet. The package ships **four composable modules** — take just what you need:
+Add a module to a bpmn-js viewer and import the stylesheet. The package ships four composable modules:
 
 | Module | Services | Use it for |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ const viewer = new NavigatedViewer({
 await viewer.importXML(diagramXML);
 ```
 
-The **API** for driving tokens — the high-level `animation` service (`createToken` / `advanceToken` / `forkToken` / `joinTokens` / `consumeToken` / …) and the low-level `primitives` it composes — is documented in [docs/animation.md](docs/animation.md) and [docs/primitives.md](docs/primitives.md). Tokens are identified by BPMN node and instance label; for unambiguous identification there must never be two tokens at the same node with the same label (race-condition-free models satisfy this).
+The `animation` API provides function such as `createToken`, `advanceToken`, `forkToken`, `joinTokens`, and `consumeToken` (documented in [docs/animation.md](docs/animation.md). Internally, these call low-level `primitives` documented in  [docs/primitives.md](docs/primitives.md). Tokens are identified by BPMN node and instance label. For unambiguous identification there must never be two tokens at the same node with the same label (race-condition-free models satisfy this).
 
 ## Simulator
 
@@ -72,7 +72,7 @@ The simulator **records** every BPMN event it drives (`startRecording` / `getRec
 
 ## Animator
 
-The **animator** plays back a recorded **event log** — the package's headline use case, animating a log produced by an external execution engine. A log is plain data, an array of self-describing `{ action, node, label, … }` events; playback paces itself like a live run, but lets a diverging gateway's branches depart **concurrently** and (with auto-focus) follows the active instance and drills in/out of collapsed sub-processes.
+The **animator** plays back a recorded event log — the package's headline use case, animating a log produced by an external execution engine. A log is plain data, an array of self-describing `{ action, node, label, … }` events; playback paces itself like a live run, but lets a diverging gateway's branches depart concurrently and (with auto-focus) follows the active instance and drills in/out of collapsed sub-processes.
 
 ```javascript
 const animator = viewer.get('animator');
