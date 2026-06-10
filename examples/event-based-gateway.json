@@ -66,8 +66,7 @@
   {
     "action": "consumeToken",
     "node": "Catch_B",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "catchIcon",
@@ -99,8 +98,7 @@
   {
     "action": "consumeToken",
     "node": "End_A",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -112,7 +110,6 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   }
 ]

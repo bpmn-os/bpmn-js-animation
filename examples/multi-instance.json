@@ -105,8 +105,7 @@
   {
     "action": "consumeToken",
     "node": "Activity_2",
-    "label": "I1/3",
-    "gesture": true
+    "label": "I1/3"
   },
   {
     "action": "advanceToken",
@@ -125,8 +124,7 @@
   {
     "action": "consumeToken",
     "node": "Activity_2",
-    "label": "I1/2",
-    "gesture": true
+    "label": "I1/2"
   },
   {
     "action": "advanceToken",
@@ -145,8 +143,7 @@
   {
     "action": "consumeToken",
     "node": "Activity_2",
-    "label": "I1/1",
-    "gesture": true
+    "label": "I1/1"
   },
   {
     "action": "advanceToken",
@@ -198,8 +195,7 @@
   {
     "action": "consumeToken",
     "node": "BoundaryEvent_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -231,20 +227,17 @@
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "consumeToken",
     "node": "EvtStart_1",
-    "label": "I1.e1",
-    "gesture": true
+    "label": "I1.e1"
   },
   {
     "action": "consumeToken",
     "node": "ErrStart_2",
-    "label": "I1.e2",
-    "gesture": true
+    "label": "I1.e2"
   },
   {
     "action": "advanceToken",
@@ -256,7 +249,6 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   }
 ]

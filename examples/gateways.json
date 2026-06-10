@@ -157,8 +157,7 @@
   {
     "action": "consumeToken",
     "node": "Event_096uk4c",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -190,8 +189,7 @@
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -203,8 +201,7 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "createToken",
@@ -324,8 +321,7 @@
   {
     "action": "consumeToken",
     "node": "Task_B",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "joinTokens",
@@ -362,8 +358,7 @@
   {
     "action": "consumeToken",
     "node": "Event_0o66r8o",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "throwIcon",
@@ -373,8 +368,7 @@
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "advanceToken",
@@ -386,7 +380,6 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   }
 ]

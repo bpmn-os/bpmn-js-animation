@@ -69,6 +69,16 @@
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+.bts-token-count.bts-once-fade-in {
+  animation-name: bts-once-fade-in;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-out;
+  animation-fill-mode: backwards; /* start invisible (no one-frame flash before the fade-in) */
+}
+@keyframes bts-once-fade-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
 /* an anchored token on a process/activity uses the larger badge size (25px); the
    default (20px, matching the moving token) is used on flows, events and gateways */

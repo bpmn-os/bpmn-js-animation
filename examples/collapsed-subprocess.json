@@ -95,8 +95,7 @@
   {
     "action": "consumeToken",
     "node": "EscEnd",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "catchIcon",
@@ -141,8 +140,7 @@
   {
     "action": "consumeToken",
     "node": "End_esc",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "catchIcon",
@@ -159,7 +157,6 @@
     "action": "consumeToken",
     "node": "Activity_1",
     "label": "I1",
-    "gesture": true,
     "sequenceFlow": null
   },
   {
@@ -208,8 +205,7 @@
   {
     "action": "consumeToken",
     "node": "Event_1k4vru2",
-    "label": "I1.e1",
-    "gesture": true
+    "label": "I1.e1"
   },
   {
     "action": "advanceToken",
@@ -221,8 +217,7 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "createToken",
@@ -320,8 +315,7 @@
   {
     "action": "consumeToken",
     "node": "NormEnd",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "advanceToken",
@@ -344,8 +338,7 @@
   {
     "action": "consumeToken",
     "node": "Activity_1",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "advanceToken",
@@ -366,14 +359,12 @@
   {
     "action": "consumeToken",
     "node": "End_err",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "consumeToken",
     "node": "Event_0vz4qr8",
-    "label": "I2.e2",
-    "gesture": true
+    "label": "I2.e2"
   },
   {
     "action": "advanceToken",
@@ -385,8 +376,7 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I2",
-    "gesture": true
+    "label": "I2"
   },
   {
     "action": "createToken",
@@ -484,8 +474,7 @@
   {
     "action": "consumeToken",
     "node": "ErrEnd",
-    "label": "I3",
-    "gesture": true
+    "label": "I3"
   },
   {
     "action": "catchIcon",
@@ -501,8 +490,7 @@
   {
     "action": "consumeToken",
     "node": "Activity_1",
-    "label": "I3",
-    "gesture": true
+    "label": "I3"
   },
   {
     "action": "advanceToken",
@@ -523,14 +511,12 @@
   {
     "action": "consumeToken",
     "node": "End_err",
-    "label": "I3",
-    "gesture": true
+    "label": "I3"
   },
   {
     "action": "consumeToken",
     "node": "Event_0vz4qr8",
-    "label": "I3.e3",
-    "gesture": true
+    "label": "I3.e3"
   },
   {
     "action": "advanceToken",
@@ -542,7 +528,6 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I3",
-    "gesture": true
+    "label": "I3"
   }
 ]

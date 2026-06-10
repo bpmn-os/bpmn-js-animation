@@ -74,6 +74,12 @@ Create a token. The behaviour is chosen by node kind:
   child of the enclosing scope's on-screen instance token, **stacked** on the event-sub node and
   inheriting its color, at `center`. See [Event sub-processes](#event-sub-processes) below.
 
+Pass `animate` for a persistent looping cue on the resting token (e.g. `'bounce'`). A created token also
+plays a standard **entrance** automatically (when `animationDuration > 0`): the new dot **fades in +
+flips** once as it appears, so it visibly *arrives* rather than popping in. The token's first departure
+waits for the entrance to finish (so a travel can't cut it short); it's the reverse of `consumeToken`'s
+exit. (For an ad-hoc one-shot at any other moment, drop to [`primitives.playTokenEffect`](primitives.md).)
+
 ```javascript
 animation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
 animation.createToken({ node: 'StartEvent_1', label: 'order-42' });   // its child at the start event
@@ -210,7 +216,7 @@ membership, inheriting any children). Carry it onward with `advanceToken`.
 > A converging *exclusive* gateway is an uncontrolled merge, not a join — there each token just
 > passes through with `advanceToken` (center-anchor).
 
-### `consumeToken({ node, label, sequenceFlow?, gesture? })` → `Promise<token[]>`
+### `consumeToken({ node, label, sequenceFlow? })` → `Promise<token[]>`
 
 Remove the **anchored** target token **and its whole subtree** (descendants on flows included).
 Resolves with the removed tokens. If the target sits at a **stacked host** (a process /
@@ -224,9 +230,10 @@ outer-thread token when its scope is interrupted). Terminating an instance is `c
 root.
 
 The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the
-moment this is called (don't await it to observe the removal). Pass `gesture: true` to flip-fade each
-removed dot on the way out: the whole subtree gestures **simultaneously** on **detached "ghost"
-clones** that play out and self-remove independently of the model — so the gesture survives any
+moment this is called (don't await it to observe the removal). Each removed dot plays a standard
+**exit** automatically (when `animationDuration > 0`) — it **flips + fades out**, the reverse of
+`createToken`'s entrance: the whole subtree fades out **simultaneously** on **detached "ghost"
+clones** that play out and self-remove independently of the model — so the fade survives any
 concurrent re-render. A **stacked** consume (a process root, an MI sub) **waits for the flip-fade to
 finish before collapsing its container** — the implicit-process box / instance stack / `moveToBack`
 arc all run after the dot has faded, so the box never vanishes out from under a still-fading dot.

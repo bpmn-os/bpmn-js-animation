@@ -122,8 +122,7 @@
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -135,7 +134,6 @@
   {
     "action": "consumeToken",
     "node": "Process_1",
-    "label": "I1",
-    "gesture": true
+    "label": "I1"
   }
 ]

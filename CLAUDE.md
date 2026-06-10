@@ -318,8 +318,8 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
   - **Consume = synchronous model drop + async "ghost" gesture (shape ⟂ identity).** `removeToken(node,
     label,selector,gesture?)` drops the token's **identity** (model: `_tokens`/`_nodeTokens`, and via
     `consumeToken`→`_tearDown` the `_tokenMap`) **synchronously** — callers never await a fade to observe
-    the removal. For a **gestured** removal (`gesture` = effect names, e.g. `['flip','fade-out']`; threaded
-    from `consumeToken({…,gesture:true})`), the live dot is **cloned into a detached "ghost"** (`_ghostFor`)
+    the removal. For a **gestured** removal (`gesture` = effect names, e.g. `['flip','fade-out']`), the live
+    dot is **cloned into a detached "ghost"** (`_ghostFor`)
     in a persistent `.bts-token-ghosts` layer (in the canvas container, `_ghostLayer`) at its on-screen
     point, the identity is dropped + `_renderNode` runs (the live cluster loses it), then `_playGhost` plays
     the effects (`_playOnce`, shared with `playTokenEffect`) and **removes the clone on `animationend`** —
@@ -333,6 +333,13 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     **implicit-process box** at size 0), and the **MI** parent release all run *after* the gesture. The
     model identity is already gone, so this delays only the **visual** container teardown, never
     addressability — and an unstacked consume (a shed boundary) is fire-and-forget, so it still never blocks.
+  - **Standard lifecycle animations (high-level, automatic).** `animation.createToken`/`consumeToken` play a
+    fixed **entrance** (`['fade-in','flip']`) / **exit** (`['flip','fade-out']`) automatically — no param,
+    skipped at `animationDuration: 0`. There is **no `gesture` argument** on the high-level API (only the
+    low-level `removeToken`/`playTokenEffect(s)` take explicit effects). A created token's **first depart
+    blocks on its entrance** (`_entering` map + `_awaitEntering`, awaited in `_travelFlow`) so a travel can't
+    cut the fade-flip short; `advanceToken`'s `onDeparted` hook fires right after `sendToken` re-renders the
+    source node, so a re-armed boundary listener is created **after** the node clears and keeps its entrance.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `primitives.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration
