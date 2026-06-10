@@ -13,9 +13,9 @@ the host application decides when tokens are created, moved, split, and removed.
 Shipped as ES modules under `lib/`; consumers bundle it. No build step for the
 library. `demo/` is the vite app (single page, `index.html` + `main.js`) — a
 **Simulator ⇄ Playback** toggle: in *Simulator* you load a diagram / pick a bundled
-`examples/` model and drive tokens by double-click (every BPMN event is **recorded** —
-download it as JSON); in *Playback* you replay an event log (the recording, a loaded
-file, or the example's shipped `examples/<id>.json`) via `simulation.replay`. The two
+`examples/` model and drive tokens by double-click (the `simulator` **records** every BPMN event —
+download it as JSON); in *Playback* the `animator` replays an event log (the recording, a loaded
+file, or the example's shipped `examples/<id>.json`) via `animator.replay`. The two
 modes are separate — toggling clears the diagram (no replay take-over). Watch the
 **console** for each event + action. It's the package's sole example app, published to
 GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). `examples/` holds the
@@ -38,6 +38,8 @@ same commit** (a renamed/removed/added method, changed signature, or new behavio
   Keep it short; detailed API tables belong in `docs/`, not here.
 - **`docs/simulation-api.md`** — the high-level `simulation` service (the supported surface).
 - **`docs/animation-api.md`** — the low-level `animation` service.
+- **`docs/animator-api.md`** — the `animator` (playback) tool: `replay` + the event-log format + the
+  `simulator`'s recording (`startRecording` / `getRecording`).
 
 `CLAUDE.md` (this file) is the **internal architecture/invariant** doc — a different audience;
 update it too, but it is not a substitute for the user-facing guides. When you change a public
@@ -47,9 +49,11 @@ without `@private` tags; the hand-curated guides read better.)
 
 ## Architecture
 
-The package entry (`lib/index.js`) exports the full module (all three services) as **default**
-(the interactive simulator), a named **`AnimationModule`** (`animation` + `simulation` only, no
-`simulator` — for driving tokens programmatically), **plus named color
+The package entry (`lib/index.js`) exports **four composable modules** — the **default** is the full
+drop-in (`animation` + `simulation` + **both** tools, `simulator` + `animator`); named
+**`AnimationModule`** (`animation` + `simulation` only — the bare enabling API), **`SimulatorModule`**
+(`+ simulator`, interactive + record), and **`AnimatorModule`** (`+ animator`, playback) let you take
+just what you need (each tool works without the other). **Plus named color
 helpers `getRandomColor` / `getDistinctColor`** (`lib/color.js`) — callers mint a color
 per identity and pass it in; the package never assigns colors itself. Both wrap the
 **`randomcolor`** library — the **same coloring scheme as bpmn-js-token-simulation**:
@@ -58,8 +62,18 @@ values kept under a YIQ cutoff), so concurrent instances read distinctly; a **ch
 inherits its parent's color** (no per-instance "related shade" ring). `randomcolor` is the
 package's one runtime dependency added for this; a `seed` option pins the palette for tests.
 
-A bpmn-js `additionalModule` (didi DI — see `lib/index.js`) providing **one service,
-`animation`** (`lib/AnimationAPI.js`), which owns both token animation and node animation.
+**Service layering (4):** `animation` (low-level visual primitive) → `simulation` (the BPMN-shaped
+**enabling vocabulary** composed over it; the supported surface — *pure*, no record/replay) → two
+opinionated **tools** that turn something into `simulation` calls: `simulator` (gestures → verbs;
+**owns record**) and `animator` (a log → verbs; **owns replay**). The two tools are **independent**
+(neither depends on the other) and share only the **event-log format** in `lib/eventLog.js`
+(`describeEvent`/`eventCall`/`startsImmediately` + `POSITIONAL_FIELDS`). Record is the simulator
+wrapping the shared `simulation` instance's verbs; replay re-issues a log against `simulation` (using
+the public `focusToken` seam + `animation.drillTo` to follow instance + plane). The "animate an
+external execution log" goal is the **animator** consuming a log; `simulation` itself stays a clean
+vocabulary.
+
+The low-level `animation` service (`lib/AnimationAPI.js`) owns both token animation and node animation.
 (The earlier split into `tokens` + `animation` services was merged — `createToken`/
 `setState`/etc. *are* animation concerns, and one service beats a fuzzy boundary.)
 

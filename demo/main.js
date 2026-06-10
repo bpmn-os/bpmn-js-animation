@@ -6,11 +6,11 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
-// The headline drop-in module (animation + simulation + the double-click simulator). One viewer
-// serves both modes: in **Simulate** you drive it interactively (and it records every BPMN event);
-// in **Play** the same `simulation` service replays an event log. Recording is always on, so a replay
-// can be taken over by toggling back to Simulate.
-import SimulatorModule from '../lib/index.js';
+// The full drop-in (default export): animation + simulation + both tools — the `simulator` (interactive
+// driving, owns record) and the `animator` (playback, owns replay). One viewer serves both modes: in
+// **Simulate** the simulator drives + records every BPMN event; in **Play** the animator replays a log.
+// The two modes are separate — toggling clears the diagram (no take-over).
+import TokenAnimationModule from '../lib/index.js';
 import '../assets/token-animation.css';
 
 // bundled example models, and their recorded event logs (loaded by basename: `<id>.bpmn` ↔ `<id>.json`)
@@ -43,8 +43,10 @@ const $ = s => document.querySelector(s);
 // --- state -------------------------------------------------------------------------------------
 
 let viewer = null;
-let simulation = null;
-let animation = null;
+let simulation = null; // the enabling vocabulary (drive tokens, lookups, clear)
+let animation = null;  // low-level (token polling for the console diff)
+let simulator = null;  // interactive tool — owns record
+let animator = null;   // playback tool — owns replay
 let prev = new Map(); // token -> its `where(...)` description last frame (the diff baseline)
 
 let mode = 'simulate';
@@ -140,13 +142,13 @@ async function load(xml, name, log) {
   playing = false;
   if (viewer) {
     viewer.destroy();
-    viewer = simulation = animation = null;
+    viewer = simulation = animation = simulator = animator = null;
   }
   prev = new Map();
 
   const next = new NavigatedViewer({
     container: '#canvas',
-    additionalModules: [ SimulatorModule ]
+    additionalModules: [ TokenAnimationModule ]
   });
 
   try {
@@ -160,17 +162,19 @@ async function load(xml, name, log) {
   viewer = next;
   simulation = next.get('simulation');
   animation = next.get('animation');
+  simulator = next.get('simulator'); // owns record
+  animator = next.get('animator');   // owns replay
   wireEvents(next.get('eventBus'));
   next.get('canvas').zoom('fit-viewport', 'auto');
 
   shippedLog = log || null;
   loadedLog = null;
-  simulation.autoFocus($('#autofocus').checked);
+  animator.autoFocus($('#autofocus').checked);
 
   // keep the current mode (loading a model in Playback stays in Playback): in Simulator we record the
   // run; in Playback we replay — the source defaults to the (new) example's shipped log
   if (mode === 'simulate') {
-    simulation.startRecording();
+    simulator.startRecording();
   } else {
     playSource = resolvePlaySource();
   }
@@ -195,9 +199,9 @@ function setMode(m) {
     simulation.clear(); // toggling clears the diagram — each mode starts from a clean slate
     prev = new Map();
     if (m === 'simulate') {
-      simulation.startRecording(); // record the interactive run
+      simulator.startRecording(); // record the interactive run
     } else {
-      simulation.stopRecording();  // Playback is read-only — don't record the replay
+      simulator.stopRecording();  // Playback is read-only — don't record the replay
     }
   }
   document.body.className = `mode-${m}`;
@@ -254,7 +258,7 @@ $('#refresh').addEventListener('click', async () => {
     return;
   }
   simulation.clear();
-  simulation.startRecording();
+  simulator.startRecording();
   prev = new Map();
   console.log('%c● cleared tokens — recording reset', 'color:#000;font-weight:bold');
 });
@@ -264,7 +268,7 @@ $('#download').addEventListener('click', () => {
   if (!simulation) {
     return;
   }
-  const log = simulation.getRecording();
+  const log = simulator.getRecording();
   if (!log.length) {
     console.warn('nothing recorded yet — drive the simulation first');
     return;
@@ -286,7 +290,7 @@ function resolvePlaySource() {
   if (loadedLog) {
     return loadedLog;
   }
-  const recorded = simulation ? simulation.getRecording() : [];
+  const recorded = simulator ? simulator.getRecording() : [];
   return recorded.length ? recorded : (shippedLog || []);
 }
 
@@ -334,13 +338,13 @@ async function startPlayback() {
   setPaused(false);
   $('#play').disabled = true;
   $('#pause').hidden = false;
-  simulation.autoFocus($('#autofocus').checked);
+  animator.autoFocus($('#autofocus').checked);
   simulation.clear(); // replay from a clean diagram
   prev = new Map();
   console.log(`%c● replaying ${playSource.length} events…`, styleEvent);
   playRun = (async () => {
     try {
-      await simulation.replay(playSource, { gate });
+      await animator.replay(playSource, { gate });
       console.log('%c● playback finished', styleEvent);
     } catch (err) {
       if (err && err.aborted) {
@@ -361,8 +365,8 @@ $('#play').addEventListener('click', startPlayback);
 
 // toggling auto-focus applies immediately (and to the next run)
 $('#autofocus').addEventListener('change', e => {
-  if (simulation) {
-    simulation.autoFocus(e.target.checked);
+  if (animator) {
+    animator.autoFocus(e.target.checked);
   }
 });
 

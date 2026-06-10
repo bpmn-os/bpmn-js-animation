@@ -56,10 +56,21 @@ await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // cen
 await simulation.consumeToken({ node: 'EndEvent_1', label: 'order-42' });
 ```
 
-The API can also **record** the BPMN events of a run (`startRecording` / `getRecording`) and **replay** such a log (`replay`) — a log is plain data, an array of `{ action, node, label, … }` events. Replay paces itself like a live run, but lets a diverging gateway's branches depart **concurrently** and (with `autoFocus`) follows the active instance and drills in/out of collapsed sub-processes. The [demo](https://bpmn-os.github.io/bpmn-js-animation/) does exactly this: drive a model in **Simulator** mode and it records every event; toggle **Playback** to replay it. See
-[Recording & replay](docs/simulation-api.md#recording--replay).
-
 Further details can be found in the [Simulation API documentation](docs/simulation-api.md), and the [Animation API documentation](docs/animation-api.md) describes the low-level primitives underneath.
+
+## Playback
+
+On top of the enabling API sit two optional **tools**, each its own module — the **simulator** (interactive driving, below) and the **animator** (playback). The **animator** plays back a recorded **event log** — the package's headline use case, animating a log produced by an external execution engine. A log is plain data, an array of self-describing `{ action, node, label, … }` events; playback paces itself like a live run, but lets a diverging gateway's branches depart **concurrently** and (with auto-focus) follows the active instance and drills in/out of collapsed sub-processes.
+
+```javascript
+import { AnimatorModule } from 'bpmn-js-animation';
+// … additionalModules: [ AnimatorModule ]
+const animator = viewer.get('animator');
+animator.autoFocus(true);
+await animator.replay(eventLog);
+```
+
+The **simulator** is the matching producer: it **records** the events you drive (`startRecording` / `getRecording`), so the [demo](https://bpmn-os.github.io/bpmn-js-animation/) records an interactive run and replays it in Playback. See the [Animator (playback) documentation](docs/animator-api.md).
 
 ## Interactive simulator
 
@@ -68,17 +79,17 @@ A **demo** of the interactive simulator can be found
 
 ### Installation
 
-Add the **default export** (the `SimulatorModule` — the `animation` + `simulation` + `simulator` services) to a bpmn-js viewer and import the stylesheet:
+Add the **default export** (the full drop-in — `animation` + `simulation` + both tools, `simulator` *and* `animator`) to a bpmn-js viewer and import the stylesheet. (For just the interactive simulator without playback, use the named `SimulatorModule`; the modules compose freely — `AnimationModule`, `SimulatorModule`, `AnimatorModule`, or the full default.)
 
 ```javascript
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
-import SimulatorModule from 'bpmn-js-animation';
+import TokenAnimationModule from 'bpmn-js-animation';
 
 import 'bpmn-js-animation/assets/token-animation.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
-  additionalModules: [ SimulatorModule ]
+  additionalModules: [ TokenAnimationModule ]
 });
 
 await viewer.importXML(diagramXML);

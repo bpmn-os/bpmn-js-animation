@@ -10,7 +10,7 @@ const ORDER_POOL = 'Participant_1c07lhk';
 const MACHINE_POOL = 'Participant_0gkimz7';
 
 // Guards the bundled event log (examples/collaboration.json) + record/replay against model-id / API
-// drift: the whole log must replay through the `simulation` service and clean up after itself.
+// drift: the whole log must replay through the `animator` service and clean up after itself.
 describe('event-log playback (examples/collaboration.json)', function() {
 
   beforeEach(bootstrap(collaborationXML, { animation: { animationDuration: 0 } }));
@@ -26,9 +26,9 @@ describe('event-log playback (examples/collaboration.json)', function() {
   });
 
   it('replays to a clean finish with auto-focus on', async function() {
-    const sim = get('simulation');
-    sim.autoFocus(true);
-    await sim.replay(eventLog);
+    const animator = get('animator');
+    animator.autoFocus(true);
+    await animator.replay(eventLog);
 
     const anim = get('animation');
     expect(anim.getTokens(), 'all tokens consumed').to.have.length(0);
@@ -38,14 +38,16 @@ describe('event-log playback (examples/collaboration.json)', function() {
 
   it('records BPMN events as flat objects, and round-trips through replay', async function() {
     const sim = get('simulation');
+    const simulator = get('simulator'); // owns record
+    const animator = get('animator');   // owns replay
 
-    // record a short run driven via the API
-    sim.startRecording();
+    // record a short run driven via the API (the simulator captures calls on the shared instance)
+    simulator.startRecording();
     sim.createToken({ node: 'MachineProcess', label: 'M1' });
     sim.createToken({ node: 'StartEventMachine', label: 'M1' });
     await sim.advanceToken({ node: 'StartEventMachine', label: 'M1', sequenceFlow: 'Flow_1rghjse' });
     await sim.advanceToken({ node: 'ConditionalEvent', label: 'M1' });
-    const recorded = sim.stopRecording();
+    const recorded = simulator.stopRecording();
 
     expect(recorded).to.have.length(4);
     expect(recorded[0]).to.eql({ action: 'createToken', node: 'MachineProcess', label: 'M1' });
@@ -53,8 +55,8 @@ describe('event-log playback (examples/collaboration.json)', function() {
 
     // replay it onto a clean diagram → same single waiting token at the conditional
     sim.clear();
-    sim.autoFocus(true);
-    await sim.replay(recorded);
+    animator.autoFocus(true);
+    await animator.replay(recorded);
     expect(get('simulation').getToken('ConditionalEvent', 'M1'), 'M1 waits at the conditional').to.exist;
   });
 });
