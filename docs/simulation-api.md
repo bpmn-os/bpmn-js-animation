@@ -321,6 +321,31 @@ is animating). Lets you sequence *after* the reveal — e.g. create a child toke
 instance has scrolled to the front. `consumeToken` also plays the reveal arc in reverse
 (`moveToBack`) when it drops a stacked instance, so the removed copy scrolls out.
 
+### Recording & replay
+
+Capture the **BPMN events** that drive a run and replay them later — the basis of a record-and-replay
+demo, or of playing back an execution log produced elsewhere.
+
+| Method | Description |
+| --- | --- |
+| `startRecording()` | Begin recording. Every subsequent call to a token-flow method (`createToken`, `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`, `jumpToken`, `departToken`, `throwIcon`, `catchIcon`, `playTokenEffect`) is appended to the log. View navigation (`moveToFront`/`scrollStack`) and focus settings are **not** recorded — a replay derives the view from the events. Resets any prior recording. |
+| `stopRecording()` → `event[]` | Stop appending and return the log (also kept; `startRecording` resets it). |
+| `getRecording()` → `event[]` | The log so far (a copy) — recording stays on. |
+| `replay(log, { gate? })` → `Promise` | Replay a log against this service, in order — each entry re-issues its call at the animation speed. Most events play **serially** (each waits for every previously-started animation to finish), but a token **travelling out along a flow** (`advanceToken` with a `sequenceFlow`) starts **immediately**, so a diverging gateway's branches leave **together** rather than one-after-another; the next event drains them. Run with **`autoFocus`** on to follow the active instance **and plane**: `replay` reveals each (serial) event's instance **before** animating it (and lets a reveal arc settle after a `createToken`), and drills the canvas **into** a collapsed sub-process's body and back **out** as the action crosses planes (via `animation.drillTo`). Pass `gate` (awaited before each event) to **pause**; throw from it to **abort** (stops at the next event). |
+
+A log is plain, serialisable data — an array of flat, self-describing **event objects** `{ action,
+…fields }`, where `action` is the method name and the fields are its named arguments:
+
+```json
+[
+  { "action": "createToken",  "node": "Process_1",   "label": "order-42" },
+  { "action": "createToken",  "node": "StartEvent_1", "label": "order-42" },
+  { "action": "advanceToken", "node": "StartEvent_1", "label": "order-42", "sequenceFlow": "Flow_1" },
+  { "action": "advanceToken", "node": "Task_1",       "label": "order-42", "position": "busy" },
+  { "action": "consumeToken", "node": "EndEvent_1",   "label": "order-42" }
+]
+```
+
 ### Lookups
 
 | Method | Returns |
@@ -346,7 +371,7 @@ and send/receive tasks), `autoFocus`, and the lookups. Most node types are cover
 (end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start =
 createToken; boundary / MI / event-sub = createToken + the choreographies above). **Sub-processes**
 (collapsed or expanded) run as an activity sweep that completes when their body empties — the
-simulator drills the canvas in/out for a collapsed plane. **Interrupting** event sub-processes and
+simulator (and an `autoFocus` `replay`) drills the canvas in/out for a collapsed plane. **Interrupting** event sub-processes and
 boundary events compose from a spawn + a scope/host `consumeToken` (see above).
 
 Not modelled: compensation, call activities, and transaction sub-processes. For full manual control

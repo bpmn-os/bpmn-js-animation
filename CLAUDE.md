@@ -11,11 +11,15 @@ BPMN execution engine. It is the "visualization only" counterpart to
 the host application decides when tokens are created, moved, split, and removed.
 
 Shipped as ES modules under `lib/`; consumers bundle it. No build step for the
-library. `demo/` is the vite app — the interactive **simulator** (load a diagram /
-pick a bundled `examples/` model, drive tokens by double-click, watch the **console**
-log each event + action). It's the package's sole example app, published to GitHub
-Pages on push to `main` (`.github/workflows/deploy.yml`). `examples/` holds the
-curated showcase models.
+library. `demo/` is the vite app (single page, `index.html` + `main.js`) — a
+**Simulator ⇄ Playback** toggle: in *Simulator* you load a diagram / pick a bundled
+`examples/` model and drive tokens by double-click (every BPMN event is **recorded** —
+download it as JSON); in *Playback* you replay an event log (the recording, a loaded
+file, or the example's shipped `examples/<id>.json`) via `simulation.replay`. The two
+modes are separate — toggling clears the diagram (no replay take-over). Watch the
+**console** for each event + action. It's the package's sole example app, published to
+GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). `examples/` holds the
+curated showcase models (and their event logs).
 
 ## Commands
 
@@ -354,4 +358,5 @@ puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 auto-settle test uses a non-zero duration so a transition is genuinely in flight.
 
 The **`demo/`** app (`npm run dev`) remains the visual check (placement, smoothness, colors,
-hover) — and the interactive simulator itself; it logs each event + token action to the console.
+hover) — the interactive simulator **and** the event-log playback (record → replay); it logs each
+event + token action to the console.

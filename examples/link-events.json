@@ -1,0 +1,141 @@
+[
+  {
+    "action": "createToken",
+    "node": "Process_1",
+    "label": "I1"
+  },
+  {
+    "action": "createToken",
+    "node": "StartEvent_1",
+    "label": "I1"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Process_1",
+    "label": "I1",
+    "position": "busy",
+    "animate": "pulse"
+  },
+  {
+    "action": "advanceToken",
+    "node": "StartEvent_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_start"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_1",
+    "label": "I1",
+    "position": "entry",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_1",
+    "label": "I1",
+    "position": "busy",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_1",
+    "label": "I1",
+    "position": "completion",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_throw"
+  },
+  {
+    "action": "advanceToken",
+    "node": "LinkThrow_A",
+    "label": "I1"
+  },
+  {
+    "action": "throwIcon",
+    "node": "LinkThrow_A",
+    "label": "I1"
+  },
+  {
+    "action": "jumpToken",
+    "fromNode": "LinkThrow_A",
+    "label": "I1",
+    "toNode": "LinkCatch_A"
+  },
+  {
+    "action": "catchIcon",
+    "node": "LinkCatch_A",
+    "label": "I1"
+  },
+  {
+    "action": "departToken",
+    "node": "LinkCatch_A",
+    "label": "I1",
+    "sequenceFlow": "Flow_after"
+  },
+  {
+    "action": "advanceToken",
+    "node": "LinkCatch_A",
+    "label": "I1",
+    "sequenceFlow": "Flow_after"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_2",
+    "label": "I1",
+    "position": "entry",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_2",
+    "label": "I1",
+    "position": "busy",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_2",
+    "label": "I1",
+    "position": "completion",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_2",
+    "label": "I1",
+    "sequenceFlow": "Flow_end"
+  },
+  {
+    "action": "advanceToken",
+    "node": "EndEvent_1",
+    "label": "I1"
+  },
+  {
+    "action": "throwIcon",
+    "node": "EndEvent_1",
+    "label": "I1"
+  },
+  {
+    "action": "consumeToken",
+    "node": "EndEvent_1",
+    "label": "I1",
+    "gesture": true
+  },
+  {
+    "action": "advanceToken",
+    "node": "Process_1",
+    "label": "I1",
+    "position": "completion",
+    "animate": null
+  },
+  {
+    "action": "consumeToken",
+    "node": "Process_1",
+    "label": "I1",
+    "gesture": true
+  }
+]

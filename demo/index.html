@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>bpmn-js-animation — interactive simulator</title>
+  <title>bpmn-js-animation — simulator & playback</title>
   <style>
     html, body { margin: 0; height: 100%; font-family: sans-serif; }
     #app { display: flex; flex-direction: column; height: 100%; }
@@ -16,9 +16,21 @@
       background: #fff; cursor: pointer; font-size: 13px;
     }
     #toolbar button:hover { background: #eee; }
+    #toolbar button:disabled { opacity: 0.5; cursor: default; }
     #toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
     #toolbar .hint { font-size: 13px; color: #555; }
+    #toolbar label { font-size: 13px; color: #333; display: inline-flex; align-items: center; gap: 4px; }
     #toolbar .spacer { flex: 1; }
+    /* the mode toggle: two segmented buttons, the active one highlighted */
+    #mode { display: inline-flex; }
+    #mode button { border-radius: 0; }
+    #mode button:first-child { border-radius: 4px 0 0 4px; }
+    #mode button:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+    #mode button.active { background: #06c; color: #fff; border-color: #06c; }
+    /* mode-specific controls — shown for the active mode only */
+    .only-simulate, .only-play { display: none; align-items: center; gap: 8px; }
+    body.mode-simulate .only-simulate { display: inline-flex; }
+    body.mode-play .only-play { display: inline-flex; }
     #main { flex: 1; position: relative; min-height: 0; }
     #canvas { position: absolute; inset: 0; }
     #placeholder {
@@ -30,19 +42,46 @@
 <body>
   <div id="app">
     <div id="toolbar">
+      <span id="mode" title="drive the model interactively, or replay an event log">
+        <button id="modeSimulate" class="active">Simulator</button>
+        <button id="modePlay">Playback</button>
+      </span>
+      <span class="sep"></span>
+
       <button id="load">Load diagram…</button>
       <input type="file" id="file" accept=".bpmn,.xml" hidden />
       <select id="examples" autocomplete="off" title="load a bundled example">
         <option value="">Examples…</option>
       </select>
       <span class="sep"></span>
-      <button id="clear">Clear tokens</button>
+
+      <!-- Simulate-mode controls -->
+      <span class="only-simulate">
+        <button id="download" title="download the recorded event log as JSON">⬇ Download log</button>
+      </span>
+
+      <!-- Play-mode controls -->
+      <span class="only-play">
+        <button id="loadLog" title="load an event log (.json)">Load log…</button>
+        <input type="file" id="logFile" accept=".json" hidden />
+        <button id="play">▶ Start</button>
+        <button id="pause" hidden title="pause / resume the playback">⏸ Pause</button>
+        <label title="follow each event's instance (scroll to it); off keeps the view fixed">
+          <input type="checkbox" id="autofocus" checked /> auto-focus
+        </label>
+      </span>
+
       <span class="spacer"></span>
-      <span class="hint">double-click the <b>start event</b> of a process to spawn · double-click a <b>token</b> to advance it</span>
+      <span class="hint only-simulate">double-click the <b>start event</b> to spawn · double-click a <b>token</b> to advance</span>
+      <span class="hint only-play">replays a BPMN <b>event log</b> — toggle <b>Simulate</b> to take over from here</span>
+      <span class="sep"></span>
+
+      <!-- shared across modes (same label + position): reset the diagram, then drive / replay over -->
+      <button id="refresh" title="reset to an empty diagram (stops a running playback)">↻ Refresh</button>
     </div>
     <div id="main">
       <div id="canvas"></div>
-      <div id="placeholder">Load a diagram or pick an example to begin.<br />Open the browser console to follow the simulation log.</div>
+      <div id="placeholder">Pick an example or load a diagram to begin.</div>
     </div>
   </div>
   <script type="module" src="./main.js"></script>

@@ -1,0 +1,118 @@
+[
+  {
+    "action": "createToken",
+    "node": "Process_1",
+    "label": "I1"
+  },
+  {
+    "action": "createToken",
+    "node": "StartEvent_1",
+    "label": "I1"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Process_1",
+    "label": "I1",
+    "position": "busy",
+    "animate": "pulse"
+  },
+  {
+    "action": "advanceToken",
+    "node": "StartEvent_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_s"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Gateway_1",
+    "label": "I1"
+  },
+  {
+    "action": "forkToken",
+    "node": "Gateway_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_a"
+  },
+  {
+    "action": "forkToken",
+    "node": "Gateway_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_b"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Gateway_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_a"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Gateway_1",
+    "label": "I1",
+    "sequenceFlow": "Flow_b"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Catch_A",
+    "label": "I1",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Catch_B",
+    "label": "I1",
+    "animate": "bounce"
+  },
+  {
+    "action": "consumeToken",
+    "node": "Catch_B",
+    "label": "I1",
+    "gesture": true
+  },
+  {
+    "action": "catchIcon",
+    "node": "Catch_A",
+    "label": "I1"
+  },
+  {
+    "action": "departToken",
+    "node": "Catch_A",
+    "label": "I1",
+    "sequenceFlow": "Flow_a2"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Catch_A",
+    "label": "I1",
+    "sequenceFlow": "Flow_a2"
+  },
+  {
+    "action": "advanceToken",
+    "node": "End_A",
+    "label": "I1"
+  },
+  {
+    "action": "throwIcon",
+    "node": "End_A",
+    "label": "I1"
+  },
+  {
+    "action": "consumeToken",
+    "node": "End_A",
+    "label": "I1",
+    "gesture": true
+  },
+  {
+    "action": "advanceToken",
+    "node": "Process_1",
+    "label": "I1",
+    "position": "completion",
+    "animate": null
+  },
+  {
+    "action": "consumeToken",
+    "node": "Process_1",
+    "label": "I1",
+    "gesture": true
+  }
+]
