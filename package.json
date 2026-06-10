@@ -1,7 +1,15 @@
 {
   "name": "bpmn-js-animation",
   "version": "0.1.0",
-  "description": "An interactive BPMN token simulator and simulation API for bpmn-js",
+  "description": "BPMN token animation for bpmn-js — a programmatic animation API, an event-log player (animator), and an interactive token simulator",
+  "author": "Asvin Goel <github@telematique.eu>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bpmn-os/bpmn-js-animation.git"
+  },
+  "homepage": "https://github.com/bpmn-os/bpmn-js-animation#readme",
+  "bugs": "https://github.com/bpmn-os/bpmn-js-animation/issues",
   "main": "lib/index.js",
   "module": "lib/index.js",
   "files": [
@@ -20,7 +28,6 @@
     "animation",
     "visualization"
   ],
-  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -28,7 +35,7 @@
     "test": "karma start"
   },
   "peerDependencies": {
-    "bpmn-js": ">=11"
+    "bpmn-js": ">=18"
   },
   "dependencies": {
     "min-dom": "^5.0.0",
