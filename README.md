@@ -75,11 +75,8 @@ await simulation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // cen
 await simulation.consumeToken({ node: 'EndEvent_1', label: 'order-42' });
 ```
 
-A **live demo** that replays a recorded execution log through the API — a small collaboration with
-two pools — runs at
-[bpmn-os.github.io/bpmn-js-animation/playback.html](https://bpmn-os.github.io/bpmn-js-animation/playback.html).
-Its complete source is a single file, [`demo/playback.js`](demo/playback.js): a tiny interpreter over
-the step log in [`demo/playback.json`](demo/playback.json) (each step is just `{ node, label, pos }`).
+A demo that replays an execution log through the API can be found 
+[here](https://bpmn-os.github.io/bpmn-js-animation/playback.html).
 
 Further details can be found in the [Simulation API documentation](docs/simulation-api.md), and the
 [Animation API documentation](docs/animation-api.md) describes the low-level primitives underneath.
@@ -123,7 +120,7 @@ await viewer.importXML(diagramXML);
 
 ![Example](docs/gateways.gif)
 
-The simulator is **double-click driven**; a token's animation tells you what it is waiting for:
+The simulator is double-click driven. A token's animation tells you what it is waiting for:
 
 | Cue | Meaning | What to do |
 | --- | --- | --- |
@@ -138,12 +135,8 @@ The simulator is **double-click driven**; a token's animation tells you what it 
   run **another iteration**, or **click an outflow then double-click** to leave the loop.
 - **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow — **double-click**
   it to spawn a sub-instance, then advance each sub; the activity departs when the last sub completes.
-- **Inclusive (OR) join**: fires automatically the moment no other branch can still arrive (proper BPMN
-  non-local merge semantics).
-- **Errors / escalations**: an error or escalation end event throws; the simulator bubbles it to a
-  matching boundary or event sub-process, innermost first.
 
-Every observed event and the resulting token action is logged to the browser **console**.
+Every observed event and the resulting token action is logged to the browser console.
 
 ## Supported BPMN elements
 
