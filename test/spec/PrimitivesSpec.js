@@ -1243,7 +1243,7 @@ describe('Primitives', function() {
 
       const moving = () => document.querySelector('.bts-animation-tokens .bts-token');
 
-      it('hides a node glide on a non-front instance', async function() {
+      it('does not glide a non-front instance (it jumps unseen)', async function() {
         cleanup();
         await bootstrap(diagramXML, { animation: { animationDuration: 40 } })();
 
@@ -1252,11 +1252,13 @@ describe('Primitives', function() {
         tokens.setStackSize('Task_1', 2); // front = instance 0
         tokens.createToken('Task_1', 'B', 'steelblue', { position: pos('center-middle') }, { Task_1: 1 });
 
-        // glide instance 1's token (the hidden, back instance) — its moving dot must not show on top
+        // instance 1's token (the hidden, back instance) repositions instantly — no moving dot is created,
+        // so nothing flashes over the front instance's dots
         tokens.setState('Task_1', 'B', { position: pos('top-left') }, { stackIndices: { Task_1: 1 } });
 
-        expect(moving(), 'glide in flight').to.exist;
-        expect(moving().style.display, 'hidden: instance 1 is not on screen').to.equal('none');
+        expect(moving(), 'no glide graphic for a back instance').to.not.exist;
+        const b = tokens.getTokens().find(t => t.label === 'B');
+        expect(b.state.position, 'jumped to the destination').to.eql(pos('top-left'));
       });
 
 
