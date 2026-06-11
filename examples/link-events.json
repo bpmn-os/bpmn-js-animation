@@ -75,12 +75,6 @@
     "label": "I1"
   },
   {
-    "action": "departToken",
-    "node": "LinkCatch_A",
-    "label": "I1",
-    "sequenceFlow": "Flow_after"
-  },
-  {
     "action": "advanceToken",
     "node": "LinkCatch_A",
     "label": "I1",

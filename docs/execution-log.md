@@ -4,11 +4,11 @@ Simulator and animator exchange execution logs using a JSON interchange format. 
 
 ## Format
 
-The `action` field names a method of the `animation` service, and the remaining fields are that method's arguments. The methods that may appear in a log are the token-flow operations an engine emits: `createToken`, `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`, `departToken`, `throwIcon`, and `catchIcon`. 
+The `action` field names a method of the `animation` service, and the remaining fields are that method's arguments. The methods that may appear in a log are the token-flow operations an engine emits: `createToken`, `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`, `throwIcon`, and `catchIcon`.
 
 Replay turns each entry into a single call on the `animation` service. The `action` field selects the method, and the way the remaining fields are passed depends on the method.
 
-Five methods take one object argument. The object is the entry with the `action` field removed, so a field that is absent from the entry is absent from the object. The other three methods take positional arguments in a fixed order, and a missing optional argument is passed as `undefined`.
+Five methods take one object argument. The object is the entry with the `action` field removed, so a field that is absent from the entry is absent from the object. The other two methods take positional arguments in a fixed order.
 
 | Action | Resulting call |
 | --- | --- |
@@ -17,7 +17,6 @@ Five methods take one object argument. The object is the entry with the `action`
 | `forkToken` | `animation.forkToken({ node, label, sequenceFlow })` |
 | `joinTokens` | `animation.joinTokens({ node, label })` |
 | `consumeToken` | `animation.consumeToken({ node, label, sequenceFlow })` |
-| `departToken` | `animation.departToken(node, label, sequenceFlow)` |
 | `throwIcon` | `animation.throwIcon(node, label)` |
 | `catchIcon` | `animation.catchIcon(node, label)` |
 
@@ -40,7 +39,7 @@ Every field that can appear in a log is listed below, together with the actions 
 | `action` | every event | The `animation` method to call. |
 | `node` | every event | The id of the BPMN element the action applies to. |
 | `label` | every event | The instance label that identifies the token. |
-| `sequenceFlow` | `advanceToken`, `forkToken`, `consumeToken`, `departToken` | The sequence flow the token travels along or rests on. |
+| `sequenceFlow` | `advanceToken`, `forkToken`, `consumeToken` | The sequence flow the token travels along or rests on. |
 | `position` | `advanceToken` | The target lifecycle position: `entry`, `busy`, `completion`, or `center`. |
 | `animate` | `createToken`, `advanceToken` | A looping motion cue on the resting token, for example `bounce` or `pulse`. |
 

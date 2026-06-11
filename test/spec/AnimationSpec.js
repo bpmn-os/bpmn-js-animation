@@ -785,22 +785,21 @@ describe('Animation', function() {
       expect(sim().getToken('BoundaryEvent_1', 'I1')).to.be.undefined;
     });
 
-    it('interrupting fire: the boundary token survives consuming the activity', async function() {
+    it('interrupting fire cancels the activity and continues a fresh dot from the boundary outflow', async function() {
       await toActivity();
       const root = sim().getToken(PROCESS, 'I1');
       const activityToken = sim().getToken('Activity_1', 'I1');
       const boundary = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
       expect(sim().getChildren(activityToken)).to.include(boundary);
 
-      // fire: depart the boundary token onto its outflow — it auto-reparents to the scope
+      // fire: advancing the boundary along its outflow cancels the host (cascading to the listener) and
+      // travels a fresh dot out — no separate consume, and no surviving boundary token
       const landed = await sim().advanceToken({ node: 'BoundaryEvent_1', label: 'I1', sequenceFlow: 'Flow_00uuuqq' });
-      expect(sim().getChildren(root)).to.include(landed);          // re-parented to the process root
-      expect(sim().getChildren(activityToken)).to.not.include(landed);
 
-      // ... then consume the interrupted activity — the boundary token is out of its subtree
-      await sim().consumeToken({ node: 'Activity_1', label: 'I1' });
-      expect(sim().getToken('Activity_1', 'I1')).to.be.undefined;  // activity gone
-      expect(sim().getToken('EndEvent_1', 'I1')).to.equal(landed); // boundary token survived at the far node
+      expect(sim().getToken('Activity_1', 'I1')).to.be.undefined;       // the activity was cancelled by the fire
+      expect(sim().getToken('BoundaryEvent_1', 'I1')).to.be.undefined;  // the listener went with it
+      expect(sim().getToken('EndEvent_1', 'I1')).to.equal(landed);      // the continuing dot rests at the far node
+      expect(sim().getChildren(root)).to.include(landed);               // a child of the scope (the process root)
     });
 
   });

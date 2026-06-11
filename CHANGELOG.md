@@ -22,6 +22,11 @@ All notable changes to this project are recorded here. The format follows
 - Removed `playTokenEffect`, and the `effect` and `selector` fields, from the execution-log format. The
   `playTokenEffect` method remains on the `animation` and `primitives` services; it is simply no longer
   a recorded log action.
+- Removed `departToken`. An interrupting boundary event now fires with a single `advanceToken` along its
+  outflow, which cancels the host activity and its whole subtree (the listener and the activity's
+  contents, an MI activity's instances included) and continues a fresh token. The reparenting that let a
+  boundary token survive the cancel is gone, because the continuing token is created fresh in the
+  enclosing scope. A non-interrupting boundary keeps its listener armed and sends a fresh token.
 
 ### Documentation
 

@@ -54,18 +54,19 @@ Throws if a token `(node, label)` already exists, or the scope/host has no token
 
 ### Boundary events
 
-`createToken({ node: boundaryEvent, label })` attaches a **listener token** as a child of the token at the boundary's host activity. Its lifecycle rides the parent-child tree — no bespoke cleanup:
+`createToken({ node: boundaryEvent, label })` attaches a **listener token** as a child of the token at the boundary's host activity. Its lifecycle rides the parent-child tree, so a listener that never fires needs no cleanup: when the activity departs normally it is **shed automatically** (invariant W1: a departing token sheds its children).
 
-- **Non-interrupting** (or a listener that never triggers) — the host stays; the listener is just a child, **shed automatically when the activity departs** (invariant W1: a departing token sheds its children) or is consumed.
-- **Interrupting** — the fire is two existing calls. `advanceToken` the boundary token onto its outflow — a departing boundary token **auto-reparents to the enclosing scope**, leaving the activity's subtree — then `consumeToken` the (interrupted) activity. The boundary token survives and continues.
+Firing is the **boundary form of `advanceToken`** (above): a single call along the boundary's outflow, which continues a fresh dot from the boundary.
+
+- **Non-interrupting** — the listener stays armed and the fresh dot continues along the outflow. Firing again sends another dot.
+- **Interrupting** — the same call also cancels the host activity, cascading to its whole subtree (including the listener). There is no separate `consumeToken`.
 
 ```javascript
 // while the activity is busy, a boundary listener arms
 animation.createToken({ node: 'BoundaryEvent_1', label: 'order-42' });
 
-// interrupting fire:
+// interrupting fire — this one call cancels the host and continues from the boundary
 await animation.advanceToken({ node: 'BoundaryEvent_1', label: 'order-42', sequenceFlow: 'Flow_err' });
-await animation.consumeToken({ node: 'Activity_1', label: 'order-42' }); // the listener token lives on
 ```
 
 The interrupting/non-interrupting distinction is the **host's** to act on (the library exposes it via `classify(element).interrupting`); both kinds spawn the same way.
@@ -113,9 +114,10 @@ await animation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops t
 
 ### `advanceToken({ node, label, sequenceFlow?, position?, animate? })` → `Promise<token>`
 
-One verb, three forms — chosen by which argument you pass:
+One verb, four forms — chosen by which argument you pass and which node the token is on:
 
 - **Along a flow** (`sequenceFlow`) — move the token onto that connected flow and travel it to the far node, where it comes to rest **on the same flow**. Advance it again to settle it into the node. The flow may be **outgoing** (forward) or **incoming** (reverse / rewind).
+- **Firing a boundary event** (`sequenceFlow`, when the token is on a boundary event) — the boundary fires along that outflow. A fresh dot continues from the boundary, and an **interrupting** boundary cancels the host activity, cascading to its whole subtree (the listener, the activity's contents, and an MI activity's every instance); a **non-interrupting** one leaves the listener armed. The cancel is part of this one call, not a separate `consumeToken`.
 - **Into a center node** (no `position`, on an event or **any gateway**) — anchor the token at the symbol **center**, taking it off whatever flow it rested on. At a converging gateway this anchors a single arrived branch; [`joinTokens`](#jointokens-node-label--promisetoken) collapses several.
 - **Within an activity/container** (`position` — a sweep value) — glide from the token's current position to the target, **through every skipped intermediate**. Forward-only, except a **standard-loop** activity may glide **backward** to an earlier position (a loop iteration redoing part of the lifecycle). `animate` (a motion cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
 
@@ -151,10 +153,6 @@ Remove the **anchored** target token **and its whole subtree** (descendants on f
 By default the target must be *anchored* — a token in transit on a flow isn't consumed directly (anchor it first), though descendants on flows **are** torn down by the cascade. To target a token **resting on a flow** instead, pass its `sequenceFlow` explicitly (e.g. consuming a parked MI outer-thread token when its scope is interrupted). Terminating an instance is `consumeToken` on its root.
 
 The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the moment this is called (don't await it to observe the removal). Each removed dot plays a standard **exit** automatically (when `animationDuration > 0`) — it **flips + fades out**, the reverse of `createToken`'s entrance: the whole subtree fades out **simultaneously** on **detached "ghost" clones** that play out and self-remove independently of the model — so the fade survives any concurrent re-render. A **stacked** consume (a process root, an MI sub) **waits for the flip-fade to finish before collapsing its container** — the implicit-process box / instance stack / `moveToBack` arc all run after the dot has faded, so the box never vanishes out from under a still-fading dot. The returned Promise resolves once that visual teardown is done.
-
-### `departToken(node, label, sequenceFlow)` → `token`
-
-Move a token onto an outgoing flow (the **depart**) **without travelling** — the dot comes to rest at the flow's near end. Pair it with `advanceToken({ sequenceFlow })` to then travel the branch, letting the host act **in between** (consume the host activity, re-arm a listener) while the token is already on the flow and no longer the anchored token at the node. A **boundary** token also detaches from its host here, reparenting to the enclosing scope, so it survives a concurrent host consume.
 
 ### `throwIcon(node, label, selector?)` → `Promise` / `catchIcon(node, label, selector?)` → `Promise`
 
@@ -221,6 +219,6 @@ Reset all simulation state and clear the underlying animation.
 
 ## Status
 
-Built and tested: `createToken` (process / participant / start event / **boundary event** / **MI activity** / **event-sub firing**), `advanceToken` (flow travel / center-anchor / activity sweep), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token** stack-decrement covering process roots, MI subs, **and event-sub firings**), `departToken`, the **icon cues** (`throwIcon` / `catchIcon` — used for throw/catch events and send/receive tasks), `autoFocus`, and the lookups. Most node types are covered by composing these (end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start = createToken; boundary / MI / event-sub = createToken + the choreographies above; link events = consumeToken at the throw + createToken at the catch). **Sub-processes** (collapsed or expanded) run as an activity sweep that completes when their body empties — the simulator (and the [`animator`](../README.md#animator)'s `autoFocus` replay) drills the canvas in/out for a collapsed plane. **Interrupting** event sub-processes and boundary events compose from a spawn + a scope/host `consumeToken` (see above).
+Built and tested: `createToken` (process / participant / start event / **boundary event** / **MI activity** / **event-sub firing**), `advanceToken` (flow travel / center-anchor / activity sweep / **boundary fire**), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token** stack-decrement covering process roots, MI subs, **and event-sub firings**), the **icon cues** (`throwIcon` / `catchIcon` — used for throw/catch events and send/receive tasks), `autoFocus`, and the lookups. Most node types are covered by composing these (end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start = createToken; MI / event-sub = createToken + the choreographies above; a **boundary** = createToken to arm + advanceToken to fire; link events = consumeToken at the throw + createToken at the catch). **Sub-processes** (collapsed or expanded) run as an activity sweep that completes when their body empties — the simulator (and the [`animator`](../README.md#animator)'s `autoFocus` replay) drills the canvas in/out for a collapsed plane. An **interrupting boundary** fires with a single `advanceToken` that cancels its host activity; an **interrupting event sub-process** spawns and then cancels its scope siblings.
 
 Not modelled: compensation, call activities, and transaction sub-processes. For full manual control beyond these choreographies, drop down to the [`primitives`](primitives.md) service.

@@ -250,7 +250,7 @@ describe('simulator — boundary events', function() {
   });
 
 
-  it('non-interrupting fire re-arms the listener, leaves the host running, path waits at the catch', async function() {
+  it('non-interrupting fire keeps the listener armed, leaves the host running, path waits at the catch', async function() {
     const sim = get('simulator');
 
     const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
@@ -259,11 +259,11 @@ describe('simulator — boundary events', function() {
 
     await sim.advanceToDeparted({ node: 'BoundaryEvent_2', label });
 
-    // host still running; a FRESH listener is armed; the boundary path rests at the catch event
+    // host still running; the listener stays armed (a fresh dot left, the listener itself did not move);
+    // the boundary path rests at the catch event
     expect(posAt('Activity_1', label)).to.equal('busy');
-    const rearmed = tokenAt('BoundaryEvent_2', label);
-    expect(rearmed).to.exist;
-    expect(rearmed).to.not.equal(armed);              // a new token, not the departed one
+    const stillArmed = tokenAt('BoundaryEvent_2', label);
+    expect(stillArmed).to.equal(armed);                      // the same listener, still armed
     expect(posAt('CatchEvent_1', label)).to.equal('center'); // path waits at the intermediate catch
     expect(tokenAt('BoundaryEvent_1', label)).to.exist;      // the interrupting listener is untouched
   });

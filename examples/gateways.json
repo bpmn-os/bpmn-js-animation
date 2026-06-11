@@ -31,13 +31,13 @@
     "action": "forkToken",
     "node": "Gateway_Split",
     "label": "I1",
-    "sequenceFlow": "Flow_b"
+    "sequenceFlow": "Flow_a"
   },
   {
     "action": "forkToken",
     "node": "Gateway_Split",
     "label": "I1",
-    "sequenceFlow": "Flow_a"
+    "sequenceFlow": "Flow_b"
   },
   {
     "action": "forkToken",
@@ -49,13 +49,13 @@
     "action": "advanceToken",
     "node": "Gateway_Split",
     "label": "I1",
-    "sequenceFlow": "Flow_b"
+    "sequenceFlow": "Flow_a"
   },
   {
     "action": "advanceToken",
     "node": "Gateway_Split",
     "label": "I1",
-    "sequenceFlow": "Flow_a"
+    "sequenceFlow": "Flow_b"
   },
   {
     "action": "advanceToken",
@@ -65,14 +65,14 @@
   },
   {
     "action": "advanceToken",
-    "node": "Task_B",
+    "node": "Task_A",
     "label": "I1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
-    "node": "Task_A",
+    "node": "Task_B",
     "label": "I1",
     "position": "entry",
     "animate": "bounce"
@@ -85,19 +85,6 @@
     "animate": "bounce"
   },
   {
-    "action": "advanceToken",
-    "node": "Task_B",
-    "label": "I1",
-    "position": "busy",
-    "animate": "bounce"
-  },
-  {
-    "action": "createToken",
-    "node": "Event_096uk4c",
-    "label": "I1",
-    "animate": "bounce"
-  },
-  {
     "action": "throwIcon",
     "node": "Task_A",
     "label": "I1"
@@ -107,6 +94,13 @@
     "node": "Task_A",
     "label": "I1",
     "position": "busy",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_A",
+    "label": "I1",
+    "position": "completion",
     "animate": "bounce"
   },
   {
@@ -138,32 +132,46 @@
     "action": "advanceToken",
     "node": "Task_A",
     "label": "I1",
-    "position": "completion",
-    "animate": "bounce"
-  },
-  {
-    "action": "advanceToken",
-    "node": "Task_A",
-    "label": "I1",
     "sequenceFlow": "Flow_a2"
   },
   {
     "action": "advanceToken",
     "node": "Task_B",
     "label": "I1",
-    "position": "completion",
+    "position": "busy",
     "animate": "bounce"
   },
   {
-    "action": "consumeToken",
+    "action": "createToken",
+    "node": "Event_096uk4c",
+    "label": "I1",
+    "animate": "bounce"
+  },
+  {
+    "action": "catchIcon",
     "node": "Event_096uk4c",
     "label": "I1"
   },
   {
     "action": "advanceToken",
-    "node": "Task_B",
+    "node": "Event_096uk4c",
     "label": "I1",
-    "sequenceFlow": "Flow_b2"
+    "sequenceFlow": "Flow_03uom6r"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Event_0o66r8o",
+    "label": "I1"
+  },
+  {
+    "action": "throwIcon",
+    "node": "Event_0o66r8o",
+    "label": "I1"
+  },
+  {
+    "action": "consumeToken",
+    "node": "Event_0o66r8o",
+    "label": "I1"
   },
   {
     "action": "joinTokens",
@@ -241,7 +249,7 @@
     "action": "forkToken",
     "node": "Gateway_Split",
     "label": "I2",
-    "sequenceFlow": "Flow_b"
+    "sequenceFlow": "Flow_c"
   },
   {
     "action": "advanceToken",
@@ -253,18 +261,18 @@
     "action": "advanceToken",
     "node": "Gateway_Split",
     "label": "I2",
-    "sequenceFlow": "Flow_b"
+    "sequenceFlow": "Flow_c"
   },
   {
     "action": "advanceToken",
-    "node": "Task_A",
+    "node": "Task_C",
     "label": "I2",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
-    "node": "Task_B",
+    "node": "Task_A",
     "label": "I2",
     "position": "entry",
     "animate": "bounce"
@@ -290,49 +298,39 @@
   },
   {
     "action": "advanceToken",
-    "node": "Task_B",
-    "label": "I2",
-    "position": "busy",
-    "animate": "bounce"
-  },
-  {
-    "action": "createToken",
-    "node": "Event_096uk4c",
-    "label": "I2",
-    "animate": "bounce"
-  },
-  {
-    "action": "advanceToken",
     "node": "Task_A",
     "label": "I2",
     "sequenceFlow": "Flow_a2"
   },
   {
-    "action": "catchIcon",
-    "node": "Event_096uk4c",
-    "label": "I2"
-  },
-  {
-    "action": "departToken",
-    "node": "Event_096uk4c",
+    "action": "advanceToken",
+    "node": "Task_C",
     "label": "I2",
-    "sequenceFlow": "Flow_03uom6r"
+    "position": "busy",
+    "animate": "bounce"
   },
   {
-    "action": "consumeToken",
-    "node": "Task_B",
+    "action": "catchIcon",
+    "node": "Task_C",
     "label": "I2"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_C",
+    "label": "I2",
+    "position": "completion",
+    "animate": "bounce"
+  },
+  {
+    "action": "advanceToken",
+    "node": "Task_C",
+    "label": "I2",
+    "sequenceFlow": "Flow_c2"
   },
   {
     "action": "joinTokens",
     "node": "Gateway_Join",
     "label": "I2"
-  },
-  {
-    "action": "advanceToken",
-    "node": "Event_096uk4c",
-    "label": "I2",
-    "sequenceFlow": "Flow_03uom6r"
   },
   {
     "action": "advanceToken",
@@ -342,22 +340,7 @@
   },
   {
     "action": "advanceToken",
-    "node": "Event_0o66r8o",
-    "label": "I2"
-  },
-  {
-    "action": "advanceToken",
     "node": "EndEvent_1",
-    "label": "I2"
-  },
-  {
-    "action": "throwIcon",
-    "node": "Event_0o66r8o",
-    "label": "I2"
-  },
-  {
-    "action": "consumeToken",
-    "node": "Event_0o66r8o",
     "label": "I2"
   },
   {

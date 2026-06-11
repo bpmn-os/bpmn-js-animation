@@ -339,7 +339,7 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     low-level `removeToken`/`playTokenEffect(s)` take explicit effects). A created token's **first depart
     blocks on its entrance** (`_entering` map + `_awaitEntering`, awaited in `_travelFlow`) so a travel can't
     cut the fade-flip short; `advanceToken`'s `onDeparted` hook fires right after `sendToken` re-renders the
-    source node, so a re-armed boundary listener is created **after** the node clears and keeps its entrance.
+    source node, so a re-armed event-sub waiter is created **after** the node clears and keeps its entrance.
   - **Low-level tween:** `TokenAnimation` lives at the **bottom of `primitives.js`, below a
     banner comment** — **adapted from bpmn-js-token-simulation** (everything above the banner
     is ours). It moves an SVG dot along a connection's waypoints over a **fixed** duration

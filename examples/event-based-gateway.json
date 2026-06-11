@@ -74,12 +74,6 @@
     "label": "I1"
   },
   {
-    "action": "departToken",
-    "node": "Catch_A",
-    "label": "I1",
-    "sequenceFlow": "Flow_a2"
-  },
-  {
     "action": "advanceToken",
     "node": "Catch_A",
     "label": "I1",
