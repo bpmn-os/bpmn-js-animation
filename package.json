@@ -15,6 +15,7 @@
   "files": [
     "assets",
     "lib",
+    "docs/*.md",
     "CHANGELOG.md"
   ],
   "sideEffects": [

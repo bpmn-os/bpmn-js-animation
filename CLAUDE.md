@@ -65,11 +65,11 @@ package's one runtime dependency added for this; a `seed` option pins the palett
 
 **Service layering (4):** `primitives` (low-level visual primitive) → `animation` (the BPMN-shaped
 **enabling vocabulary** composed over it; the supported surface — *pure*, no record/replay) → two
-opinionated **tools** that turn something into `animation` calls: `simulator` (gestures → verbs;
-**owns record**) and `animator` (a log → verbs; **owns replay**). The two tools are **independent**
+opinionated **tools** that turn something into `animation` calls: `simulator` (gestures → functions;
+**owns record**) and `animator` (a log → functions; **owns replay**). The two tools are **independent**
 (neither depends on the other) and share only the **execution-log format** in `lib/executionLog.js`
-(`RECORDED_METHODS` = the five token-flow verbs, `describeEvent`/`eventCall`/`startsImmediately`). Record is the simulator
-wrapping the shared `animation` instance's verbs; replay re-issues a log against `animation` (using
+(`RECORDED_METHODS` = the five token-flow functions, `describeEvent`/`eventCall`/`startsImmediately`). Record is the simulator
+wrapping the shared `animation` instance's functions; replay re-issues a log against `animation` (using
 the public `focusToken` seam + `animation.drillTo` to follow instance + plane). The "animate an
 external execution log" goal is the **animator** consuming a log; `animation` itself stays a clean
 vocabulary.
@@ -286,7 +286,7 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     `advanceToDeparted` routes a link **throw** (`c.link !== undefined`, no outflow) to `_jumpLink` → one
     matching catch auto-jumps (`_jumpTo`: throw icon out fire-and-forget + `animation.consumeToken` the
     throw + `createToken` the catch + route it through `triggerCatchEvent`, which flies the catch icon in
-    and departs). The consume uses the **plain `animation.consumeToken` verb**, not the Simulator's
+    and departs). The consume uses the **plain `animation.consumeToken` function**, not the Simulator's
     `_consume` — a leaf removal that does **not** finalize the instance even when the throw is its last
     token, so the create can repopulate it. Several matches reuse the diverging-gateway Fallback over the
     candidate **catch nodes** (`setNodeDimmed` dims them, a click picks, a double-click jumps). Matching

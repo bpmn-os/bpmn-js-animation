@@ -1,22 +1,20 @@
 # The execution log
 
-Simulator and animator exchange execution logs using a JSON interchange format. It is an array of event objects of the form `{ action, ...fields }`. The simulator records a log from a run, and the animator replays a log as an animation. The log belongs to neither tool, so you can also write one yourself by translating the events of an external execution engine into this format. That is the main intended use of the library.
+Simulator and animator exchange process execution logs using a JSON interchange format. It is an array of event objects of the form `{ action, ...fields }`. The `SimulatorModule` records a log from a run, and the `AnimatorModule` replays a log as an animation. The log can equally be produced by an external execution engine.
 
-## Format
+Each entry in the array must have a field named `action` with value `createToken`, `advanceToken`, `forkToken`, `joinTokens`, or `consumeToken`. These values correspond to functions of the `AnimationModule`, each representing an individual token animation.
 
-The `action` field names a method of the `animation` service, and the remaining fields are that method's arguments. A log holds only the five token-flow operations an engine emits: `createToken`, `advanceToken`, `forkToken`, `joinTokens`, and `consumeToken`. Everything visual is derived by the library from the BPMN model, so it is not in the log: the icon a node flies, the cancel an interrupting boundary performs, and the gestures are all worked out from the node type during replay.
-
-Replay turns each entry into a single call on the `animation` service. The `action` field selects the method, and the remaining fields, the entry without its `action`, are passed as that method's one object argument. A field that is absent from the entry is absent from the object.
+Every entry carries a `node` and a `label`. `node` is the id of the BPMN element the action applies to, and `label` is the instance the token belongs to. The other fields depend on the action, and are described with each function:
 
 | Action | Resulting call |
 | --- | --- |
-| `createToken` | `animation.createToken({ node, label, animate })` |
-| `advanceToken` | `animation.advanceToken({ node, label, sequenceFlow, position, animate })` |
-| `forkToken` | `animation.forkToken({ node, label, sequenceFlow })` |
-| `joinTokens` | `animation.joinTokens({ node, label })` |
-| `consumeToken` | `animation.consumeToken({ node, label, sequenceFlow })` |
+| [`createToken`](animation.md#createtoken) | `animation.createToken({ node, label, animate })` |
+| [`advanceToken`](animation.md#advancetoken) | `animation.advanceToken({ node, label, sequenceFlow, position, animate })` |
+| [`forkToken`](animation.md#forktoken) | `animation.forkToken({ node, label, sequenceFlow })` |
+| [`joinTokens`](animation.md#jointokens) | `animation.joinTokens({ node, label })` |
+| [`consumeToken`](animation.md#consumetoken) | `animation.consumeToken({ node, label, sequenceFlow })` |
 
-A log does not record view navigation or focus. During replay the animator determines which instance to show from the events themselves, provided you turn `autoFocus` on.
+## Example log file
 
 ```json
 [
@@ -27,20 +25,6 @@ A log does not record view navigation or focus. During replay the animator deter
   { "action": "consumeToken", "node": "EndEvent_1",   "label": "order-42" }
 ]
 ```
-
-Every field that can appear in a log is listed below, together with the actions that use it.
-
-| Field | Used by | Meaning |
-| --- | --- | --- |
-| `action` | every event | The `animation` method to call. |
-| `node` | every event | The id of the BPMN element the action applies to. |
-| `label` | every event | The instance label that identifies the token. |
-| `sequenceFlow` | `advanceToken`, `forkToken`, `consumeToken` | The sequence flow the token travels along or rests on. |
-| `position` | `advanceToken` | The target lifecycle position: `entry`, `busy`, `completion`, or `center`. |
-| `animate` | `createToken`, `advanceToken` | A looping motion cue on the resting token, for example `bounce` or `pulse`. |
-
-
-The object forms list every field the method accepts; only the fields present in the entry are included. See [animation.md](animation.md) for what each call does.
 
 ## Recording a log with the simulator
 
@@ -59,7 +43,7 @@ simulator.startRecording();
 const log = simulator.stopRecording();   // a flat execution log
 ```
 
-Recording captures every call to the shared `animation` instance, so it works whether the simulator drives the animation or your own code does.
+Recording captures every call to the shared `animation` instance, so it works whether the simulator drives the animation or host code does.
 
 ## Replaying a log with the animator
 
@@ -68,7 +52,7 @@ The animator consumes a log. It re-issues each entry as the corresponding `anima
 | Method (on `animator`) | Description |
 | --- | --- |
 | `replay(log, { gate? })` → `Promise` | Replay a log in order, re-issuing each entry as its `animation` call. The optional `gate` pauses or aborts replay. The timing and focus behaviour are described below the table. |
-| `autoFocus(on = true)` | While replaying, follow the active instance and plane. This forwards to [`animation.autoFocus`](animation.md#autofocuson--true) so the post-operation reveal also runs. It is off by default. |
+| `autoFocus(on = true)` | While replaying, follow the active instance and plane. This forwards to [`animation.autoFocus`](animation.md#autofocus) so the post-operation reveal also runs. It is off by default. |
 
 ```javascript
 const animator = viewer.get('animator');

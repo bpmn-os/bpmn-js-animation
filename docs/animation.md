@@ -1,224 +1,207 @@
-# Animation (`animation` service)
+# Animation
 
-The high-level, BPMN-shaped surface for driving token flow. It **composes** the low-level [`primitives`](primitives.md) service into a small vocabulary and owns the bookkeeping that lets you address tokens by readable `(node, label)` names — so the host never computes `stackIndices` or builds selectors.
+This module animates tokens on a BPMN diagram. Beyond rendering tokens, the module visualizes multiple instances of a process or activity as stacked shapes, one for each instance. The module does not create or move tokens by itself, but expects the respective function to be called. Each function plays one step a token takes, and the module decides how that step looks but never when it happens, so a token moves only when a function is called. 
+
+The functions live on the `animation` object, which a bpmn-js viewer exposes once `AnimationModule` is added:
 
 ```javascript
-const simulation = viewer.get('animation');
+const animation = viewer.get('animation');
 ```
 
-Animation is **driven by a simulation engine's token log**: the host calls these functions as the engine reports movements. The library decides *how* each node type animates — never *when*. It is the sole writer of tokens and resets on `diagram.clear` / `diagram.destroy`.
+Recording and replaying token flow are separate tools. The simulator records the steps as they happen, and the animator replays a recorded [execution log](execution-log.md).
 
 ## The token model
 
-- A token is addressed by **`(node, label)`**, where **`label` is the instance id** (e.g. `"Instance_1#1"`, `"order-42"`). A node id plus an instance label is enough to find the token and its membership.
-- **`node` is any BPMN element id — name a process by its *process* id.** In a collaboration a `bpmn:Process` has no shape of its own (its `bpmn:Participant` pool does); pass the **process** id (`"OrderProcess"`) anywhere a `node` is expected and it resolves to the participant automatically. A bare (pool-less) process and every flow node are already real shapes, so this is a no-op for them — you address processes by process id everywhere, never by participant id.
-- Tokens form **one tree per process instance**. The process/participant `createToken` is the **root**; every token created inside that instance (a start-event child, a fork branch) is a descendant. `consumeToken` on a token cascades to its whole subtree — so terminating an instance is one call on its root.
-- **Color is per instance.** A new instance gets a fresh [`getDistinctColor`](primitives.md#colors); a **child inherits its parent's color**.
-- **Homogeneous queue (FIFO).** When concurrent **same-instance** paths converge at one node (e.g. a non-interrupting boundary fired twice), the tokens sharing an identity form a **FIFO queue** — rendered as a stack of dots (a `+k` marker past `maxVisible`). `getEntry`/`getToken(node, label)` return the **head**, so a trigger/advance acts on the first-arrived. *Limitation:* queued tokens are interchangeable — no individual selection/targeting and no scrolling; advancing always takes the head.
+Every token belongs to a process instance and is addressed by the node it sits on together with a label that names the instance, such as `"order-42"`. It is assumed that a `(node, label)` pair identifies exactly one token, so a node never carries two tokens with the same label at the same time. Any model without race conditions meets this.
+
+The node is any element id, including a process id. In a collaboration that draws the process as a pool, a process id resolves to the pool.
+
+A token is created explicitly when an instance starts and each time a path reaches a new node. It is removed explicitly only when it reaches an end of its own, such as an end event or a finished activity. Every other ending follows from the model and is performed by the module: an interrupting boundary event or event sub-process clears the work it cancels, an event-based gateway clears the branches that did not win, and a finishing scope clears anything still waiting inside it. Removing a token also removes everything created from it, so removing an instance's first token removes the whole instance.
 
 ## Lifecycle positions
 
-Within an activity/container a token sweeps **left → right along the top edge** through three named positions; events and gateways use a single **center** point. You name the target; `advanceToken` glides through every skipped intermediate so the path is shown.
+Within an activity a token moves left to right along the top edge through three named positions. Events and gateways use a single center point instead.
 
-| position | where (activity) |
+| Position | Where, on an activity |
 | --- | --- |
-| `entry` | top-left corner (on the edge) |
-| `busy` | top-center (on the edge) |
-| `completion` | top-right corner (on the edge) |
-| `center` | events & gateways — the symbol center (one point for the whole lifecycle) |
+| `entry` | top-left corner |
+| `busy` | top-center |
+| `completion` | top-right corner |
+| `center` | the symbol center, for an event or a gateway |
 
-These names are **prescribed**, not configurable. What each *means* in your engine (arrived / entered / running / done) is your convention.
+`advanceToken` glides through every position between the current one and the target, so the path is always shown. The names are fixed. What each one means, such as arrived, running, or done, is a matter of convention.
 
-## API
+## `createToken`
 
-### `createToken({ node, label, animate? })` → `token`
+`createToken({ node, label, animate? }) → Token`
 
-Create a token. The behaviour is chosen by node kind:
+Creates a token and returns it. What it creates depends on the node type: on a process or participant it starts a new instance, a fresh root with a new color, and for a pool-less process it also draws the [process box](primitives.md#implicit-process-box); on a start event or an activity inside a scope it seeds a child of the enclosing instance; on a link catch event it places the token that the matching link throw consumed; on a boundary event it arms a listener on the host activity; on a multi-instance activity it spawns one sub-instance; on an event sub-process start event it fires the event sub-process. The token plays an entrance as it appears, and its first departure waits for that entrance to finish.
 
-- **Process / Participant** — start a new instance: bump the node's instance stack and create the **root** token at `entry` with a fresh distinct color. For a pool-less `bpmn:Process` this also draws the [implicit process box](primitives.md#implicit-process-box).
-- **Start event** of a Process / SubProcess (not an event sub-process) — create a **child** of the token at the enclosing scope, with the **same label** and color, at `center`.
-- **Link catch event** — create a **child** of the enclosing-scope token, with the **same label** and color, at `center`. A link catch has no incoming flow, so this is how a token reaches it: consume the matching link throw, then create the token here. Because it shares the scope's color, the instance keeps its color across the link.
-- **Activity** (non-MI, inside a scope) — create a **child** of the enclosing-scope token, inheriting its color, at `entry`. Used to seed an ad-hoc sub-process's no-incoming-flow body activities (each a ready token the user then advances).
-- **Boundary event** — create a **child** of the token at the **attached activity**, cloned from it (same label/color), at `center`. See [Boundary events](#boundary-events) below.
-- **MI activity** — create a **sub-instance** (`label` = the sub's id), a child of the outer thread token resting on the activity's incoming flow, **stacked** at the node and inheriting its color, at `entry`. See [MI activities](#mi-activities) below.
-- **Event sub-process start event** — fire the event sub-process (`label` = the firing id): a child of the enclosing scope's on-screen instance token, **stacked** on the event-sub node and inheriting its color, at `center`. See [Event sub-processes](#event-sub-processes) below.
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `node` | `string` | The element to create the token at. |
+| `label` | `string` | The instance label. |
+| `animate` | `string`, optional | A looping cue on the resting token, such as `'bounce'`. |
 
-Pass `animate` for a persistent looping cue on the resting token (e.g. `'bounce'`). A created token also plays a standard **entrance** automatically (when `animationDuration > 0`): the new dot **fades in + flips** once as it appears, so it visibly *arrives* rather than popping in. The token's first departure waits for the entrance to finish (so a travel can't cut it short); it's the reverse of `consumeToken`'s exit. (For an ad-hoc one-shot at any other moment, drop to [`primitives.playTokenEffect`](primitives.md).)
+**Returns** `Token`, the created token.
 
-```javascript
-animation.createToken({ node: 'Process_1', label: 'order-42' });      // instance root
-animation.createToken({ node: 'StartEvent_1', label: 'order-42' });   // its child at the start event
-```
-
-Throws if a token `(node, label)` already exists, or the scope/host has no token of that label.
-
-### Boundary events
-
-`createToken({ node: boundaryEvent, label })` attaches a **listener token** as a child of the token at the boundary's host activity. Its lifecycle rides the parent-child tree, so a listener that never fires needs no cleanup: when the activity departs normally it is **shed automatically** (invariant W1: a departing token sheds its children).
-
-Firing is the **boundary form of `advanceToken`** (above): a single call along the boundary's outflow, which continues a fresh dot from the boundary.
-
-- **Non-interrupting** — the listener stays armed and the fresh dot continues along the outflow. Firing again sends another dot.
-- **Interrupting** — the same call also cancels the host activity, cascading to its whole subtree (including the listener). There is no separate `consumeToken`.
+**Throws** if a token already exists at `(node, label)`, if the enclosing scope has no token of that label, or if the node is not a kind that can hold a created token.
 
 ```javascript
-// while the activity is busy, a boundary listener arms
-animation.createToken({ node: 'BoundaryEvent_1', label: 'order-42' });
-
-// interrupting fire — this one call cancels the host and continues from the boundary
-await animation.advanceToken({ node: 'BoundaryEvent_1', label: 'order-42', sequenceFlow: 'Flow_err' });
+animation.createToken({ node: 'Process_1', label: 'order-42' });    // instance root
+animation.createToken({ node: 'StartEvent_1', label: 'order-42' }); // its child at the start event
 ```
 
-The interrupting/non-interrupting distinction is the **host's** to act on (the library exposes it via `classify(element).interrupting`); both kinds spawn the same way.
+## `advanceToken`
 
-### MI activities
+`advanceToken({ node, label, sequenceFlow?, position?, animate? }) → Promise<Token>`
 
-A multi-instance activity renders as a **stack of its own instances**. The outer thread's token **arrives but never enters** — it rests on the activity's **incoming flow** (assume one in / one out) — and from there fans out into *N* sub-instances:
+Moves a token one step and resolves with it. The form is chosen by the argument given and the node the token is on:
 
-- **Fan-out** — `createToken({ node: MIactivity, label: subLabel })` per sub: a child of the outer thread token, **stacked** at the node, inheriting its color, at `entry`.
-- **Park / spawn window** — as soon as the **first** sub starts running (leaves `entry`), the outer thread token is **parked** (`state.hidden`, CSS-hidden) and **no more subs may be spawned** (further `createToken` is rejected). One color per instance; subs differ by stack position, not hue.
-- **Run** each sub independently with `advanceToken({ node, label: subLabel, position })`.
-- **Fan-in** — `consumeToken({ node, label: subLabel })` per sub (from `completion`). The decrement drops that sub's stack key; when the **last** sub is consumed, the parent is **un-parked onto the outgoing flow**, ready to travel.
+- Along a flow (`sequenceFlow`): the token moves onto that flow and travels to the far node, where it rests on the same flow. The flow may be outgoing (forward) or incoming (a rewind).
+- Firing a boundary (`sequenceFlow`, when the token is on a boundary event): a fresh token continues along the outflow, and an interrupting boundary also cancels the host activity and its whole subtree as part of this call.
+- Into a center node (no `position`, on an event or a gateway): the token anchors at the symbol center.
+- Through an activity (`position`): the token glides to the target position, passing through every position in between. Forward only, except that a standard-loop activity may glide back for another iteration.
 
-```javascript
-// outer thread "I1" rests on the MI activity's incoming flow (advanceToken'd there)
-animation.createToken({ node: 'MI_1', label: 'I1#1' });   // fan out
-animation.createToken({ node: 'MI_1', label: 'I1#2' });
-await animation.advanceToken({ node: 'MI_1', label: 'I1#1', position: 'busy' }); // sub runs → parks "I1", closes the window
+The node's own icon flies automatically, derived from the node type. An interrupting event sub-process firing and an event-based gateway resolution also cancel within this call, not as separate ones.
 
-// ... run each sub to completion, then collapse:
-for (const sub of [ 'I1#1', 'I1#2' ]) {
-  await animation.advanceToken({ node: 'MI_1', label: sub, position: 'completion' });
-  await animation.consumeToken({ node: 'MI_1', label: sub });
-}
-// "I1" is now un-parked on the outgoing flow:
-await animation.advanceToken({ node: 'MI_1', label: 'I1', sequenceFlow: 'Flow_out' });
-```
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `node` | `string` | The token's current node. |
+| `label` | `string` | The instance label. |
+| `sequenceFlow` | `string`, optional | The flow to travel along, or to fire a boundary along. |
+| `position` | `'entry' \| 'busy' \| 'completion' \| 'center'`, optional | The position to glide to within an activity. |
+| `animate` | `string`, optional | A looping cue applied at the target. |
 
-### Event sub-processes
+**Returns** `Promise<Token>`, the moved token.
 
-An event sub-process is triggered by an **event** (no incoming flow), so its instances are created **lazily** — a *firing* per trigger. Each firing is `createToken({ node: evtspStartEvent, label })`: a child of the **enclosing scope's on-screen instance** token, **stacked** on the event-sub node (key = the firing id), inheriting its color, at `center`.
-
-- **Non-interrupting** firings **coexist** — they stack, so the event-sub box scrolls through concurrent firings; the enclosing scope keeps running.
-- A firing's key is dropped when **its last token is consumed** — `consumeToken` does a surviving-token check (no remaining token carries that firing key → drop it). The enclosing scope is untouched.
-
-```javascript
-animation.createToken({ node: 'Process_1', label: 'I1' });        // scope instance
-animation.createToken({ node: 'EvtStart_1', label: 'I1.e1' });    // firing 1 (stacked)
-animation.createToken({ node: 'EvtStart_1', label: 'I1.e2' });    // firing 2 (concurrent)
-// run each firing's internal flow, then end it:
-await animation.consumeToken({ node: 'EvtStart_1', label: 'I1.e1' }); // drops the e1 firing key
-```
-
-**Interrupting** firings are the same spawn followed by `consumeToken` on the enclosing scope's other tokens (the simulator does exactly this) — the firing departs its start event first so it survives, then the scope siblings are torn down. The library exposes the distinction via `classify(element).interrupting`; both kinds spawn identically.
-
-### `advanceToken({ node, label, sequenceFlow?, position?, animate? })` → `Promise<token>`
-
-One verb, four forms — chosen by which argument you pass and which node the token is on:
-
-- **Along a flow** (`sequenceFlow`) — move the token onto that connected flow and travel it to the far node, where it comes to rest **on the same flow**. Advance it again to settle it into the node. The flow may be **outgoing** (forward) or **incoming** (reverse / rewind).
-- **Firing a boundary event** (`sequenceFlow`, when the token is on a boundary event) — the boundary fires along that outflow. A fresh dot continues from the boundary, and an **interrupting** boundary cancels the host activity, cascading to its whole subtree (the listener, the activity's contents, and an MI activity's every instance); a **non-interrupting** one leaves the listener armed. The cancel is part of this one call, not a separate `consumeToken`.
-- **Into a center node** (no `position`, on an event or **any gateway**) — anchor the token at the symbol **center**, taking it off whatever flow it rested on. At a converging gateway this anchors a single arrived branch; [`joinTokens`](#jointokens-node-label--promisetoken) collapses several.
-- **Within an activity/container** (`position` — a sweep value) — glide from the token's current position to the target, **through every skipped intermediate**. Forward-only, except a **standard-loop** activity may glide **backward** to an earlier position (a loop iteration redoing part of the lifecycle). `animate` (a motion cue, e.g. `'bounce'`/`'pulse'`) applies at the target.
+**Throws** if no token of `label` is at `node`, if the flow is not connected to the node, if `position` is unknown or would move backward, or if the node is not a flow node.
 
 ```javascript
 await animation.advanceToken({ node: 'StartEvent_1', label: 'order-42', sequenceFlow: 'Flow_1' });
-await animation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'entry' });
-await animation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'completion', animate: 'pulse' });
-await animation.advanceToken({ node: 'EndEvent_1', label: 'order-42' }); // center-anchor
+await animation.advanceToken({ node: 'Task_1', label: 'order-42', position: 'busy', animate: 'pulse' });
 ```
 
-### `forkToken({ node, label, sequenceFlow })` → `Promise<token>`
+## `forkToken`
 
-Split a thread at a **diverging** gateway — call once per chosen outgoing flow. All branches carry the **same instance label** (they rejoin at `joinTokens`). `forkToken` only **places** a branch *on* the outflow (no travel), so the remaining outflows can be forked too; call `advanceToken({ sequenceFlow })` afterwards to travel each branch onward. The **first** fork moves the original onto its flow; **later** forks clone onto theirs.
+`forkToken({ node, label, sequenceFlow }) → Promise<Token>`
+
+Splits a thread at a diverging gateway, one branch per call on a chosen outgoing flow. Every branch carries the same instance label, and they rejoin at `joinTokens`. A fork only places a branch on its outflow without travelling, so the remaining outflows can be forked too, and each branch then travels onward through `advanceToken`. The first fork moves the original token onto its flow, and later forks clone onto theirs.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `node` | `string` | The diverging gateway. |
+| `label` | `string` | The instance label. |
+| `sequenceFlow` | `string` | The chosen outgoing flow. |
+
+**Returns** `Promise<Token>`, the branch token, resting on the flow.
+
+**Throws** if the node is not a gateway, the flow is not one of its outflows, or no token of `label` is at the node.
 
 ```javascript
 await animation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
 await animation.forkToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
-await animation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_a' });
-await animation.advanceToken({ node: 'Gateway_1', label: 'order-42', sequenceFlow: 'Flow_b' });
 ```
 
-### `joinTokens({ node, label })` → `Promise<token>`
+## `joinTokens`
 
-The inverse of `forkToken`: at a **converging** gateway, collapse the branches of `label` resting on its incoming flows into one token anchored at the gateway **center** (same color / membership, inheriting any children). Carry it onward with `advanceToken`.
+`joinTokens({ node, label }) → Promise<Token>`
 
-> A converging *exclusive* gateway is an uncontrolled merge, not a join — there each token just
-> passes through with `advanceToken` (center-anchor).
+The inverse of `forkToken`. At a converging gateway it collapses the branches of `label` resting on the incoming flows into one token anchored at the gateway center, keeping the color, the membership, and any children. The merged token then travels onward through `advanceToken`. A converging exclusive gateway is an uncontrolled merge rather than a join, so there each token passes through with `advanceToken` instead.
 
-### `consumeToken({ node, label, sequenceFlow? })` → `Promise<token[]>`
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `node` | `string` | The converging gateway. |
+| `label` | `string` | The instance label. |
 
-Remove the **anchored** target token **and its whole subtree** (descendants on flows included). Resolves with the removed tokens. If the target sits at a **stacked host** (a process / participant root, or a multi-instance activity instance), the host's instance stack is decremented — consuming the last process instance removes its box.
+**Returns** `Promise<Token>`, the merged token, at the gateway center.
 
-By default the target must be *anchored* — a token in transit on a flow isn't consumed directly (anchor it first), though descendants on flows **are** torn down by the cascade. To target a token **resting on a flow** instead, pass its `sequenceFlow` explicitly (e.g. consuming a parked MI outer-thread token when its scope is interrupted). Terminating an instance is `consumeToken` on its root.
+**Throws** if the node is not a gateway, or no branches of `label` are at the node.
 
-The **model removal is synchronous** — every token in the subtree is gone from the bookkeeping the moment this is called (don't await it to observe the removal). Each removed dot plays a standard **exit** automatically (when `animationDuration > 0`) — it **flips + fades out**, the reverse of `createToken`'s entrance: the whole subtree fades out **simultaneously** on **detached "ghost" clones** that play out and self-remove independently of the model — so the fade survives any concurrent re-render. A **stacked** consume (a process root, an MI sub) **waits for the flip-fade to finish before collapsing its container** — the implicit-process box / instance stack / `moveToBack` arc all run after the dot has faded, so the box never vanishes out from under a still-fading dot. The returned Promise resolves once that visual teardown is done.
+## `consumeToken`
 
-### Event and message icons (automatic)
+`consumeToken({ node, label, sequenceFlow? }) → Promise<Token[]>`
 
-A node's own icon is flown automatically by `advanceToken`, so there is no icon call to make. A throwing node flies its symbol out as the token passes through it: a throw or end event as the token anchors at its center, a send task as it reaches `busy`. A catching node flies its symbol in before the token moves on, and the move waits for it to land: a catch event, a typed start event, or a boundary event as it is triggered, a receive task as it reaches `completion`. A node with no symbol shows nothing. The direction follows the BPMN type, so the icon is never part of the log. (The low-level [`primitives`](primitives.md) service still exposes `throwIcon` / `catchIcon` if you want to fly an icon by hand.)
+Removes the target token and its whole subtree, and resolves with the removed tokens. A token is consumed explicitly only when it reaches its own end. Structural removal (an interrupting cancel, an event-based gateway's losing branches, a scope's untriggered waiters) is derived and is not a separate call. The model updates synchronously, so every token in the subtree is gone the moment the call is made, before the returned promise settles. Each removed token then flips and fades out. Consuming a stacked instance decrements its stack, and consuming the last process instance removes its box.
 
-### `playTokenEffectOn(token, effect)` → `Promise`
+By default the target is the token anchored at the node. A token in transit on a flow is not consumed directly, though descendants on flows are torn down by the cascade. A `sequenceFlow` argument instead targets a token resting on that flow, such as a parked multi-instance outer token when its scope is interrupted.
 
-Like [`playTokenEffect`](#playtokeneffectnode-label-effect-selector--promise) but addresses a **specific token object** directly (not by `(node, label)`) — used to gesture a whole subtree at once. No-op if the token is gone.
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `node` | `string` | The token's node. |
+| `label` | `string` | The instance label. |
+| `sequenceFlow` | `string`, optional | The flow whose resting token is consumed instead of the anchored one. |
 
-### `autoFocus(on = true)`
+**Returns** `Promise<Token[]>`, the removed tokens, the target first.
 
-When on, every call that touches a token **reveals that token's instance** — bringing it to the front of its stack(s) (animated, via [`moveToFront`](primitives.md#instance-stacks)) so the just-touched token is the one on screen. Off by default; global. While a reveal arc is playing, `advanceToken` **waits for it** before moving, so an advance never overlaps the reveal gesture.
+**Throws** if no matching token is at the node, or if the target is in transit on a flow and no `sequenceFlow` was given.
 
-### `setFocusContext(stackIndices | null)`
+```javascript
+await animation.consumeToken({ node: 'EndEvent_1', label: 'order-42' });
+```
 
-Scope `autoFocus` to a single **instance** — the one the host last interacted with. While set, a token is brought to the front of a stacked node only when the context hasn't claimed that node for a *different* instance (nodes the context doesn't mention still focus). So a burst of concurrently auto-advancing instances — e.g. rapidly spawned process instances — no longer thrash which one is shown; the last-interacted instance keeps the front. Pass `null` to clear (focus every touch again).
+## `autoFocus`
 
-### `moveToFront(node, label)` → `Promise` / `moveToBack(node, label)` → `Promise` / `scrollStack(node, direction?)` → `Promise`
+`autoFocus(on = true) → void`
 
-**Choose which stacked instance is on screen**, explicitly (the manual counterpart to `autoFocus`). A stacked process / participant / MI activity renders only its **front** instance's tokens, and the simulation API resolves "spawn into this instance" against that front — so when you drive several instances programmatically, bring the target to the front *before* the operation. `moveToFront` / `moveToBack` reorder by instance **label**; `scrollStack(node, 'forward'|'backward')` steps to the next / previous. The order updates **synchronously** (a later spawn resolves against the new front); the scroll arc resolves the Promise. Delegates to the [`animation`](primitives.md#instance-stacks) service (which also exposes the `getStacks` / `getCurrentStacks` readers); no-op when the node isn't stacked. (`autoFocus` automates this on touch — reach for these when you need deterministic control instead.)
+Turns auto-focus on or off. While on, every function that touches a token brings that token's instance to the front, so the just-touched token is the visible one. It is off by default. When several instances run at once a stacked node shows only its front instance's tokens, so this keeps the active instance in view. While a reveal is animating, `advanceToken` waits for it, so a move never overlaps a reveal.
 
-### `setCue(node, label, animate, selector?)`
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `on` | `boolean`, optional | `true` to follow the active instance (the default), `false` to stop. |
 
-Set a token's motion cue (`state.animate`) **without moving it** — e.g. `pulse-pause` while a user picks an outflow, or `bounce-pause` for an MI parent idling on its flow. `animate` is an effect name or `null` to clear. The optional `selector` (`{ sequenceFlow?, stackIndices? }`) disambiguates a branch/instance; omit to use the single token there.
+## `focusToken`
 
-### `playTokenEffect(node, label, effect, selector?)` → `Promise`
+`focusToken(token) → Promise`
 
-Play a **one-shot** dot gesture on a resting token (delegates to [`primitives.playTokenEffect`](primitives.md)) — e.g. a `flip` when an event triggers, or a `fade-out` sequenced before `consumeToken`. Resolves when the gesture ends.
+Brings a token's instance, and the stacked ancestors in its scope, to the front, and resolves once the reveal has settled. It is the manual counterpart to `autoFocus`, and the [animator](../README.md#animator) uses it to follow the active instance during replay. A no-op when nothing in the token's chain is stacked.
 
-### `setFlowDimmed(flowId, on = true)`
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `token` | `Token` | The token whose instance to reveal. |
 
-Dim / undim a **sequence flow** (semi-transparent line + arrowhead; reverts cleanly) — delegates to [`primitives.setFlowDimmed`](primitives.md). Used to fade a diverging gateway's unchosen outflows while the user picks. `clear` undims any left dimmed.
+**Returns** `Promise`, resolved when the reveal arc settles.
 
-### `setNodeDimmed(nodeId, on = true)`
+## `whenFocused`
 
-Dim / undim a **node** (semi-transparent shape; same `.bts-dim` mechanism as `setFlowDimmed`) — delegates to [`primitives.setNodeDimmed`](primitives.md). Used to fade the candidate **link catch** events of an ambiguous link throw while the user picks the jump target. `clear` undims any left dimmed.
+`whenFocused() → Promise`
 
-### `whenFocused()` → `Promise`
+Resolves once any in-flight reveal has settled, which lets later work be sequenced after a reveal. Resolves immediately when nothing is animating.
 
-Resolves once any in-flight auto-focus **reveal arc** has settled (resolves immediately when nothing is animating). Lets you sequence *after* the reveal — e.g. create a child token only once its instance has scrolled to the front. `consumeToken` also plays the reveal arc in reverse (`moveToBack`) when it drops a stacked instance, so the removed copy scrolls out.
+**Returns** `Promise`.
 
-### `focusToken(token)` → `Promise`
+## `getToken`
 
-Reveal a token's instance(s): bring the token's stacked node — and the stacked ancestors in its scope chain — to the **front** of their stacks, so the token is the visible copy. Returns the `whenFocused` arc. The manual counterpart to `autoFocus` (which does this automatically after every touch); the [`animator`](../README.md#animator) uses it to follow the active instance during replay. No-op when nothing in the token's chain is stacked.
+`getToken(node, label, sequenceFlow?) → Token | undefined`
 
-> **Recording & replay moved.** Capturing and replaying an execution log is no longer part of this
-> vocabulary — it's owned by the two tools that sit on top of it: the **simulator** records
-> (`startRecording` / `getRecording`) and the **animator** replays (`animator.replay`). See the
-> [execution-log doc](execution-log.md) — the format, plus the record and replay API.
+The token at `(node, label)`, optionally the branch resting on `sequenceFlow`, or `undefined` if there is none.
 
-### Lookups
+## `getTokens`
 
-| Method | Returns |
-| --- | --- |
-| `getToken(node, label, sequenceFlow?)` | the token at `(node, label)` — optionally the branch on `sequenceFlow` — or `undefined` |
-| `getTokens(node, label)` | every token of instance `label` at `node` (0, 1, or several branches) |
-| `getEntry(node, label, sequenceFlow?)` | the internal bookkeeping record (prefer `getToken`) |
-| `getChildren(token)` | the token's child tokens (one tree per instance) |
-| `getParent(token)` | the token's parent — its enclosing scope (a sub-process / process-root token), or `null` |
+`getTokens(node, label) → Token[]`
 
-### `clear()`
+Every token of instance `label` currently at `node`, in arrival order.
 
-Reset all simulation state and clear the underlying animation.
+## `getEntry`
 
-## Status
+`getEntry(node, label, sequenceFlow?) → object | undefined`
 
-Built and tested: `createToken` (process / participant / start event / **boundary event** / **MI activity** / **event-sub firing**), `advanceToken` (flow travel / center-anchor / activity sweep / **boundary fire**), `forkToken` / `joinTokens`, `consumeToken` (subtree cascade + the **surviving-token** stack-decrement covering process roots, MI subs, **and event-sub firings**), **automatic event/message icons** (`advanceToken` flies them for throw / catch / end events and send / receive tasks), `autoFocus`, and the lookups. Most node types are covered by composing these (end events = advance-center + consume; tasks = activity sweep with an `animate` cue; start = createToken; MI / event-sub = createToken + the choreographies above; a **boundary** = createToken to arm + advanceToken to fire; link events = consumeToken at the throw + createToken at the catch). **Sub-processes** (collapsed or expanded) run as an activity sweep that completes when their body empties — the simulator (and the [`animator`](../README.md#animator)'s `autoFocus` replay) drills the canvas in/out for a collapsed plane. An **interrupting boundary** fires with a single `advanceToken` that cancels its host activity; an **interrupting event sub-process** spawns and then cancels its scope siblings.
+The record the module keeps for a token, or `undefined`. `getToken` returns the token itself and is usually the better choice.
 
-Not modelled: compensation, call activities, and transaction sub-processes. For full manual control beyond these choreographies, drop down to the [`primitives`](primitives.md) service.
+## `getChildren`
+
+`getChildren(token) → Token[]`
+
+The child tokens of `token`.
+
+## `getParent`
+
+`getParent(token) → Token | null`
+
+The parent of `token`, its enclosing scope, or `null` for an instance root.
+
+## `clear`
+
+`clear() → void`
+
+Removes every token and resets the module.

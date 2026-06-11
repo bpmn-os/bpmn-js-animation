@@ -19,7 +19,7 @@ To use the library, add one of its modules to a bpmn-js viewer and import the st
 
 ```javascript
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
-import AnimationModule from 'bpmn-js-animation'; // the enabling API (default export)
+import AnimationModule from 'bpmn-js-animation'; // the animation API (default export)
 
 import 'bpmn-js-animation/assets/token-animation.css';
 
@@ -32,7 +32,7 @@ await viewer.importXML(diagramXML);
 // drive tokens via viewer.get('animation') — see docs/animation.md
 ```
 
-The `animation` API provides functions such as `createToken`, `advanceToken`, `forkToken`, `joinTokens`, and `consumeToken` (documented in [docs/animation.md](docs/animation.md). Internally, these call low-level `primitives` documented in  [docs/primitives.md](docs/primitives.md). Tokens are identified by BPMN node and instance label. For unambiguous identification there must never be two tokens at the same node with the same label (race-condition-free models satisfy this).
+The `animation` API provides functions such as `createToken`, `advanceToken`, `forkToken`, `joinTokens`, and `consumeToken` (documented in [docs/animation.md](docs/animation.md)). Internally, these call low-level `primitives` documented in [docs/primitives.md](docs/primitives.md). Tokens are identified by BPMN node and instance label. For unambiguous identification there must never be two tokens at the same node with the same label (race-condition-free models satisfy this).
 
 ## Demo
 
