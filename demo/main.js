@@ -136,9 +136,14 @@ function wireEvents(eventBus) {
 // --- diagram loading (rebuilds the viewer; never on a mode toggle) ------------------------------
 
 async function load(xml, name, log) {
-  // stop any in-flight replay and tear the old viewer down for a clean slate
-  aborted = true;     // stop any in-flight replay before tearing the viewer down
+  // stop any in-flight replay and let it unwind before tearing the old viewer down — otherwise the
+  // replay keeps issuing calls against a destroyed viewer (switching examples mid-playback breaks the
+  // page). Same abort-then-await the Refresh button does.
+  aborted = true;     // stop the in-flight replay at the next event boundary
   setPaused(false);   // resolve a pending pause so the replay reaches the gate and aborts
+  if (playing) {
+    await playRun;
+  }
   playing = false;
   if (viewer) {
     viewer.destroy();
