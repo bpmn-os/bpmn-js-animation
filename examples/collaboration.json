@@ -415,6 +415,11 @@
     "label": "M2#fire2"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M2#fire2"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O2#1",
@@ -435,11 +440,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O2#1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M2#fire2"
   },
   {
     "action": "advanceToken",
@@ -535,6 +535,11 @@
     "label": "M1#fire1"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M1#fire1"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O1#1",
@@ -555,11 +560,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O1#1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M1#fire1"
   },
   {
     "action": "advanceToken",
@@ -713,6 +713,11 @@
     "label": "M1#fire3"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M1#fire3"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O3#1",
@@ -733,11 +738,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O3#1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M1#fire3"
   },
   {
     "action": "advanceToken",
@@ -862,6 +862,11 @@
     "label": "M2#fire4"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M2#fire4"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O1#2",
@@ -882,11 +887,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O1#2"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M2#fire4"
   },
   {
     "action": "advanceToken",
@@ -978,6 +978,11 @@
     "label": "M1#fire5"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M1#fire5"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O2#2",
@@ -998,11 +1003,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O2#2"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M1#fire5"
   },
   {
     "action": "advanceToken",
@@ -1065,6 +1065,11 @@
     "label": "M2#fire6"
   },
   {
+    "action": "consumeToken",
+    "node": "ThrowCompletionMessage",
+    "label": "M2#fire6"
+  },
+  {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
     "label": "O3#2",
@@ -1085,11 +1090,6 @@
     "action": "consumeToken",
     "node": "JobEndEvent",
     "label": "O3#2"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ThrowCompletionMessage",
-    "label": "M2#fire6"
   },
   {
     "action": "advanceToken",
@@ -1124,11 +1124,6 @@
     "label": "O3"
   },
   {
-    "action": "consumeToken",
-    "node": "CatchRequestMessage",
-    "label": "M1#fire7"
-  },
-  {
     "action": "advanceToken",
     "node": "ConditionalEvent",
     "label": "M1",
@@ -1148,11 +1143,6 @@
     "action": "consumeToken",
     "node": "MachineProcess",
     "label": "M1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "CatchRequestMessage",
-    "label": "M2#fire8"
   },
   {
     "action": "advanceToken",

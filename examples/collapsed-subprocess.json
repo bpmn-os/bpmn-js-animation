@@ -122,12 +122,6 @@
     "sequenceFlow": "Flow_18sa0dl"
   },
   {
-    "action": "consumeToken",
-    "node": "Activity_1",
-    "label": "I1",
-    "sequenceFlow": null
-  },
-  {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
     "label": "I1.e1",
@@ -297,12 +291,6 @@
     "node": "Event_0vz4qr8",
     "label": "I2.e2",
     "sequenceFlow": "Flow_18sa0dl"
-  },
-  {
-    "action": "consumeToken",
-    "node": "Activity_1",
-    "label": "I2",
-    "sequenceFlow": null
   },
   {
     "action": "advanceToken",

@@ -64,11 +64,6 @@
     "animate": "bounce"
   },
   {
-    "action": "consumeToken",
-    "node": "Catch_B",
-    "label": "I1"
-  },
-  {
     "action": "advanceToken",
     "node": "Catch_A",
     "label": "I1",

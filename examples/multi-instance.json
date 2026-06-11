@@ -193,11 +193,6 @@
     "animate": "bounce"
   },
   {
-    "action": "consumeToken",
-    "node": "BoundaryEvent_1",
-    "label": "I1"
-  },
-  {
     "action": "advanceToken",
     "node": "Activity_1",
     "label": "I1",
@@ -223,16 +218,6 @@
     "action": "consumeToken",
     "node": "EndEvent_1",
     "label": "I1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "EvtStart_1",
-    "label": "I1.e1"
-  },
-  {
-    "action": "consumeToken",
-    "node": "ErrStart_2",
-    "label": "I1.e2"
   },
   {
     "action": "advanceToken",

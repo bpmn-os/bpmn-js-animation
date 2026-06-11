@@ -6,39 +6,42 @@ All notable changes to this project are recorded here. The format follows
 
 ## [0.2.0] - 2026-06-11
 
+A large, breaking release. The execution-log format and the module layout both changed. A log recorded
+with 0.1.0 will not replay; re-record it.
+
 ### Changed
 
-- The animation API (`AnimationModule`) is now the default export. The interactive simulator and the
-  animator are opt-in modules, `SimulatorModule` and `AnimatorModule`, and each one includes the
-  animation API, so you add only the module you need.
-- Renamed the recording format from "event log" to "execution log". The internal module
-  `lib/eventLog.js` is now `lib/executionLog.js`, and the guide is now `docs/execution-log.md`.
+- The animation API (`AnimationModule`) is now the default export. The simulator and animator are opt-in
+  (`SimulatorModule`, `AnimatorModule`), and each one includes the animation API.
+- The execution log now holds only the five token-flow verbs (`createToken`, `advanceToken`,
+  `forkToken`, `joinTokens`, `consumeToken`). Everything else is derived on replay from the BPMN model:
+  a node's icon, an interrupting boundary or event-sub cancel, an event-based gateway's losing branches,
+  and the cleanup of boundary listeners and event-sub waiters that never fire. A `consumeToken` is now
+  only a token reaching its own end. A link event is a `consumeToken` at the throw plus a `createToken`
+  at the matching catch.
+- Renamed "event log" to "execution log" (`lib/eventLog.js` became `lib/executionLog.js`, and the guide
+  is now `docs/execution-log.md`).
+- Each run starts the token-color cycle at a random offset, so playback no longer always begins with the
+  same color.
 
 ### Removed
 
-- Removed `jumpToken` from the `animation` service and `moveToken` from `primitives`. A link event is
-  now an ordinary `consumeToken` at the throw followed by `createToken` at the matching catch, and
-  `createToken` now accepts a link catch event.
-- Removed `playTokenEffect`, and the `effect` and `selector` fields, from the execution-log format. The
-  `playTokenEffect` method remains on the `animation` and `primitives` services; it is simply no longer
-  a recorded log action.
-- Removed `departToken`. An interrupting boundary event now fires with a single `advanceToken` along its
-  outflow, which cancels the host activity and its whole subtree (the listener and the activity's
-  contents, an MI activity's instances included) and continues a fresh token. The reparenting that let a
-  boundary token survive the cancel is gone, because the continuing token is created fresh in the
-  enclosing scope. A non-interrupting boundary keeps its listener armed and sends a fresh token.
-- Removed `throwIcon` and `catchIcon` from the execution-log format and the `animation` service. A
-  node's own icon is now flown automatically by `advanceToken` from the node type: a throw or end event,
-  or a send task, flies its symbol out; a catch event, a typed start event, a boundary, or a receive
-  task flies it in. The recorded format is therefore exactly the five token-flow verbs (`createToken`,
-  `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`); everything visual is derived on replay.
-  The `throwIcon` / `catchIcon` methods remain on the low-level `primitives` service.
+- From the public API: `jumpToken`, `moveToken`, and `departToken`.
+- From the recorded format: `throwIcon`, `catchIcon`, `playTokenEffect`, and the `effect` and `selector`
+  fields. These methods remain on the lower-level `primitives` service; they are simply no longer
+  recorded log actions.
+
+### Fixed
+
+- A non-interrupting event sub-process firing keeps focus instead of scrolling to its re-armed waiter and
+  back.
+- A hidden (back-stack) instance's token jumps to its new position instead of flashing a glide graphic
+  over the visible instance.
 
 ### Documentation
 
-- Rewrote the README and the guides in plainer language.
-- Consolidated the format, recording, and replay documentation into `docs/execution-log.md`, and
-  removed the separate animator guide.
+- Rewrote the README and the guides in plainer language, and consolidated the format, recording, and
+  replay documentation into `docs/execution-log.md`.
 
 ## [0.1.0] - 2026-06-10
 
