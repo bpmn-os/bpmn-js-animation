@@ -88,11 +88,6 @@
     "label": "I1"
   },
   {
-    "action": "throwIcon",
-    "node": "NormEnd",
-    "label": "I1"
-  },
-  {
     "action": "consumeToken",
     "node": "NormEnd",
     "label": "I1"
@@ -103,11 +98,6 @@
     "label": "I1",
     "position": "completion",
     "animate": "bounce"
-  },
-  {
-    "action": "catchIcon",
-    "node": "EscBoundary_1",
-    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -121,19 +111,9 @@
     "label": "I1"
   },
   {
-    "action": "throwIcon",
-    "node": "End_esc",
-    "label": "I1"
-  },
-  {
     "action": "consumeToken",
     "node": "End_esc",
     "label": "I1"
-  },
-  {
-    "action": "catchIcon",
-    "node": "Event_0vz4qr8",
-    "label": "I1.e1"
   },
   {
     "action": "advanceToken",
@@ -176,11 +156,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "Event_1k4vru2",
-    "label": "I1.e1"
-  },
-  {
-    "action": "throwIcon",
     "node": "Event_1k4vru2",
     "label": "I1.e1"
   },
@@ -290,18 +265,8 @@
     "label": "I2"
   },
   {
-    "action": "throwIcon",
-    "node": "EscEnd",
-    "label": "I2"
-  },
-  {
     "action": "consumeToken",
     "node": "EscEnd",
-    "label": "I2"
-  },
-  {
-    "action": "catchIcon",
-    "node": "EscBoundary_1",
     "label": "I2"
   },
   {
@@ -323,19 +288,9 @@
     "label": "I2"
   },
   {
-    "action": "throwIcon",
-    "node": "End_esc",
-    "label": "I2"
-  },
-  {
     "action": "consumeToken",
     "node": "End_esc",
     "label": "I2"
-  },
-  {
-    "action": "catchIcon",
-    "node": "Event_0vz4qr8",
-    "label": "I2.e2"
   },
   {
     "action": "advanceToken",
@@ -378,11 +333,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "Event_1k4vru2",
-    "label": "I2.e2"
-  },
-  {
-    "action": "throwIcon",
     "node": "Event_1k4vru2",
     "label": "I2.e2"
   },

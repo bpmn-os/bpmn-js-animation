@@ -220,11 +220,6 @@
     "label": "I1"
   },
   {
-    "action": "throwIcon",
-    "node": "EndEvent_1",
-    "label": "I1"
-  },
-  {
     "action": "consumeToken",
     "node": "EndEvent_1",
     "label": "I1"

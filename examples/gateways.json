@@ -85,11 +85,6 @@
     "animate": "bounce"
   },
   {
-    "action": "throwIcon",
-    "node": "Task_A",
-    "label": "I1"
-  },
-  {
     "action": "advanceToken",
     "node": "Task_A",
     "label": "I1",
@@ -109,11 +104,6 @@
     "label": "I1",
     "position": "busy",
     "animate": "bounce"
-  },
-  {
-    "action": "catchIcon",
-    "node": "Task_C",
-    "label": "I1"
   },
   {
     "action": "advanceToken",
@@ -148,11 +138,6 @@
     "animate": "bounce"
   },
   {
-    "action": "catchIcon",
-    "node": "Event_096uk4c",
-    "label": "I1"
-  },
-  {
     "action": "advanceToken",
     "node": "Event_096uk4c",
     "label": "I1",
@@ -160,11 +145,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "Event_0o66r8o",
-    "label": "I1"
-  },
-  {
-    "action": "throwIcon",
     "node": "Event_0o66r8o",
     "label": "I1"
   },
@@ -186,11 +166,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "EndEvent_1",
-    "label": "I1"
-  },
-  {
-    "action": "throwIcon",
     "node": "EndEvent_1",
     "label": "I1"
   },
@@ -278,11 +253,6 @@
     "animate": "bounce"
   },
   {
-    "action": "throwIcon",
-    "node": "Task_A",
-    "label": "I2"
-  },
-  {
     "action": "advanceToken",
     "node": "Task_A",
     "label": "I2",
@@ -310,11 +280,6 @@
     "animate": "bounce"
   },
   {
-    "action": "catchIcon",
-    "node": "Task_C",
-    "label": "I2"
-  },
-  {
     "action": "advanceToken",
     "node": "Task_C",
     "label": "I2",
@@ -340,11 +305,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "EndEvent_1",
-    "label": "I2"
-  },
-  {
-    "action": "throwIcon",
     "node": "EndEvent_1",
     "label": "I2"
   },

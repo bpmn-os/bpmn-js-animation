@@ -55,22 +55,12 @@
     "label": "I1"
   },
   {
-    "action": "throwIcon",
-    "node": "LinkThrow_A",
-    "label": "I1"
-  },
-  {
     "action": "consumeToken",
     "node": "LinkThrow_A",
     "label": "I1"
   },
   {
     "action": "createToken",
-    "node": "LinkCatch_A",
-    "label": "I1"
-  },
-  {
-    "action": "catchIcon",
     "node": "LinkCatch_A",
     "label": "I1"
   },
@@ -109,11 +99,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "EndEvent_1",
-    "label": "I1"
-  },
-  {
-    "action": "throwIcon",
     "node": "EndEvent_1",
     "label": "I1"
   },

@@ -69,11 +69,6 @@
     "label": "I1"
   },
   {
-    "action": "catchIcon",
-    "node": "Catch_A",
-    "label": "I1"
-  },
-  {
     "action": "advanceToken",
     "node": "Catch_A",
     "label": "I1",
@@ -81,11 +76,6 @@
   },
   {
     "action": "advanceToken",
-    "node": "End_A",
-    "label": "I1"
-  },
-  {
-    "action": "throwIcon",
     "node": "End_A",
     "label": "I1"
   },

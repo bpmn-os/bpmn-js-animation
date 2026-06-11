@@ -4,11 +4,9 @@ Simulator and animator exchange execution logs using a JSON interchange format. 
 
 ## Format
 
-The `action` field names a method of the `animation` service, and the remaining fields are that method's arguments. The methods that may appear in a log are the token-flow operations an engine emits: `createToken`, `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`, `throwIcon`, and `catchIcon`.
+The `action` field names a method of the `animation` service, and the remaining fields are that method's arguments. A log holds only the five token-flow operations an engine emits: `createToken`, `advanceToken`, `forkToken`, `joinTokens`, and `consumeToken`. Everything visual is derived by the library from the BPMN model, so it is not in the log: the icon a node flies, the cancel an interrupting boundary performs, and the gestures are all worked out from the node type during replay.
 
-Replay turns each entry into a single call on the `animation` service. The `action` field selects the method, and the way the remaining fields are passed depends on the method.
-
-Five methods take one object argument. The object is the entry with the `action` field removed, so a field that is absent from the entry is absent from the object. The other two methods take positional arguments in a fixed order.
+Replay turns each entry into a single call on the `animation` service. The `action` field selects the method, and the remaining fields, the entry without its `action`, are passed as that method's one object argument. A field that is absent from the entry is absent from the object.
 
 | Action | Resulting call |
 | --- | --- |
@@ -17,8 +15,6 @@ Five methods take one object argument. The object is the entry with the `action`
 | `forkToken` | `animation.forkToken({ node, label, sequenceFlow })` |
 | `joinTokens` | `animation.joinTokens({ node, label })` |
 | `consumeToken` | `animation.consumeToken({ node, label, sequenceFlow })` |
-| `throwIcon` | `animation.throwIcon(node, label)` |
-| `catchIcon` | `animation.catchIcon(node, label)` |
 
 A log does not record view navigation or focus. During replay the animator determines which instance to show from the events themselves, provided you turn `autoFocus` on.
 

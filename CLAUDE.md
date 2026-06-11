@@ -68,7 +68,7 @@ package's one runtime dependency added for this; a `seed` option pins the palett
 opinionated **tools** that turn something into `animation` calls: `simulator` (gestures → verbs;
 **owns record**) and `animator` (a log → verbs; **owns replay**). The two tools are **independent**
 (neither depends on the other) and share only the **execution-log format** in `lib/executionLog.js`
-(`describeEvent`/`eventCall`/`startsImmediately` + `POSITIONAL_FIELDS`). Record is the simulator
+(`RECORDED_METHODS` = the five token-flow verbs, `describeEvent`/`eventCall`/`startsImmediately`). Record is the simulator
 wrapping the shared `animation` instance's verbs; replay re-issues a log against `animation` (using
 the public `focusToken` seam + `animation.drillTo` to follow instance + plane). The "animate an
 external execution log" goal is the **animator** consuming a log; `animation` itself stays a clean

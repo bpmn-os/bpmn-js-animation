@@ -27,6 +27,12 @@ All notable changes to this project are recorded here. The format follows
   contents, an MI activity's instances included) and continues a fresh token. The reparenting that let a
   boundary token survive the cancel is gone, because the continuing token is created fresh in the
   enclosing scope. A non-interrupting boundary keeps its listener armed and sends a fresh token.
+- Removed `throwIcon` and `catchIcon` from the execution-log format and the `animation` service. A
+  node's own icon is now flown automatically by `advanceToken` from the node type: a throw or end event,
+  or a send task, flies its symbol out; a catch event, a typed start event, a boundary, or a receive
+  task flies it in. The recorded format is therefore exactly the five token-flow verbs (`createToken`,
+  `advanceToken`, `forkToken`, `joinTokens`, `consumeToken`); everything visual is derived on replay.
+  The `throwIcon` / `catchIcon` methods remain on the low-level `primitives` service.
 
 ### Documentation
 
