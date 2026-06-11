@@ -4,21 +4,21 @@ import { bootstrap, cleanup, get } from '../TestHelper';
 
 import collaborationXML from '../diagrams/collaboration.bpmn';
 
-import eventLog from '../../examples/collaboration.json';
+import executionLog from '../../examples/collaboration.json';
 
 const ORDER_POOL = 'Participant_1c07lhk';
 const MACHINE_POOL = 'Participant_0gkimz7';
 
-// Guards the bundled event log (examples/collaboration.json) + record/replay against model-id / API
+// Guards the bundled execution log (examples/collaboration.json) + record/replay against model-id / API
 // drift: the whole log must replay through the `animator` service and clean up after itself.
-describe('event-log playback (examples/collaboration.json)', function() {
+describe('execution-log playback (examples/collaboration.json)', function() {
 
   beforeEach(bootstrap(collaborationXML, { animation: { animationDuration: 0 } }));
   afterEach(cleanup);
 
   it('every entry is a flat { action, node, label } event', function() {
-    expect(eventLog).to.be.an('array').that.is.not.empty;
-    for (const entry of eventLog) {
+    expect(executionLog).to.be.an('array').that.is.not.empty;
+    for (const entry of executionLog) {
       expect(entry.action, 'action').to.be.a('string');
       expect(entry.node, 'node').to.be.a('string');
       expect(entry.label, 'label').to.be.a('string');
@@ -28,7 +28,7 @@ describe('event-log playback (examples/collaboration.json)', function() {
   it('replays to a clean finish with auto-focus on', async function() {
     const animator = get('animator');
     animator.autoFocus(true);
-    await animator.replay(eventLog);
+    await animator.replay(executionLog);
 
     const anim = get('primitives');
     expect(anim.getTokens(), 'all tokens consumed').to.have.length(0);

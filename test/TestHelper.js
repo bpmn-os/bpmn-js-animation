@@ -1,6 +1,8 @@
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 
-import AnimationModule from '../lib/index.js';
+// Boot with both opt-in tools (each pulls in the enabling API via `__depends__`) so specs can reach
+// `simulator` (record) and `animator` (replay) alongside `primitives` + `animation`.
+import { SimulatorModule, AnimatorModule } from '../lib/index.js';
 
 let viewer;
 let container;
@@ -21,13 +23,13 @@ export function bootstrap(xml, config = {}) {
 
     viewer = new BpmnViewer({
       container,
-      additionalModules: [ AnimationModule ],
+      additionalModules: [ SimulatorModule, AnimatorModule ],
       ...config
     });
 
     installStackShims(viewer.get('primitives'));
 
-    // the bundled `simulator` turns on `simulation.autoFocus` (the interactive default); the
+    // the bundled `simulator` turns on `animation.autoFocus` (the interactive default); the
     // API-level specs assert the autofocus-OFF default (front = first instance), so reset it —
     // the simulator's own focus behaviour is exercised in SimulatorSpec where it matters.
     viewer.get('animation').autoFocus(false);

@@ -88,7 +88,7 @@ describe('Animation', function() {
 
     it('rejects an unsupported node', function() {
       expect(() => sim().createToken({ node: 'Event_10nbvlp', label: 'X' })) // an end event
-        .to.throw(/not a process\/participant, a start\/boundary event, an activity, or an MI activity/);
+        .to.throw(/not a process\/participant, a start\/boundary event, a link catch event, an activity, or an MI activity/);
     });
 
     it('rejects an unknown node', function() {

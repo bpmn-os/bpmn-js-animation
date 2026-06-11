@@ -737,20 +737,20 @@ describe('simulator — standard-loop activity', function() {
     beforeEach(bootstrap(linkXML, { animation: { animationDuration: 0 } }));
     afterEach(cleanup);
 
-    it('teleports a token from a link throw to its matching catch, then continues', async function() {
+    it('moves a token from a link throw to its matching catch, then continues', async function() {
       const sim = get('simulator');
 
       const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-      // run Task_1 and depart it — the token travels into the link throw, which auto-jumps to the
-      // matching catch and continues, all in one chain
+      // run Task_1 and depart it. The token travels into the link throw, which consumes it there,
+      // creates a fresh token at the matching catch, and continues, all in one chain.
       await sim.advanceToBusy({ node: 'Task_1', label });
       await sim.advanceToCompletion({ node: 'Task_1', label });
       await sim.advanceToDeparted({ node: 'Task_1', label });
       await flush();
 
-      // neither the throw nor the catch holds the token any more — it resumed past the catch at Task_2,
-      // carrying the same identity (no sequence flow ever ran between throw and catch)
+      // neither the throw nor the catch holds the token any more. It resumed past the catch at Task_2.
+      // No sequence flow ever ran between the throw and the catch.
       expect(tokenAt('LinkThrow_A', label)).to.not.exist;
       expect(tokenAt('LinkCatch_A', label)).to.not.exist;
       expect(posAt('Task_2', label)).to.equal('entry');

@@ -60,10 +60,14 @@
     "label": "I1"
   },
   {
-    "action": "jumpToken",
-    "fromNode": "LinkThrow_A",
-    "label": "I1",
-    "toNode": "LinkCatch_A"
+    "action": "consumeToken",
+    "node": "LinkThrow_A",
+    "label": "I1"
+  },
+  {
+    "action": "createToken",
+    "node": "LinkCatch_A",
+    "label": "I1"
   },
   {
     "action": "catchIcon",

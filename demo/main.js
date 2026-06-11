@@ -6,14 +6,14 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
-// The full drop-in (default export): primitives + animation + both tools — the `simulator` (interactive
-// driving, owns record) and the `animator` (playback, owns replay). One viewer serves both modes: in
-// **Simulate** the simulator drives + records every BPMN event; in **Play** the animator replays a log.
-// The two modes are separate — toggling clears the diagram (no take-over).
-import TokenAnimationModule from '../lib/index.js';
+// Both opt-in tools — the `simulator` (interactive driving, owns record) and the `animator` (playback,
+// owns replay); each pulls in the enabling API (primitives + animation) via `__depends__`. One viewer
+// serves both modes: in **Simulate** the simulator drives + records every BPMN event; in **Play** the
+// animator replays a log. The two modes are separate — toggling clears the diagram (no take-over).
+import { SimulatorModule, AnimatorModule } from '../lib/index.js';
 import '../assets/token-animation.css';
 
-// bundled example models, and their recorded event logs (loaded by basename: `<id>.bpmn` ↔ `<id>.json`)
+// bundled example models, and their recorded execution logs (loaded by basename: `<id>.bpmn` ↔ `<id>.json`)
 import simpleProcessXML from '../examples/simple-process.bpmn?raw';
 import gatewaysXML from '../examples/gateways.bpmn?raw';
 import collapsedSubprocessXML from '../examples/collapsed-subprocess.bpmn?raw';
@@ -148,7 +148,7 @@ async function load(xml, name, log) {
 
   const next = new NavigatedViewer({
     container: '#canvas',
-    additionalModules: [ TokenAnimationModule ]
+    additionalModules: [ SimulatorModule, AnimatorModule ]
   });
 
   try {
@@ -277,12 +277,12 @@ $('#download').addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'event-log.json';
+  a.download = 'execution-log.json';
   a.click();
   URL.revokeObjectURL(url);
 });
 
-// --- play (replay an event log) ----------------------------------------------------------------
+// --- play (replay an execution log) ----------------------------------------------------------------
 
 // the source log to replay: a loaded file ▸ the just-driven recording ▸ the example's shipped log.
 // Resolved when entering Playback (before the recording is cleared) and stored in `playSource`.
@@ -325,7 +325,7 @@ async function startPlayback() {
     return;
   }
   if (!playSource.length) {
-    console.warn('no event log to play — record a run in Simulator, pick an example, or Load log…');
+    console.warn('no execution log to play — record a run in Simulator, pick an example, or Load log…');
     return;
   }
   if (playing) {            // restart: stop the in-flight replay and wait for it to settle first
@@ -370,7 +370,7 @@ $('#autofocus').addEventListener('change', e => {
   }
 });
 
-// Play: load an event-log file → use it on the next Play
+// Play: load an execution-log file → use it on the next Play
 $('#loadLog').addEventListener('click', () => $('#logFile').click());
 $('#logFile').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];

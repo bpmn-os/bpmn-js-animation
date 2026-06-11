@@ -1,7 +1,7 @@
 {
   "name": "bpmn-js-animation",
-  "version": "0.1.0",
-  "description": "BPMN token animation for bpmn-js — a programmatic animation API, an event-log player (animator), and an interactive token simulator",
+  "version": "0.2.0",
+  "description": "BPMN token animation for bpmn-js — a programmatic animation API, an execution-log player (animator), and an interactive token simulator",
   "author": "Asvin Goel <github@telematique.eu>",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,8 @@
   "module": "lib/index.js",
   "files": [
     "assets",
-    "lib"
+    "lib",
+    "CHANGELOG.md"
   ],
   "sideEffects": [
     "*.css"

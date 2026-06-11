@@ -14,12 +14,12 @@ Shipped as ES modules under `lib/`; consumers bundle it. No build step for the
 library. `demo/` is the vite app (single page, `index.html` + `main.js`) — a
 **Simulator ⇄ Playback** toggle: in *Simulator* you load a diagram / pick a bundled
 `examples/` model and drive tokens by double-click (the `simulator` **records** every BPMN event —
-download it as JSON); in *Playback* the `animator` replays an event log (the recording, a loaded
+download it as JSON); in *Playback* the `animator` replays an execution log (the recording, a loaded
 file, or the example's shipped `examples/<id>.json`) via `animator.replay`. The two
 modes are separate — toggling clears the diagram (no replay take-over). Watch the
 **console** for each event + action. It's the package's sole example app, published to
 GitHub Pages on push to `main` (`.github/workflows/deploy.yml`). `examples/` holds the
-curated showcase models (and their event logs).
+curated showcase models (and their execution logs).
 
 ## Commands
 
@@ -38,8 +38,9 @@ same commit** (a renamed/removed/added method, changed signature, or new behavio
   Keep it short; detailed API tables belong in `docs/`, not here.
 - **`docs/animation.md`** — the high-level `animation` service (the supported surface).
 - **`docs/primitives.md`** — the low-level `primitives` service.
-- **`docs/animator.md`** — the `animator` (playback) tool: `replay` + the event-log format + the
-  `simulator`'s recording (`startRecording` / `getRecording`).
+- **`docs/execution-log.md`** — the shared **execution-log format**, plus its producer/consumer API: the
+  `simulator`'s recording (`startRecording` / `getRecording`) and the `animator`'s `replay`. (The
+  `animator`/`simulator` *tools* themselves are described in `README.md`, not a per-tool doc.)
 
 `CLAUDE.md` (this file) is the **internal architecture/invariant** doc — a different audience;
 update it too, but it is not a substitute for the user-facing guides. When you change a public
@@ -49,11 +50,11 @@ without `@private` tags; the hand-curated guides read better.)
 
 ## Architecture
 
-The package entry (`lib/index.js`) exports **four composable modules** — the **default** is the full
-drop-in (`primitives` + `animation` + **both** tools, `simulator` + `animator`); named
-**`AnimationModule`** (`primitives` + `animation` only — the bare enabling API), **`SimulatorModule`**
-(`+ simulator`, interactive + record), and **`AnimatorModule`** (`+ animator`, playback) let you take
-just what you need (each tool works without the other). **Plus named color
+The package entry (`lib/index.js`) exports **three composable modules** — the **default** is
+**`AnimationModule`** (`primitives` + `animation` — the bare enabling API, no tools). The two tools are
+**opt-in** and each pulls `AnimationModule` in via `__depends__`: **`SimulatorModule`** (`+ simulator`,
+interactive + record) and **`AnimatorModule`** (`+ animator`, playback) — add either, or both (the demo
+does), and each works without the other. **Plus named color
 helpers `getRandomColor` / `getDistinctColor`** (`lib/color.js`) — callers mint a color
 per identity and pass it in; the package never assigns colors itself. Both wrap the
 **`randomcolor`** library — the **same coloring scheme as bpmn-js-token-simulation**:
@@ -66,7 +67,7 @@ package's one runtime dependency added for this; a `seed` option pins the palett
 **enabling vocabulary** composed over it; the supported surface — *pure*, no record/replay) → two
 opinionated **tools** that turn something into `animation` calls: `simulator` (gestures → verbs;
 **owns record**) and `animator` (a log → verbs; **owns replay**). The two tools are **independent**
-(neither depends on the other) and share only the **event-log format** in `lib/eventLog.js`
+(neither depends on the other) and share only the **execution-log format** in `lib/executionLog.js`
 (`describeEvent`/`eventCall`/`startsImmediately` + `POSITIONAL_FIELDS`). Record is the simulator
 wrapping the shared `animation` instance's verbs; replay re-issues a log against `animation` (using
 the public `focusToken` seam + `animation.drillTo` to follow instance + plane). The "animate an
@@ -120,9 +121,6 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     a sequence flow — the simulator fades a diverging gateway's unchosen outflows; reverted by `clear`),
     `setNodeDimmed(nodeId,on=true)` (the same `.bts-dim` on a **node** — fades candidate link-catch events;
     thin wrapper over `setFlowDimmed`, shares its tracking + `clear`),
-    `moveToken(fromNode,label,toNode,selector?,state?) → Token` (**teleport** a token to another node
-    **preserving identity** — re-key + re-render both, no flow travel; the **link-event** primitive, a link
-    throw → its matching catch),
     `setStacks(node,keys,ancestorStackIndices?)` (the key-based primitive:
     set a node's ordered instance **keys**, front first — removing one never shifts the others),
     `getStacks(node) → key[]` (count = `.length`), `getCurrentStack(node) → key`
@@ -281,17 +279,19 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     split** — the host creates a token on each flow. (Entering a specific instance of a stacked target / leaving
     a stack is host-managed: `removeToken` + `createToken` per instance, or `setState` with the full
     `stackIndices`.)
-  - **`moveToken(fromNode,label,toNode,selector?,state?)`** — **teleport**, the dual of `sendToken`: no
-    flow travels, the **same Token object** is re-keyed from `fromNode` to `toNode` (drop from the old key +
-    node set, set `token.node`, merge `state`, push under the new key, re-render both). Identity / color /
-    `selected` / `stackIndices` / children all carried. Drives **link events** (a link throw → its matching
-    catch); the host anchors the landing `state` (Animation passes `position: CENTER`, `sequenceFlow:
-    null`). The Simulator side: `advanceToDeparted` routes a link **throw** (`c.link !== undefined`, no
-    outflow) to `_jumpLink` → one matching catch auto-jumps (`_jumpTo`: throw icon out fire-and-forget +
-    `jumpToken` + route the landed token through `triggerCatchEvent`, which flies the catch icon in and
-    departs); several matches reuse the diverging-gateway Fallback over the candidate **catch nodes**
-    (`setNodeDimmed` dims them, a click picks, a double-click jumps). Matching catches exclude **label**
-    elements (they share the catch's `businessObject`, so they'd classify identically and double the match).
+  - **Link events** — a link throw and its matching catch are bridged by **consume + create**, not a
+    teleport: the token is **consumed at the throw** and a **fresh one created at the catch**. `createToken`
+    accepts a **link catch** event (`_createCatchEventToken` — a child of the enclosing scope at CENTER,
+    inheriting its color, so the instance keeps its color across the link). The Simulator side:
+    `advanceToDeparted` routes a link **throw** (`c.link !== undefined`, no outflow) to `_jumpLink` → one
+    matching catch auto-jumps (`_jumpTo`: throw icon out fire-and-forget + `animation.consumeToken` the
+    throw + `createToken` the catch + route it through `triggerCatchEvent`, which flies the catch icon in
+    and departs). The consume uses the **plain `animation.consumeToken` verb**, not the Simulator's
+    `_consume` — a leaf removal that does **not** finalize the instance even when the throw is its last
+    token, so the create can repopulate it. Several matches reuse the diverging-gateway Fallback over the
+    candidate **catch nodes** (`setNodeDimmed` dims them, a click picks, a double-click jumps). Matching
+    catches exclude **label** elements (they share the catch's `businessObject`, so they'd classify
+    identically and double the match).
   - **Fast events:** `sendToken` calls `_settle(token)` first — mid-flight tokens
     `finish()` immediately (land now), so rapid sends never overlap. No public settle call.
   - **Rendering:** the node's **rule-visible** tokens (`_isVisible` — filter + the instance rule) are
@@ -379,5 +379,5 @@ puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 auto-settle test uses a non-zero duration so a transition is genuinely in flight.
 
 The **`demo/`** app (`npm run dev`) remains the visual check (placement, smoothness, colors,
-hover) — the interactive simulator **and** the event-log playback (record → replay); it logs each
+hover) — the interactive simulator **and** the execution-log playback (record → replay); it logs each
 event + token action to the console.
