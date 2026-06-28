@@ -736,13 +736,20 @@ describe('Animation', function() {
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });                // sweep in
     }
 
-    it('shifts top-edge sweep tokens down so they clear a top boundary event', function() {
+    it('nudges a top-edge sweep token clear of a top boundary event, keeping it on the top edge', function() {
       const animation = get('primitives');
       const activity = get('elementRegistry').get('Activity_1'); // BoundaryEvent_1 sits on its top edge
 
-      // a top:0 sweep point drops by BOUNDARY_VOFFSET — off the boundary symbol
-      const top = animation._clusterPoint(activity, { position: { left: 0.5, top: 0, hoffset: 0, voffset: 0 } });
-      expect(top.y).to.equal(20);
+      // the busy stop (ideal x = 50) stays on the top edge (y = 0) but slides right, past the symbol
+      const busy = animation._clusterPoint(activity, { position: { left: 0.5, top: 0, hoffset: 0, voffset: 0 } });
+      expect(busy.y).to.equal(0);
+      expect(busy.x).to.equal(73);
+
+      // entry/completion sit at the corners, clear of the centred symbol
+      const entry = animation._clusterPoint(activity, { position: { left: 0, top: 0, hoffset: 0, voffset: 0 } });
+      const completion = animation._clusterPoint(activity, { position: { left: 1, top: 0, hoffset: 0, voffset: 0 } });
+      expect(entry).to.eql({ x: 0, y: 0 });
+      expect(completion).to.eql({ x: 100, y: 0 });
 
       // a lower-half anchor (e.g. center) is untouched
       const center = animation._clusterPoint(activity, { position: { left: 0.5, top: 0.5, hoffset: 0, voffset: 0 } });

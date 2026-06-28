@@ -298,10 +298,18 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     grouped into **location clusters** — keyed by the **resolved point** (`anchorPoint`, rounded) so equal/
     equivalent positions queue together, or by rest `sequenceFlow`; each cluster is its own overlay
     (`overlays.add`, `bts-token-count`) at the computed point (`_clusterPoint`: `anchorPoint` of the position,
-    or the flow's node-end waypoint). **Boundary-event avoidance** (`_avoidBoundaryEvents`): if the activity
-    has a boundary event on its **top edge** (`element.attachers`), top-edge sweep points (`top:0`) drop by a
-    fixed `BOUNDARY_VOFFSET` so the dots don't sit under the boundary symbol (the whole row shifts together;
-    lower-half anchors untouched). **Dot size:** the default is small (20px, the moving-token size — so it
+    or the flow's node-end waypoint). **Boundary-event avoidance** (`_avoidBoundaryEvents` → `_sweepLayout`):
+    keep the activity's top-edge sweep (entry/busy/completion, `top:0`) clear of boundary symbols
+    (`element.attachers`). The whole sweep is laid out together (`placeSweepStops`), since a nudged stop must
+    sit right of the previous one. **Prefer the upper edge:** walk the three stops left to right, each
+    advancing as far right as possible **without passing its own ideal x** (`0`/`W/2`/`W`) and staying clear of
+    the symbol zones (`_boundaryZones`, each attacher's bbox widened by the dot radius); only when nothing fits
+    at or before the ideal does a stop overshoot to the first free spot beyond (this leaves the most room for
+    the later stops). If a stop is forced past the right corner, the **upper edge fails** → retry on the
+    **lower edge** (the dots then sit on the bottom). If neither edge holds the sweep, fall back to dropping
+    the row by a fixed `BOUNDARY_VOFFSET`. Lower-half anchors (e.g. a center) and activities with no attachers
+    are untouched. **Naturally MI-aware** — it reads the real activity geometry, so a multi-instance activity's
+    sweep avoids its boundaries the same way (stack clones are offset separately). **Dot size:** the default is small (20px, the moving-token size — so it
     doesn't cover an event/gateway symbol); an **anchored** token on a `bpmn:Activity`/`bpmn:Process` gets the
     larger 25px badge (`.bts-on-activity`, set per cluster via `big`). Per dot: `background: color`, `title =
     label`, `.bts-anim-<animate>` when `animate`, `.bts-selected` when `selected`, `.bts-hidden` (`display:none`) when `hidden`,

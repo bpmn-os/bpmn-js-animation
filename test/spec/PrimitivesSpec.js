@@ -2000,3 +2000,84 @@ describe('primitives — collapsed sub-process (drill plane)', function() {
   });
 
 });
+
+
+describe('Primitives — boundary-event avoidance', function() {
+
+  beforeEach(bootstrap(diagramXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  const prims = () => get('primitives');
+
+  // a synthetic 100×80 activity at the origin carrying the given attachers
+  function activity(attachers) {
+    return { x: 0, y: 0, width: 100, height: 80, attachers };
+  }
+
+  // a boundary event covering element-local x [lo, hi] on the given edge of an 80-tall activity
+  function boundary(lo, hi, edge) {
+    return { x: lo, y: edge === 'top' ? -18 : 62, width: hi - lo, height: 36 };
+  }
+
+  it('keeps the sweep on the top edge, nudging busy past a top boundary', function() {
+    // a single top boundary over the centre (like boundary.bpmn's BoundaryEvent_1)
+    const layout = prims()._sweepLayout(activity([ boundary(22, 58, 'top') ]));
+
+    expect(layout.y).to.equal(0);                // still the top edge
+    expect(layout.xs).to.eql([ 0, 73, 100 ]);    // entry corner, busy just past the symbol, completion corner
+  });
+
+  it('advances busy only to the ideal when a free spot exists before the event', function() {
+    // event right of centre: busy stops just left of it rather than overshooting (more room downstream)
+    const layout = prims()._sweepLayout(activity([ boundary(55, 75, 'top') ]));
+
+    expect(layout.y).to.equal(0);
+    expect(layout.xs).to.eql([ 0, 40, 100 ]);
+  });
+
+  it('spills the whole sweep to the lower edge when the top cannot hold it', function() {
+    // two top boundaries saturate the top edge; the clear bottom edge takes the natural sweep
+    const layout = prims()._sweepLayout(activity([ boundary(5, 45, 'top'), boundary(50, 95, 'top') ]));
+
+    expect(layout.y).to.equal(80);               // moved to the bottom edge
+    expect(layout.xs).to.eql([ 0, 50, 100 ]);
+  });
+
+  it('leaves the sweep on the top edge when boundaries are only on the lower edge', function() {
+    const layout = prims()._sweepLayout(activity([ boundary(40, 60, 'bottom') ]));
+
+    expect(layout.y).to.equal(0);
+    expect(layout.xs).to.eql([ 0, 50, 100 ]);    // top untouched
+  });
+
+  it('drops the row as a last resort when neither edge can hold the sweep', function() {
+    const el = activity([
+      boundary(5, 45, 'top'), boundary(50, 95, 'top'),
+      boundary(5, 45, 'bottom'), boundary(50, 95, 'bottom')
+    ]);
+
+    expect(prims()._sweepLayout(el)).to.equal(null);
+
+    // _avoidBoundaryEvents then drops a top-edge point by BOUNDARY_VOFFSET (20px)
+    expect(prims()._avoidBoundaryEvents(el, { x: 50, y: 0 })).to.eql({ x: 50, y: 20 });
+  });
+
+  it('leaves an activity with no boundary events untouched', function() {
+    const el = activity([]);
+
+    expect(prims()._avoidBoundaryEvents(el, { x: 50, y: 0 })).to.eql({ x: 50, y: 0 });
+  });
+
+  it('avoids the real boundary.bpmn activity on the top edge', function() {
+    // Activity_1 (100×80) has a top boundary (BoundaryEvent_1) and a bottom one (BoundaryEvent_2);
+    // the top sweep still fits, so the row stays on top with busy nudged past the top symbol
+    const layout = prims()._sweepLayout({
+      x: 0, y: 0, width: 100, height: 80,
+      attachers: [ boundary(22, 58, 'top'), boundary(62, 98, 'bottom') ]
+    });
+
+    expect(layout.y).to.equal(0);
+    expect(layout.xs).to.eql([ 0, 73, 100 ]);
+  });
+
+});

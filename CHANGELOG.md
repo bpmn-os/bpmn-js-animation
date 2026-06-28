@@ -2,6 +2,16 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-06-29
+
+### Changed
+
+- Boundary-event avoidance now repositions the activity sweep horizontally instead of dropping it. The entry/busy/completion stops are laid out together so each stays clear of the boundary symbols while still advancing left to right. The sweep prefers the top edge, moves to the bottom edge when the top cannot hold it, and only falls back to dropping the row when neither edge fits. This also applies to multi-instance activities.
+
+### Fixed
+
+- In the `collaboration` example log, each machine-process event sub-process waiter is now armed when its instance starts, instead of after the token reaches the conditional event.
+
 ## [0.3.0] - 2026-06-28
 
 Adds a simulation side panel and reusable playback controls, and standardises token instance naming to match the engine.
