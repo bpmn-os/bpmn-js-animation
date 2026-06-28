@@ -147,10 +147,22 @@
   background: #e8f0fe;
 }
 
+/* middle-truncated label: head ellipsizes, tail (the "#k" end) always stays visible */
 .bjs-sim-token-label {
   flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.bjs-sim-label-head {
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bjs-sim-label-tail {
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 
