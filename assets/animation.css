@@ -168,6 +168,13 @@
   display: none !important;
 }
 
+/* opt-in: show the node-selection frame again (hidden above). Enabled by adding `.bts-node-selection`
+   to the container — via `config.simulator.nodeSelection` (default off) or the simulation panel
+   (`config.simulationPanel.nodeSelection`, default on). Shapes only; flows stay dimmed, not framed. */
+.bts-simulation.bts-node-selection .djs-shape.selected .djs-outline {
+  display: block !important;
+}
+
 @keyframes bts-bounce {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-5px); }

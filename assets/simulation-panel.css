@@ -1,0 +1,175 @@
+.bjs-sim {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px;
+  font-size: 13px;
+  color: #333;
+}
+
+.bjs-sim *,
+.bjs-sim *::before,
+.bjs-sim *::after {
+  box-sizing: border-box;
+}
+
+/* --- controls (top) --- */
+.bjs-sim-controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* playback-only group (run/pause, speed, load) — stacks its controls */
+.bjs-sim-playback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* explicit display:flex above would override the `hidden` attribute, so restore it */
+.bjs-sim-playback[hidden] {
+  display: none;
+}
+
+/* --- footer (bottom): refresh + save --- */
+.bjs-sim-footer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.bjs-sim-footer .bjs-sim-btn {
+  flex: 1;
+}
+
+.bjs-sim-btn {
+  font: inherit;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.bjs-sim-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.bjs-sim-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bjs-sim-run {
+  font-weight: bold;
+}
+
+.bjs-sim-autofocus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bjs-sim-speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bjs-sim-slider {
+  flex: 1;
+}
+
+/* --- inspector (fills the middle, scrolls) --- */
+.bjs-sim-inspector {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 10px;
+}
+
+.bjs-sim-empty {
+  color: #888;
+  font-style: italic;
+}
+
+.bjs-sim-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.bjs-sim-list-title {
+  color: #666;
+  margin-bottom: 4px;
+}
+
+/* divider between the selected-token section and the selected-node section(s) */
+.bjs-sim-separator {
+  margin: 12px 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* a list title following the separator shouldn't double up the gap */
+.bjs-sim-separator + .bjs-sim-list-title {
+  margin-top: 0;
+}
+
+.bjs-sim-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bjs-sim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bjs-sim-row:hover {
+  background: #f0f0f0;
+}
+
+.bjs-sim-row.selected {
+  background: #e8f0fe;
+}
+
+.bjs-sim-token-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bjs-sim-swatch {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.bjs-sim-badge {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.bjs-sim-badge.hidden {
+  background: #eee;
+  color: #888;
+}

@@ -6,12 +6,15 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
-// Both opt-in tools — the `simulator` (interactive driving, owns record) and the `animator` (playback,
-// owns replay); each pulls in the enabling API (primitives + animation) via `__depends__`. One viewer
-// serves both modes: in **Simulate** the simulator drives + records every BPMN event; in **Play** the
-// animator replays a log. The two modes are separate — toggling clears the diagram (no take-over).
-import { SimulatorModule, AnimatorModule } from '../lib/index.js';
-import '../assets/token-animation.css';
+// The opt-in tools — `simulator` (interactive driving, owns record) and `animator` (playback, owns
+// replay) — plus `SidePanelModule` + `SimulationPanelModule`: run/pause, speed, auto-focus, log
+// save/load and the selected-token / tokens-at-node inspector all live in a "Simulation" tab of the
+// side panel. The toolbar keeps only model loading and the Simulate/Playback mode toggle.
+import { SimulatorModule, AnimatorModule, SimulationPanelModule } from '../lib/index.js';
+import SidePanelModule from 'bpmn-js-side-panel';
+import 'bpmn-js-side-panel/assets/side-panel.css';
+import '../assets/animation.css';
+import '../assets/simulation-panel.css';
 
 // bundled example models, and their recorded execution logs (loaded by basename: `<id>.bpmn` ↔ `<id>.json`)
 import simpleProcessXML from '../examples/simple-process.bpmn?raw';
@@ -47,17 +50,12 @@ let animation = null; // the enabling vocabulary (drive tokens, lookups, clear)
 let primitives = null;  // low-level (token polling for the console diff)
 let simulator = null;  // interactive tool — owns record
 let animator = null;   // playback tool — owns replay
+let playback = null;   // run/pause controller around the animator
+let simulationPanel = null; // the Simulation side-panel tab
 let prev = new Map(); // token -> its `where(...)` description last frame (the diff baseline)
 
 let mode = 'simulate';
 let shippedLog = null; // the current example's shipped log (or null)
-let loadedLog = null;  // a log loaded via "Load log…" (or null) — takes precedence on Play
-let playSource = [];   // the log the current Play will replay (resolved when entering Playback)
-
-let playing = false;   // a replay is actively running (double-clicks are blocked)
-let paused = false;
-let resumers = [];     // pause-gate resolvers
-let aborted = false;   // set when toggling to Simulate mid-replay → stop at the next event
 
 const styleEvent = 'color:#06c;font-weight:bold';
 const styleAdd = 'color:#0a0';
@@ -137,23 +135,20 @@ function wireEvents(eventBus) {
 
 async function load(xml, name, log) {
   // stop any in-flight replay and let it unwind before tearing the old viewer down — otherwise the
-  // replay keeps issuing calls against a destroyed viewer (switching examples mid-playback breaks the
-  // page). Same abort-then-await the Refresh button does.
-  aborted = true;     // stop the in-flight replay at the next event boundary
-  setPaused(false);   // resolve a pending pause so the replay reaches the gate and aborts
-  if (playing) {
-    await playRun;
+  // replay keeps issuing calls against a destroyed viewer (switching examples mid-playback breaks the page).
+  if (playback) {
+    await playback.stop();
   }
-  playing = false;
   if (viewer) {
     viewer.destroy();
-    viewer = animation = primitives = simulator = animator = null;
+    viewer = animation = primitives = simulator = animator = playback = simulationPanel = null;
   }
   prev = new Map();
 
   const next = new NavigatedViewer({
     container: '#canvas',
-    additionalModules: [ SimulatorModule, AnimatorModule ]
+    additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, SimulationPanelModule ],
+    sidePanel: { parent: '#side-panel' }
   });
 
   try {
@@ -169,19 +164,18 @@ async function load(xml, name, log) {
   primitives = next.get('primitives');
   simulator = next.get('simulator'); // owns record
   animator = next.get('animator');   // owns replay
+  playback = next.get('playback');   // run/pause controller
+  simulationPanel = next.get('simulationPanel');
   wireEvents(next.get('eventBus'));
   next.get('canvas').zoom('fit-viewport', 'auto');
 
   shippedLog = log || null;
-  loadedLog = null;
-  animator.autoFocus($('#autofocus').checked);
+  simulationPanel.setLog(shippedLog); // the panel's Run replays this when nothing is recorded/loaded
+  simulationPanel.setMode(mode);      // hide the playback-only controls in Simulate mode
 
-  // keep the current mode (loading a model in Playback stays in Playback): in Simulator we record the
-  // run; in Playback we replay — the source defaults to the (new) example's shipped log
+  // keep the current mode (loading a model in Playback stays in Playback): in Simulator we record the run
   if (mode === 'simulate') {
     simulator.startRecording();
-  } else {
-    playSource = resolvePlaySource();
   }
   $('#placeholder').style.display = 'none';
   console.log(`%c● loaded "${name}"`, 'color:#000;font-weight:bold');
@@ -189,17 +183,14 @@ async function load(xml, name, log) {
 
 // --- mode toggle — clears the diagram (the modes are separate: no take-over) --------------------
 
-function setMode(m) {
-  if (playing) {
-    aborted = true;     // stop any in-flight replay at the next event boundary
-    setPaused(false);   // resolve a pending pause so the gate runs and aborts
-  }
-  // entering Playback, capture the source to replay *before* clearing (the just-driven recording, a
-  // loaded file, or the example's shipped log)
-  if (m === 'play') {
-    playSource = resolvePlaySource();
+async function setMode(m) {
+  if (playback) {
+    await playback.stop(); // stop any in-flight replay at the next event boundary
   }
   mode = m;
+  if (simulationPanel) {
+    simulationPanel.setMode(m);
+  }
   if (animation) {
     animation.clear(); // toggling clears the diagram — each mode starts from a clean slate
     prev = new Map();
@@ -244,154 +235,6 @@ examplesEl.addEventListener('change', e => {
   }
 });
 
-// Refresh — one button shared by both modes (same label + position): reset to an empty diagram.
-//   Simulator → clear tokens + reset the recording;
-//   Playback  → stop the replay (abort if running) + clear, leaving it idle (▶ Start replays anew).
-$('#refresh').addEventListener('click', async () => {
-  if (!animation) {
-    return;
-  }
-  if (mode === 'play') {
-    if (playing) {
-      aborted = true;   // stop the in-flight replay…
-      setPaused(false); // …resolve a pending pause so the gate runs and aborts
-      await playRun;
-    }
-    animation.clear();
-    prev = new Map();
-    console.log('%c● playback stopped', 'color:#000;font-weight:bold');
-    return;
-  }
-  animation.clear();
-  simulator.startRecording();
-  prev = new Map();
-  console.log('%c● cleared tokens — recording reset', 'color:#000;font-weight:bold');
-});
-
-// Simulate: download the current recording (the events that produced the on-screen state)
-$('#download').addEventListener('click', () => {
-  if (!animation) {
-    return;
-  }
-  const log = simulator.getRecording();
-  if (!log.length) {
-    console.warn('nothing recorded yet — drive the simulation first');
-    return;
-  }
-  const blob = new Blob([ JSON.stringify(log, null, 2) ], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'execution-log.json';
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// --- play (replay an execution log) ----------------------------------------------------------------
-
-// the source log to replay: a loaded file ▸ the just-driven recording ▸ the example's shipped log.
-// Resolved when entering Playback (before the recording is cleared) and stored in `playSource`.
-function resolvePlaySource() {
-  if (loadedLog) {
-    return loadedLog;
-  }
-  const recorded = simulator ? simulator.getRecording() : [];
-  return recorded.length ? recorded : (shippedLog || []);
-}
-
-// the pause/abort gate the replay awaits before each event
-function gate() {
-  if (aborted) {
-    const err = new Error('playback aborted');
-    err.aborted = true;
-    throw err;
-  }
-  return paused ? new Promise(resolve => resumers.push(resolve)) : undefined;
-}
-
-function setPaused(p) {
-  paused = p;
-  $('#pause').textContent = p ? '▶ Resume' : '⏸ Pause';
-  if (!p) {
-    const rs = resumers;
-    resumers = [];
-    rs.forEach(r => r());
-  }
-}
-
-$('#pause').addEventListener('click', () => setPaused(!paused));
-
-let playRun = Promise.resolve(); // resolves when the current replay has fully unwound
-
-// (Re)start the replay from the top — shared by ▶ Start and ↻ Restart. Restart works mid-replay
-// (the button stays enabled): it aborts the in-flight run, waits for it to unwind, then replays anew.
-async function startPlayback() {
-  if (!animation) {
-    return;
-  }
-  if (!playSource.length) {
-    console.warn('no execution log to play — record a run in Simulator, pick an example, or Load log…');
-    return;
-  }
-  if (playing) {            // restart: stop the in-flight replay and wait for it to settle first
-    aborted = true;
-    setPaused(false);       // resolve a pending pause so the gate runs and aborts
-    await playRun;
-  }
-  playing = true;
-  aborted = false;
-  setPaused(false);
-  $('#play').disabled = true;
-  $('#pause').hidden = false;
-  animator.autoFocus($('#autofocus').checked);
-  animation.clear(); // replay from a clean diagram
-  prev = new Map();
-  console.log(`%c● replaying ${playSource.length} events…`, styleEvent);
-  playRun = (async () => {
-    try {
-      await animator.replay(playSource, { gate });
-      console.log('%c● playback finished', styleEvent);
-    } catch (err) {
-      if (err && err.aborted) {
-        console.log('%c● playback stopped', 'color:#000;font-weight:bold');
-      } else {
-        console.error('playback failed:', err);
-      }
-    } finally {
-      playing = false;
-      setPaused(false);
-      $('#play').disabled = false;
-      $('#pause').hidden = true;
-    }
-  })();
-}
-
-$('#play').addEventListener('click', startPlayback);
-
-// toggling auto-focus applies immediately (and to the next run)
-$('#autofocus').addEventListener('change', e => {
-  if (animator) {
-    animator.autoFocus(e.target.checked);
-  }
-});
-
-// Play: load an execution-log file → use it on the next Play
-$('#loadLog').addEventListener('click', () => $('#logFile').click());
-$('#logFile').addEventListener('change', async e => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) {
-    return;
-  }
-  e.target.value = '';
-  try {
-    loadedLog = JSON.parse(await file.text());
-    playSource = loadedLog; // replay this on the next Play
-    console.log(`%c● loaded log "${file.name}" (${loadedLog.length} events) — press Play`, 'color:#000;font-weight:bold');
-  } catch (err) {
-    console.error(`invalid log JSON in "${file.name}":`, err);
-  }
-});
-
 // start blank in Simulate mode — the placeholder invites loading a diagram
 setMode('simulate');
-console.log('bpmn-js-animation — pick an example or load a diagram. Simulate to drive & record, Play to replay.');
+console.log('bpmn-js-animation — pick an example or load a diagram. Simulate to drive & record, Play to replay (Simulation tab).');

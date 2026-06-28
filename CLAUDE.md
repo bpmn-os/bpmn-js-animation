@@ -363,7 +363,7 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
 
 The **low-level tween** at the bottom of `lib/primitives.js` (below the banner) derives from
 upstream `lib/animation/Animation.js`; keep edits there minimal so upstream fixes can be
-re-applied. Everything above the banner is ours. `assets/token-animation.css` is the
+re-applied. Everything above the banner is ours. `assets/animation.css` is the
 token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-icon*` /
 `.bts-once-*` (one-shot `playTokenEffect` gestures) / `.bts-selected` / `.bts-on-activity` /
 `.bts-node-outline` / `.bts-stack-*` styles.

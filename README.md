@@ -21,7 +21,7 @@ To use the library, add one of its modules to a bpmn-js viewer and import the st
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import AnimationModule from 'bpmn-js-animation'; // the animation API (default export)
 
-import 'bpmn-js-animation/assets/token-animation.css';
+import 'bpmn-js-animation/assets/animation.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
@@ -49,7 +49,7 @@ The **simulator** (`SimulatorModule`) allows users to control process execution 
 ```javascript
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import { SimulatorModule } from 'bpmn-js-animation';
-import 'bpmn-js-animation/assets/token-animation.css';
+import 'bpmn-js-animation/assets/animation.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
@@ -92,7 +92,7 @@ The **animator** plays back a recorded execution log that is either produced by 
 ```javascript
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import { AnimatorModule } from 'bpmn-js-animation';
-import 'bpmn-js-animation/assets/token-animation.css';
+import 'bpmn-js-animation/assets/animation.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
