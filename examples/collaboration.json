@@ -10,6 +10,12 @@
     "label": "MachineProcess_1"
   },
   {
+    "action": "createToken",
+    "node": "CatchRequestMessage",
+    "label": "MachineProcess_1^EventSubProcess#1",
+    "animate": "bounce"
+  },
+  {
     "action": "advanceToken",
     "node": "MachineProcess",
     "label": "MachineProcess_1",
@@ -29,12 +35,6 @@
   },
   {
     "action": "createToken",
-    "node": "CatchRequestMessage",
-    "label": "MachineProcess_1^EventSubProcess#1",
-    "animate": "bounce"
-  },
-  {
-    "action": "createToken",
     "node": "MachineProcess",
     "label": "MachineProcess_2"
   },
@@ -42,6 +42,12 @@
     "action": "createToken",
     "node": "StartEventMachine",
     "label": "MachineProcess_2"
+  },
+  {
+    "action": "createToken",
+    "node": "CatchRequestMessage",
+    "label": "MachineProcess_2^EventSubProcess#1",
+    "animate": "bounce"
   },
   {
     "action": "advanceToken",
@@ -60,12 +66,6 @@
     "action": "advanceToken",
     "node": "ConditionalEvent",
     "label": "MachineProcess_2"
-  },
-  {
-    "action": "createToken",
-    "node": "CatchRequestMessage",
-    "label": "MachineProcess_2^EventSubProcess#1",
-    "animate": "bounce"
   },
   {
     "action": "createToken",
