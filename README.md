@@ -83,7 +83,7 @@ A token's animation tells you what it is waiting for:
 - **Standard-loop activity**: at completion the outflows dim, **double-click** with nothing selected to run **another iteration**, or **click an outflow then double-click** to leave the loop.
 - **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow, **double-click** it to spawn an activity-instance, then advance each instance token.
 
-The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo, you can use **⬇ Download log** to save the log and replay it with the animator.
+The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo's **Simulation** panel you can **save** the log and **load** it back to replay with the animator.
 
 ## Animator
 
@@ -110,6 +110,33 @@ await animator.replay(executionLog);
 ```
 
 See [docs/execution-log.md](docs/execution-log.md) for the execution log format.
+
+## Simulation panel
+
+`SimulationPanelModule` adds a **Simulation** tab to a [`bpmn-js-side-panel`](https://github.com/bpmn-os/bpmn-js-side-panel) that inspects the running tokens and hosts the controls. Add it alongside `SidePanelModule` and the simulator / animator you want to drive:
+
+```javascript
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
+import SidePanelModule from 'bpmn-js-side-panel';
+import { SimulatorModule, AnimatorModule, SimulationPanelModule } from 'bpmn-js-animation';
+
+import 'bpmn-js-side-panel/assets/side-panel.css';
+import 'bpmn-js-animation/assets/animation.css';
+import 'bpmn-js-animation/assets/simulation-panel.css';
+
+const viewer = new NavigatedViewer({
+  container: '#canvas',
+  additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, SimulationPanelModule ],
+  sidePanel: { parent: '#side-panel' }
+});
+```
+
+The panel:
+
+- shows the **selected token(s)** and the **tokens at the selected node(s)** — or **all tokens** when nothing is selected; **click** a listed token to bring its stack to the front and select it, **double-click** to advance it;
+- hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
+
+The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own.
 
 ## Development
 
