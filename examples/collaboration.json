@@ -2,1167 +2,1167 @@
   {
     "action": "createToken",
     "node": "MachineProcess",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "createToken",
     "node": "StartEventMachine",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
     "node": "MachineProcess",
-    "label": "M1",
+    "label": "MachineProcess_1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEventMachine",
-    "label": "M1",
+    "label": "MachineProcess_1",
     "sequenceFlow": "Flow_1rghjse"
   },
   {
     "action": "advanceToken",
     "node": "ConditionalEvent",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "MachineProcess",
-    "label": "M2"
+    "label": "MachineProcess_2"
   },
   {
     "action": "createToken",
     "node": "StartEventMachine",
-    "label": "M2"
+    "label": "MachineProcess_2"
   },
   {
     "action": "advanceToken",
     "node": "MachineProcess",
-    "label": "M2",
+    "label": "MachineProcess_2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEventMachine",
-    "label": "M2",
+    "label": "MachineProcess_2",
     "sequenceFlow": "Flow_1rghjse"
   },
   {
     "action": "advanceToken",
     "node": "ConditionalEvent",
-    "label": "M2"
+    "label": "MachineProcess_2"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "OrderProcess",
-    "label": "O1"
+    "label": "OrderProcess_1"
   },
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "O1"
+    "label": "OrderProcess_1"
   },
   {
     "action": "advanceToken",
     "node": "OrderProcess",
-    "label": "O1",
+    "label": "OrderProcess_1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEventOrder",
-    "label": "O1",
+    "label": "OrderProcess_1",
     "sequenceFlow": "Flow_1qgy5y7"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O1#1"
+    "label": "OrderProcess_1#1"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O1#2"
+    "label": "OrderProcess_1#2"
   },
   {
     "action": "createToken",
     "node": "OrderProcess",
-    "label": "O2"
+    "label": "OrderProcess_2"
   },
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "O2"
+    "label": "OrderProcess_2"
   },
   {
     "action": "advanceToken",
     "node": "OrderProcess",
-    "label": "O2",
+    "label": "OrderProcess_2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEventOrder",
-    "label": "O2",
+    "label": "OrderProcess_2",
     "sequenceFlow": "Flow_1qgy5y7"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O2#1"
+    "label": "OrderProcess_2#1"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O2#2"
+    "label": "OrderProcess_2#2"
   },
   {
     "action": "createToken",
     "node": "OrderProcess",
-    "label": "O3"
+    "label": "OrderProcess_3"
   },
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "O3"
+    "label": "OrderProcess_3"
   },
   {
     "action": "advanceToken",
     "node": "OrderProcess",
-    "label": "O3",
+    "label": "OrderProcess_3",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEventOrder",
-    "label": "O3",
+    "label": "OrderProcess_3",
     "sequenceFlow": "Flow_1qgy5y7"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O3#1"
+    "label": "OrderProcess_3#1"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "O3#2"
+    "label": "OrderProcess_3#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O1#1"
+    "label": "OrderProcess_1#1"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O2#1"
+    "label": "OrderProcess_2#1"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O3#1"
+    "label": "OrderProcess_3#1"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M1#fire1"
+    "label": "MachineProcess_1#fire1"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M2#fire2"
+    "label": "MachineProcess_2#fire2"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M2#fire2"
+    "label": "MachineProcess_2#fire2"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire2",
+    "label": "MachineProcess_2#fire2",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire2"
+    "label": "MachineProcess_2#fire2"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire2"
+    "label": "MachineProcess_2#fire2"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O2#1"
+    "label": "OrderProcess_2#1"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O2#1"
+    "label": "OrderProcess_2#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O2#1",
+    "label": "OrderProcess_2#1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O2#1"
+    "label": "OrderProcess_2#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O2#2"
+    "label": "OrderProcess_2#2"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M1#fire1"
+    "label": "MachineProcess_1#fire1"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire1",
+    "label": "MachineProcess_1#fire1",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire1"
+    "label": "MachineProcess_1#fire1"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire1"
+    "label": "MachineProcess_1#fire1"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O1#1"
+    "label": "OrderProcess_1#1"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O1#1"
+    "label": "OrderProcess_1#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O1#1",
+    "label": "OrderProcess_1#1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O1#1"
+    "label": "OrderProcess_1#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O1#2"
+    "label": "OrderProcess_1#2"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M1#fire3"
+    "label": "MachineProcess_1#fire3"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M2#fire4"
+    "label": "MachineProcess_2#fire4"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M1#fire3"
+    "label": "MachineProcess_1#fire3"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire3",
+    "label": "MachineProcess_1#fire3",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire3"
+    "label": "MachineProcess_1#fire3"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire3"
+    "label": "MachineProcess_1#fire3"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O3#1"
+    "label": "OrderProcess_3#1"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O3#1"
+    "label": "OrderProcess_3#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O3#1",
+    "label": "OrderProcess_3#1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O3#1"
+    "label": "OrderProcess_3#1"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "O3#2"
+    "label": "OrderProcess_3#2"
   },
   {
     "action": "advanceToken",
     "node": "JobStartEvent",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "sequenceFlow": "Flow_06kzyqb"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "SendJobTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "sequenceFlow": "Flow_1t871bp"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "entry"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M1#fire7",
+    "label": "MachineProcess_1#fire7",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M1#fire5"
+    "label": "MachineProcess_1#fire5"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M2#fire4"
+    "label": "MachineProcess_2#fire4"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire4",
+    "label": "MachineProcess_2#fire4",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire4"
+    "label": "MachineProcess_2#fire4"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire4"
+    "label": "MachineProcess_2#fire4"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O1#2"
+    "label": "OrderProcess_1#2"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O1#2"
+    "label": "OrderProcess_1#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O1#2",
+    "label": "OrderProcess_1#2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O1#2"
+    "label": "OrderProcess_1#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O1",
+    "label": "OrderProcess_1",
     "sequenceFlow": "Flow_0xaxr01"
   },
   {
     "action": "advanceToken",
     "node": "EndEventOrder",
-    "label": "O1"
+    "label": "OrderProcess_1"
   },
   {
     "action": "consumeToken",
     "node": "EndEventOrder",
-    "label": "O1"
+    "label": "OrderProcess_1"
   },
   {
     "action": "consumeToken",
     "node": "OrderProcess",
-    "label": "O1"
+    "label": "OrderProcess_1"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "M2#fire8",
+    "label": "MachineProcess_2#fire8",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "M2#fire6"
+    "label": "MachineProcess_2#fire6"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M1#fire5"
+    "label": "MachineProcess_1#fire5"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M1#fire5",
+    "label": "MachineProcess_1#fire5",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire5"
+    "label": "MachineProcess_1#fire5"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M1#fire5"
+    "label": "MachineProcess_1#fire5"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O2#2"
+    "label": "OrderProcess_2#2"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O2#2"
+    "label": "OrderProcess_2#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O2#2",
+    "label": "OrderProcess_2#2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O2#2"
+    "label": "OrderProcess_2#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O2",
+    "label": "OrderProcess_2",
     "sequenceFlow": "Flow_0xaxr01"
   },
   {
     "action": "advanceToken",
     "node": "EndEventOrder",
-    "label": "O2"
+    "label": "OrderProcess_2"
   },
   {
     "action": "consumeToken",
     "node": "EndEventOrder",
-    "label": "O2"
+    "label": "OrderProcess_2"
   },
   {
     "action": "consumeToken",
     "node": "OrderProcess",
-    "label": "O2"
+    "label": "OrderProcess_2"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "M2#fire6"
+    "label": "MachineProcess_2#fire6"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "M2#fire6",
+    "label": "MachineProcess_2#fire6",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire6"
+    "label": "MachineProcess_2#fire6"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "M2#fire6"
+    "label": "MachineProcess_2#fire6"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "NoticeJobCompletionTask",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "sequenceFlow": "Flow_05lm3ex"
   },
   {
     "action": "advanceToken",
     "node": "JobEndEvent",
-    "label": "O3#2"
+    "label": "OrderProcess_3#2"
   },
   {
     "action": "consumeToken",
     "node": "JobEndEvent",
-    "label": "O3#2"
+    "label": "OrderProcess_3#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O3#2",
+    "label": "OrderProcess_3#2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "JobActivity",
-    "label": "O3#2"
+    "label": "OrderProcess_3#2"
   },
   {
     "action": "advanceToken",
     "node": "JobActivity",
-    "label": "O3",
+    "label": "OrderProcess_3",
     "sequenceFlow": "Flow_0xaxr01"
   },
   {
     "action": "advanceToken",
     "node": "EndEventOrder",
-    "label": "O3"
+    "label": "OrderProcess_3"
   },
   {
     "action": "consumeToken",
     "node": "EndEventOrder",
-    "label": "O3"
+    "label": "OrderProcess_3"
   },
   {
     "action": "consumeToken",
     "node": "OrderProcess",
-    "label": "O3"
+    "label": "OrderProcess_3"
   },
   {
     "action": "advanceToken",
     "node": "ConditionalEvent",
-    "label": "M1",
+    "label": "MachineProcess_1",
     "sequenceFlow": "Flow_12w5bvb"
   },
   {
     "action": "advanceToken",
     "node": "EndEventMachine",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "consumeToken",
     "node": "EndEventMachine",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "consumeToken",
     "node": "MachineProcess",
-    "label": "M1"
+    "label": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
     "node": "ConditionalEvent",
-    "label": "M2",
+    "label": "MachineProcess_2",
     "sequenceFlow": "Flow_12w5bvb"
   },
   {
     "action": "advanceToken",
     "node": "EndEventMachine",
-    "label": "M2"
+    "label": "MachineProcess_2"
   },
   {
     "action": "consumeToken",
     "node": "EndEventMachine",
-    "label": "M2"
+    "label": "MachineProcess_2"
   },
   {
     "action": "consumeToken",
     "node": "MachineProcess",
-    "label": "M2"
+    "label": "MachineProcess_2"
   }
 ]
