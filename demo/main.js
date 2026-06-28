@@ -108,8 +108,11 @@ function wireEvents(eventBus) {
   // higher priority than the simulator's own listeners (1000): in Playback the diagram is read-only,
   // so block double-clicks (return false stops propagation); in Simulator they drive + log.
   eventBus.on('element.dblclick', 2000, e => {
+    // in Playback the diagram is read-only — block the spawn gesture (double-click a start event),
+    // but let stack scrolling (double-click a stacked node / the process) through so instances can
+    // still be browsed during replay
     if (mode === 'play') {
-      return false;
+      return (e.element && is(e.element, 'bpmn:StartEvent')) ? false : undefined;
     }
     if (e.element) {
       logEvent(`double-click ${e.element.id} (${e.element.type})`);
@@ -188,17 +191,26 @@ async function setMode(m) {
     await playback.stop(); // stop any in-flight replay at the next event boundary
   }
   mode = m;
-  if (simulationPanel) {
-    simulationPanel.setMode(m);
-  }
   if (animation) {
-    animation.clear(); // toggling clears the diagram — each mode starts from a clean slate
+    // entering Playback: keep the just-driven log as the replay source (so Playback replays what you
+    // drove, and switching back doesn't wipe it), then stop recording so the replay isn't re-recorded
+    if (m === 'play') {
+      const recorded = simulator.getRecording();
+      if (recorded.length) {
+        simulationPanel.setLog(recorded);
+      }
+      simulator.stopRecording();
+    }
+    // switching clears the view consistently: tokens (and thus token selection) + node selection
+    animation.clear();
+    viewer.get('selection').select(null);
     prev = new Map();
     if (m === 'simulate') {
-      simulator.startRecording(); // record the interactive run
-    } else {
-      simulator.stopRecording();  // Playback is read-only — don't record the replay
+      simulator.startRecording(); // record the new interactive run
     }
+  }
+  if (simulationPanel) {
+    simulationPanel.setMode(m); // also clears the process context + applies the per-mode controls
   }
   document.body.className = `mode-${m}`;
   $('#modeSimulate').classList.toggle('active', m === 'simulate');
