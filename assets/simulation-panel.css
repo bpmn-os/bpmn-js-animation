@@ -24,10 +24,11 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-/* playback-only group (run/pause, speed, load) — stacks its controls */
+/* playback-only group: compact run/pause button + speed slider on one row */
 .bjs-sim-playback {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 8px;
 }
 
@@ -36,16 +37,23 @@
   display: none;
 }
 
-/* --- footer (bottom): refresh + save --- */
+/* --- footer (bottom): run/pause + speed (Playback) above a [Refresh][log] row --- */
 .bjs-sim-footer {
   flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
   gap: 8px;
   padding-top: 10px;
   border-top: 1px solid #e0e0e0;
 }
 
-.bjs-sim-footer .bjs-sim-btn {
+/* the bottom row — Refresh + the log button (Load/Save) side by side */
+.bjs-sim-footer-row {
+  display: flex;
+  gap: 8px;
+}
+
+.bjs-sim-footer-row .bjs-sim-btn {
   flex: 1;
 }
 
@@ -67,7 +75,11 @@
   cursor: default;
 }
 
+/* compact icon-only run/pause button */
 .bjs-sim-run {
+  flex: 0 0 auto;
+  min-width: 2.2em;
+  text-align: center;
   font-weight: bold;
 }
 
@@ -77,7 +89,9 @@
   gap: 6px;
 }
 
+/* speed takes the rest of the run/pause row */
 .bjs-sim-speed {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 8px;
