@@ -1,344 +1,344 @@
 [
   {
     "action": "createToken",
-    "node": "Process_1",
-    "label": "Process_1_1"
+    "node": "Process",
+    "label": "Process_1"
   },
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_1",
+    "node": "Process",
+    "label": "Process_1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_01tjf2m"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "EscBoundary_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "ErrorBoundary_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "StartEvent_2",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_2",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_2"
   },
   {
     "action": "advanceToken",
     "node": "Gateway_1",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "forkToken",
     "node": "Gateway_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_c"
   },
   {
     "action": "advanceToken",
     "node": "Gateway_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_c"
   },
   {
     "action": "advanceToken",
     "node": "NormEnd",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "consumeToken",
     "node": "NormEnd",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "EscBoundary_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_escb"
   },
   {
     "action": "advanceToken",
     "node": "End_esc",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "consumeToken",
     "node": "End_esc",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "advanceToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_18sa0dl"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1^Activity_0r6q3a2#1",
+    "label": "Process_1^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_19cmq84"
   },
   {
     "action": "advanceToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_1^Activity_0r6q3a2#1"
+    "label": "Process_1^Activity_0r6q3a2#1"
   },
   {
     "action": "consumeToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_1^Activity_0r6q3a2#1"
+    "label": "Process_1^Activity_0r6q3a2#1"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_1",
+    "node": "Process",
+    "label": "Process_1",
     "position": "completion",
     "animate": null
   },
   {
     "action": "consumeToken",
-    "node": "Process_1",
-    "label": "Process_1_1"
+    "node": "Process",
+    "label": "Process_1"
   },
   {
     "action": "createToken",
-    "node": "Process_1",
-    "label": "Process_1_2"
+    "node": "Process",
+    "label": "Process_2"
   },
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_2",
+    "node": "Process",
+    "label": "Process_2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_01tjf2m"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "createToken",
     "node": "EscBoundary_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "ErrorBoundary_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "StartEvent_2",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_2",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_2"
   },
   {
     "action": "advanceToken",
     "node": "Gateway_1",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "forkToken",
     "node": "Gateway_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_b"
   },
   {
     "action": "advanceToken",
     "node": "Gateway_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_b"
   },
   {
     "action": "advanceToken",
     "node": "EscEnd",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "consumeToken",
     "node": "EscEnd",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
     "node": "Activity_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "EscBoundary_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_escb"
   },
   {
     "action": "advanceToken",
     "node": "End_esc",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "consumeToken",
     "node": "End_esc",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_18sa0dl"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2^Activity_0r6q3a2#1",
+    "label": "Process_2^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_19cmq84"
   },
   {
     "action": "advanceToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_2^Activity_0r6q3a2#1"
+    "label": "Process_2^Activity_0r6q3a2#1"
   },
   {
     "action": "consumeToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_2^Activity_0r6q3a2#1"
+    "label": "Process_2^Activity_0r6q3a2#1"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_2",
+    "node": "Process",
+    "label": "Process_2",
     "position": "completion",
     "animate": null
   },
   {
     "action": "consumeToken",
-    "node": "Process_1",
-    "label": "Process_1_2"
+    "node": "Process",
+    "label": "Process_2"
   }
 ]

@@ -1,146 +1,146 @@
 [
   {
     "action": "createToken",
-    "node": "Process_1",
-    "label": "Process_1_1"
+    "node": "Process",
+    "label": "Process_1"
   },
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_1",
+    "node": "Process",
+    "label": "Process_1",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_1"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "createToken",
-    "node": "Process_1",
-    "label": "Process_1_2"
+    "node": "Process",
+    "label": "Process_2"
   },
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_2",
+    "node": "Process",
+    "label": "Process_2",
     "position": "busy",
     "animate": "pulse"
   },
   {
     "action": "advanceToken",
     "node": "StartEvent_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_1"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_2",
+    "label": "Process_2",
     "sequenceFlow": "Flow_2"
   },
   {
     "action": "advanceToken",
     "node": "EndEvent_1",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "Process_1_2"
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_2",
+    "node": "Process",
+    "label": "Process_2",
     "position": "completion",
     "animate": null
   },
   {
     "action": "consumeToken",
-    "node": "Process_1",
-    "label": "Process_1_2"
+    "node": "Process",
+    "label": "Process_2"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Task_1",
-    "label": "Process_1_1",
+    "label": "Process_1",
     "sequenceFlow": "Flow_2"
   },
   {
     "action": "advanceToken",
     "node": "EndEvent_1",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "consumeToken",
     "node": "EndEvent_1",
-    "label": "Process_1_1"
+    "label": "Process_1"
   },
   {
     "action": "advanceToken",
-    "node": "Process_1",
-    "label": "Process_1_1",
+    "node": "Process",
+    "label": "Process_1",
     "position": "completion",
     "animate": null
   },
   {
     "action": "consumeToken",
-    "node": "Process_1",
-    "label": "Process_1_1"
+    "node": "Process",
+    "label": "Process_1"
   }
 ]
