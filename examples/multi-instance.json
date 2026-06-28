@@ -12,13 +12,13 @@
   {
     "action": "createToken",
     "node": "EvtStart_1",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^EventSub_1#1",
     "animate": "bounce"
   },
   {
     "action": "createToken",
     "node": "ErrStart_2",
-    "label": "Process_1_1.e2",
+    "label": "Process_1_1^EventSub_2#1",
     "animate": "bounce"
   },
   {

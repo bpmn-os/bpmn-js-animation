@@ -12,7 +12,7 @@
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "animate": "bounce"
   },
   {
@@ -118,45 +118,45 @@
   {
     "action": "advanceToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_18sa0dl"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_1.e1",
+    "label": "Process_1_1^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_19cmq84"
   },
   {
     "action": "advanceToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_1.e1"
+    "label": "Process_1_1^Activity_0r6q3a2#1"
   },
   {
     "action": "consumeToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_1.e1"
+    "label": "Process_1_1^Activity_0r6q3a2#1"
   },
   {
     "action": "advanceToken",
@@ -183,7 +183,7 @@
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "animate": "bounce"
   },
   {
@@ -289,45 +289,45 @@
   {
     "action": "advanceToken",
     "node": "Event_0vz4qr8",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_18sa0dl"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "position": "entry",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "position": "busy",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "position": "completion",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "Activity_0dak25o",
-    "label": "Process_1_2.e2",
+    "label": "Process_1_2^Activity_0r6q3a2#1",
     "sequenceFlow": "Flow_19cmq84"
   },
   {
     "action": "advanceToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_2.e2"
+    "label": "Process_1_2^Activity_0r6q3a2#1"
   },
   {
     "action": "consumeToken",
     "node": "Event_1k4vru2",
-    "label": "Process_1_2.e2"
+    "label": "Process_1_2^Activity_0r6q3a2#1"
   },
   {
     "action": "advanceToken",

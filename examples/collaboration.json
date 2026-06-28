@@ -30,7 +30,7 @@
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "animate": "bounce"
   },
   {
@@ -64,7 +64,7 @@
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "animate": "bounce"
   },
   {
@@ -331,93 +331,93 @@
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire1"
+    "label": "MachineProcess_1^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire2"
+    "label": "MachineProcess_2^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire2"
+    "label": "MachineProcess_2^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire2",
+    "label": "MachineProcess_2^EventSubProcess#1",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire2"
+    "label": "MachineProcess_2^EventSubProcess#1"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire2"
+    "label": "MachineProcess_2^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
@@ -509,35 +509,35 @@
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire1"
+    "label": "MachineProcess_1^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire1",
+    "label": "MachineProcess_1^EventSubProcess#1",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire1"
+    "label": "MachineProcess_1^EventSubProcess#1"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire1"
+    "label": "MachineProcess_1^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
@@ -629,93 +629,93 @@
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire3"
+    "label": "MachineProcess_1^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire4"
+    "label": "MachineProcess_2^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire3"
+    "label": "MachineProcess_1^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire3",
+    "label": "MachineProcess_1^EventSubProcess#2",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire3"
+    "label": "MachineProcess_1^EventSubProcess#2"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire3"
+    "label": "MachineProcess_1^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
@@ -807,64 +807,64 @@
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_1#fire7",
+    "label": "MachineProcess_1^EventSubProcess#4",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire5"
+    "label": "MachineProcess_1^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire4"
+    "label": "MachineProcess_2^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire4",
+    "label": "MachineProcess_2^EventSubProcess#2",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire4"
+    "label": "MachineProcess_2^EventSubProcess#2"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire4"
+    "label": "MachineProcess_2^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
@@ -923,64 +923,64 @@
   {
     "action": "advanceToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "sequenceFlow": "Flow_04nmpfp"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
-    "label": "MachineProcess_2#fire8",
+    "label": "MachineProcess_2^EventSubProcess#4",
     "animate": "bounce"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "position": "busy"
   },
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire6"
+    "label": "MachineProcess_2^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "position": "busy"
   },
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1#fire5"
+    "label": "MachineProcess_1^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_1#fire5",
+    "label": "MachineProcess_1^EventSubProcess#3",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire5"
+    "label": "MachineProcess_1^EventSubProcess#3"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_1#fire5"
+    "label": "MachineProcess_1^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
@@ -1039,35 +1039,35 @@
   {
     "action": "advanceToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "position": "completion"
   },
   {
     "action": "consumeToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2#fire6"
+    "label": "MachineProcess_2^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "position": "completion"
   },
   {
     "action": "advanceToken",
     "node": "AdHocSubProcess",
-    "label": "MachineProcess_2#fire6",
+    "label": "MachineProcess_2^EventSubProcess#3",
     "sequenceFlow": "Flow_0d3x89n"
   },
   {
     "action": "advanceToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire6"
+    "label": "MachineProcess_2^EventSubProcess#3"
   },
   {
     "action": "consumeToken",
     "node": "ThrowCompletionMessage",
-    "label": "MachineProcess_2#fire6"
+    "label": "MachineProcess_2^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
