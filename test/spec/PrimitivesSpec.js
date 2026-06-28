@@ -576,10 +576,13 @@ describe('Primitives', function() {
       tokens.createToken('Task_1', 'A', 'tomato');
       dotAt('Task_1').click();
 
-      expect(fired).to.exist;
-      expect(fired.node).to.equal('Task_1');
-      expect(fired.label).to.equal('A');
-      expect(fired.sequenceFlow).to.equal(null);
+      // token.click is deferred (a 2nd click within the window becomes a dblclick) — wait it out
+      return new Promise(resolve => setTimeout(resolve, 400)).then(() => {
+        expect(fired).to.exist;
+        expect(fired.node).to.equal('Task_1');
+        expect(fired.label).to.equal('A');
+        expect(fired.sequenceFlow).to.equal(null);
+      });
     });
 
 
@@ -597,13 +600,16 @@ describe('Primitives', function() {
       tokens.setStackIndex('Task_1', 1);
       dotAt('Task_1').click();
 
-      expect(fired.stackIndices).to.eql({ Task_1: 1 });
+      // token.click is deferred (a 2nd click within the window becomes a dblclick) — wait it out
+      return new Promise(resolve => setTimeout(resolve, 400)).then(() => {
+        expect(fired.stackIndices).to.eql({ Task_1: 1 });
 
-      // and it addresses the right (non-base) token
-      tokens.selectToken('Task_1', 'A', { stackIndices: fired.stackIndices });
-      const selected = tokens.getSelectedTokens();
-      expect(selected).to.have.length(1);
-      expect(selected[0].stackIndices).to.eql({ Task_1: 1 });
+        // and it addresses the right (non-base) token
+        tokens.selectToken('Task_1', 'A', { stackIndices: fired.stackIndices });
+        const selected = tokens.getSelectedTokens();
+        expect(selected).to.have.length(1);
+        expect(selected[0].stackIndices).to.eql({ Task_1: 1 });
+      });
     });
 
 
