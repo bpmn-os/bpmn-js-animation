@@ -45,7 +45,7 @@ describe('simulator', function() {
 
       const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-      expect(label).to.equal('I1');
+      expect(label).to.equal('Process_1_1');
 
       // process box is running (busy/pulse), the start event has departed
       expect(posAt('Process_1', label)).to.equal('busy');
@@ -57,13 +57,13 @@ describe('simulator', function() {
     });
 
 
-    it('numbers instances I1, I2, …', async function() {
+    it('numbers instances "<process>_k" with a per-process counter', async function() {
       const sim = get('simulator');
 
       const a = await sim.spawnInstance('Process_1', 'StartEvent_1');
       const b = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-      expect([ a, b ]).to.eql([ 'I1', 'I2' ]);
+      expect([ a, b ]).to.eql([ 'Process_1_1', 'Process_1_2' ]);
     });
 
   });
@@ -166,7 +166,7 @@ describe('simulator', function() {
       await flush();
 
       // an instance was created and the token entered the task
-      expect(posAt('Task_1', 'I1')).to.equal('entry');
+      expect(posAt('Task_1', 'Process_1_1')).to.equal('entry');
     });
 
   });
@@ -499,23 +499,23 @@ describe('simulator — multi-instance activity', function() {
     // double-click the parent twice → two sub-instances appear (at entry), the parent still rests there
     await sim._step(MI, label, IN);
     await sim._step(MI, label, IN);
-    expect(simulation.getToken(MI, label + '/1')).to.exist;
-    expect(simulation.getToken(MI, label + '/2')).to.exist;
-    expect(posAt(MI, label + '/1')).to.equal('entry');
+    expect(simulation.getToken(MI, label + '#1')).to.exist;
+    expect(simulation.getToken(MI, label + '#2')).to.exist;
+    expect(posAt(MI, label + '#1')).to.equal('entry');
 
     // run each sub entry → busy → completion (the first to leave entry parks the parent)
-    for (const sub of [ label + '/1', label + '/2' ]) {
+    for (const sub of [ label + '#1', label + '#2' ]) {
       await sim._step(MI, sub); // entry → busy
       await sim._step(MI, sub); // busy → completion
     }
     expect(simulation.getToken(MI, label).state.hidden).to.equal(true); // parent parked
 
     // consume each completed sub; the last one releases + travels the parent → end → instance done
-    await sim._step(MI, label + '/1'); // completion → consume (not last)
-    expect(simulation.getToken(MI, label + '/1')).to.not.exist;
+    await sim._step(MI, label + '#1'); // completion → consume (not last)
+    expect(simulation.getToken(MI, label + '#1')).to.not.exist;
     expect(simulation.getToken(MI, label)).to.exist; // parent still parked, more subs remain
 
-    await sim._step(MI, label + '/2'); // completion → consume (last) → parent departs
+    await sim._step(MI, label + '#2'); // completion → consume (last) → parent departs
     expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
     expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
   });
@@ -793,13 +793,13 @@ describe('simulator — collaboration (pools)', function() {
     // first double-click → first sub-instance
     await sim._step('JobActivity', label, inflow);
     await flush();
-    expect(simulation.getToken('JobActivity', label + '/1')).to.exist;
+    expect(simulation.getToken('JobActivity', label + '#1')).to.exist;
 
     // second double-click → a SECOND, distinctly-labelled sub-instance (this is where a duplicate-label
     // error <label/1 already exists> was reported)
     await sim._step('JobActivity', label, inflow);
     await flush();
-    expect(simulation.getToken('JobActivity', label + '/2')).to.exist;
+    expect(simulation.getToken('JobActivity', label + '#2')).to.exist;
   });
 
   it('the MI outer token at JobActivity is tied to the front pool instance', async function() {
@@ -845,8 +845,8 @@ describe('simulator — collaboration (pools)', function() {
     await sim._step('JobActivity', i3, inflow);
     await flush();
 
-    expect(simulation.getToken('JobActivity', i3 + '/1'), 'first sub of the front instance').to.exist;
-    expect(simulation.getToken('JobActivity', i3 + '/2'), 'second sub of the front instance').to.exist;
+    expect(simulation.getToken('JobActivity', i3 + '#1'), 'first sub of the front instance').to.exist;
+    expect(simulation.getToken('JobActivity', i3 + '#2'), 'second sub of the front instance').to.exist;
   });
 
 });
