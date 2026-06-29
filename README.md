@@ -122,7 +122,7 @@ import { SimulatorModule, AnimatorModule, TokenPanelModule } from 'bpmn-js-anima
 
 import 'bpmn-js-side-panel/assets/side-panel.css';
 import 'bpmn-js-animation/assets/animation.css';
-import 'bpmn-js-animation/assets/simulation-panel.css';
+import 'bpmn-js-animation/assets/token-panel.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',

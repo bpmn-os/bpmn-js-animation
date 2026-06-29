@@ -14,7 +14,7 @@ import { SimulatorModule, AnimatorModule, TokenPanelModule } from '../lib/index.
 import SidePanelModule from 'bpmn-js-side-panel';
 import 'bpmn-js-side-panel/assets/side-panel.css';
 import '../assets/animation.css';
-import '../assets/simulation-panel.css';
+import '../assets/token-panel.css';
 
 // bundled example models, and their recorded execution logs (loaded by basename: `<id>.bpmn` ↔ `<id>.json`)
 import simpleProcessXML from '../examples/simple-process.bpmn?raw';

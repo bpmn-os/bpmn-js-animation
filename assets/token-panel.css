@@ -1,0 +1,299 @@
+.bjs-token {
+  /* vendor (diagram-js / properties-panel) grey ramp + blue accent — kept self-contained, since this
+     module is used standalone (its demo has no host token layer) */
+  --t-grey-15: hsl(225, 10%, 15%);
+  --t-grey-35: hsl(225, 10%, 35%);
+  --t-grey-55: hsl(225, 10%, 55%);
+  --t-grey-75: hsl(225, 10%, 75%);
+  --t-grey-90: hsl(225, 10%, 90%);
+  --t-grey-95: hsl(225, 10%, 95%);
+  --t-accent: hsl(205, 100%, 50%);
+  --t-accent-tint: hsl(205, 100%, 95%);
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px;
+  font-size: 13px;
+  color: var(--t-grey-15);
+}
+
+.bjs-token *,
+.bjs-token *::before,
+.bjs-token *::after {
+  box-sizing: border-box;
+}
+
+/* --- controls (top) --- */
+.bjs-token-controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* playback-only group: compact run/pause button + speed slider on one row */
+.bjs-token-playback {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* explicit display:flex above would override the `hidden` attribute, so restore it */
+.bjs-token-playback[hidden] {
+  display: none;
+}
+
+/* --- footer (bottom): run/pause + speed (Playback) above a [Refresh][log] row --- */
+.bjs-token-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--t-grey-90);
+}
+
+/* the bottom row — Refresh + the log button (Load/Save) side by side */
+.bjs-token-footer-row {
+  display: flex;
+  gap: 8px;
+}
+
+.bjs-token-footer-row .bjs-token-btn {
+  flex: 1;
+}
+
+.bjs-token-btn {
+  font: inherit;
+  padding: 5px 10px;
+  border: 1px solid var(--t-grey-75);
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.bjs-token-btn:hover:not(:disabled) {
+  background: var(--t-grey-95);
+}
+
+.bjs-token-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* compact icon-only run/pause button */
+.bjs-token-run {
+  flex: 0 0 auto;
+  min-width: 2.2em;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* auto-focus header bar — mirrors the host's properties-panel header (64px tall, padding 16px 10px,
+   grey-95 bg, grey-75 bottom border). Negative margins break it out of the .bjs-token 10px padding so it
+   sits flush at the panel's top edge and spans full width. */
+.bjs-token-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  max-height: 64px;
+  margin: -10px -10px 0;
+  padding: 16px 10px;
+  background-color: var(--t-grey-95);
+  border-bottom: 1px solid var(--t-grey-75);
+  cursor: pointer;
+}
+
+/* sliding toggle switch (same as the host's properties-panel toggle: 32x16, blue when on) */
+.bjs-token-toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 16px;
+}
+
+.bjs-token-toggle input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.bjs-token-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--t-grey-75);
+  border-radius: 34px;
+  transition: 0.3s;
+}
+
+.bjs-token-toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.bjs-token-toggle input:checked + .bjs-token-toggle-slider {
+  background-color: var(--t-accent);
+}
+
+.bjs-token-toggle input:checked + .bjs-token-toggle-slider::before {
+  transform: translateX(16px);
+}
+
+/* speed takes the rest of the run/pause row */
+.bjs-token-speed {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bjs-token-slider {
+  flex: 1;
+}
+
+/* --- inspector (fills the middle, scrolls) --- */
+.bjs-token-inspector {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 10px;
+}
+
+.bjs-token-empty {
+  color: var(--t-grey-55);
+  font-style: italic;
+}
+
+.bjs-token-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.bjs-token-list-title {
+  color: var(--t-grey-35);
+  margin-bottom: 4px;
+}
+
+/* "Tokens" heading with the (all / selected) view-filter radios */
+.bjs-token-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bjs-token-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: normal;
+  cursor: pointer;
+}
+.bjs-token-filter input[type="radio"] {
+  margin: 0;
+}
+
+/* divider between the selected-token section and the selected-node section(s) */
+.bjs-token-separator {
+  margin: 12px 0;
+  border-top: 1px solid var(--t-grey-90);
+}
+
+/* a list title following the separator shouldn't double up the gap */
+.bjs-token-separator + .bjs-token-list-title {
+  margin-top: 0;
+}
+
+.bjs-token-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bjs-token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bjs-token-row:hover {
+  background: var(--t-grey-95);
+}
+
+.bjs-token-row.selected {
+  background: var(--t-accent-tint);
+}
+
+/* token info column: label on top, node id below */
+.bjs-token-token {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* the node id (a token is identified by label + node) — smaller and bold */
+.bjs-token-token-node {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--t-grey-35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* middle-truncated label: head ellipsizes, tail (the "#k" end) always stays visible */
+.bjs-token-token-label {
+  display: flex;
+  min-width: 0;
+}
+
+.bjs-token-label-head {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bjs-token-label-tail {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.bjs-token-swatch {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.bjs-token-badge {
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.bjs-token-badge.hidden {
+  background: var(--t-grey-90);
+  color: var(--t-grey-55);
+}
