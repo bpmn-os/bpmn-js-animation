@@ -151,6 +151,17 @@
 .bts-dim .djs-visual {
   opacity: 0.25;
 }
+/* the standard-loop marker is a bare path — dim it directly (not via a child .djs-visual). Black =
+   "will loop"; dimmed = "will leave the loop". Toggled with the outflow dimming above. */
+[data-marker="loop"].bts-dim {
+  opacity: 0.25;
+}
+/* transparent clickable hit area laid over the loop marker (the loop/exit toggle) */
+.bts-loop-hit {
+  fill: transparent;
+  pointer-events: all;
+  cursor: pointer;
+}
 /* clicking a flow selects it in diagram-js — hide that bounding-box outline (we dim/undim instead) */
 .djs-connection.selected .djs-outline {
   display: none;

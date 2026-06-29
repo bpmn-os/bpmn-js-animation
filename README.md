@@ -80,7 +80,7 @@ A token's animation tells you what it is waiting for:
 | **pulse-pause** | a **decision** the simulator can't make without a data layer | pick / spawn, then double-click |
 
 - **Diverging gateway** (exclusive / inclusive / complex): its outflows **dim**; **click** the flow(s) you want (one for exclusive, several for inclusive), then **double-click the token** to depart. A parallel or event-based gateway forks automatically.
-- **Standard-loop activity**: at completion the outflows dim, **double-click** with nothing selected to run **another iteration**, or **click an outflow then double-click** to leave the loop.
+- **Standard-loop activity**: at completion the **loop marker** is a loop/exit toggle — **black** = loop again (outflows dimmed), **dimmed** = leave. **Double-click** with the marker black runs **another iteration**; **click an outflow** (or **click the loop marker**) to mark "leave", then **double-click** to depart. Clicking the marker also leaves a loop with **no outgoing flow** (implicit end), which then completes.
 - **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow, **double-click** it to spawn an activity-instance, then advance each instance token. An MI activity with **no incoming flow** (e.g. an ad-hoc sub-process child) instead gets its outer token at the activity's **left edge** — double-click it the same way to spawn.
 
 The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo's **Tokens** panel you can **save** the log and **load** it back to replay with the animator.
