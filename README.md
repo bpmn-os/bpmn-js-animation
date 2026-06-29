@@ -81,7 +81,7 @@ A token's animation tells you what it is waiting for:
 
 - **Diverging gateway** (exclusive / inclusive / complex): its outflows **dim**; **click** the flow(s) you want (one for exclusive, several for inclusive), then **double-click the token** to depart. A parallel or event-based gateway forks automatically.
 - **Standard-loop activity**: at completion the outflows dim, **double-click** with nothing selected to run **another iteration**, or **click an outflow then double-click** to leave the loop.
-- **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow, **double-click** it to spawn an activity-instance, then advance each instance token.
+- **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow, **double-click** it to spawn an activity-instance, then advance each instance token. An MI activity with **no incoming flow** (e.g. an ad-hoc sub-process child) instead gets its outer token at the activity's **left edge** — double-click it the same way to spawn.
 
 The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo's **Tokens** panel you can **save** the log and **load** it back to replay with the animator.
 
@@ -133,7 +133,7 @@ const viewer = new NavigatedViewer({
 
 The panel:
 
-- shows the **selected token(s)** and the **tokens at the selected node(s)** — or **all tokens** when nothing is selected; **click** a listed token to bring its stack to the front and select it, **double-click** to advance it;
+- has a **Tokens** view filter (radio): **all** lists every token; **selected** lists the selected token(s) **plus** the tokens at the selected node(s) — purely a display switch, it never changes the selection. **Click** a listed token to bring its stack to the front and select it, **double-click** to advance it;
 - hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
 
 The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own.
@@ -158,7 +158,7 @@ const modeler = new BpmnModeler({
 modeler.get('mode').setMode('simulate'); // ← your toolbar/canvas control calls this; fires `mode.changed`
 ```
 
-On each switch it clears the tokens, toggles the `.bts-simulation` view and the palette, and — when modeller services are present — makes the canvas read-only outside `model` (a folded-in port of token-simulation's `DisableModeling`). It is **viewer-safe**: in a plain viewer it only does the simulation gating (no modeller services to touch). The low-level gate is `simulator.setActive(active)` (default on), which `ModeModule` drives.
+On each switch it clears the tokens, toggles the `.bts-simulation` view and the palette, and — when modeller services are present — makes the canvas read-only outside `model` (a folded-in port of token-simulation's `DisableModeling`, including hiding the context pad). It is **viewer-safe**: in a plain viewer it only does the simulation gating (no modeller services to touch). The low-level gate is `simulator.setActive(active)` (default on), which `ModeModule` drives.
 
 ## Development
 

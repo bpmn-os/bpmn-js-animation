@@ -127,6 +127,23 @@
   margin-bottom: 4px;
 }
 
+/* "Tokens" heading with the (all / selected) view-filter radios */
+.bjs-sim-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bjs-sim-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: normal;
+  cursor: pointer;
+}
+.bjs-sim-filter input[type="radio"] {
+  margin: 0;
+}
+
 /* divider between the selected-token section and the selected-node section(s) */
 .bjs-sim-separator {
   margin: 12px 0;
