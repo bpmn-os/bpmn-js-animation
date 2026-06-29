@@ -18,6 +18,21 @@
   stroke-width: 2px;
 }
 
+/* Moving tokens render in their own SVG layer, laid over diagram-js's HTML overlay container so a
+   gliding token paints above the lint issue markers and resting-token overlays (which stay visible).
+   Its inner <g> mirrors the canvas viewport transform (set by the primitives service); pointer-events
+   are off so clicks fall through to the canvas/overlays beneath. */
+.bts-animation-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1101;
+}
+
 /* resting token badge(s) rendered as a diagram-js overlay on a node */
 .bts-token-count-parent {
   white-space: nowrap;

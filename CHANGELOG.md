@@ -14,6 +14,8 @@ Adds a mode controller so the same package works in a **modeller** that toggles 
 - Multi-instance completion no longer requires an outgoing flow: an MI activity that is the **last node** (implicit end) — or an **ad-hoc child** — now completes (its outer/parent token is consumed) once the last sub-instance finishes, instead of throwing. The fan-in un-parks the parent to the activity's completion position and the host consumes it.
 - The **Tokens** panel inspector is now a `Tokens` view filter (radio): **all** lists every token; **selected** lists the selected token(s) **plus** the tokens at the selected node(s). Purely a display switch — it never changes the selection.
 - Standard-loop activities can now be **left without selecting an outflow**: at completion the loop marker is a clickable loop/exit toggle (black = loop again, dimmed = leave). Click an outflow to leave via it, or click the marker to leave with no pick — including a loop with **no outgoing flow** (implicit end), which now completes. Previously a loop could only be left by selecting an outflow, so an implicit-end loop was inescapable.
+- Moving tokens now render in a **dedicated SVG layer above diagram-js's overlay container**, so a gliding token paints **above** HTML overlays such as bpmn-js-bpmnlint issue markers (which stay visible) — matching the resting tokens. The layer mirrors the canvas viewport transform (pan / zoom) and is **plane-aware**: only the active drill plane's moving tokens are shown.
+- Fixed a stray selection box: the implicit-process selection outline is now **cleared when its process box is removed** (e.g. at instance completion), instead of lingering and being repainted at the root's restored, bounds-less coordinates.
 
 ### Added
 
