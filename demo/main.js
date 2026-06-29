@@ -7,10 +7,10 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 // The opt-in tools — `simulator` (interactive driving, owns record) and `animator` (playback, owns
-// replay) — plus `SidePanelModule` + `SimulationPanelModule`: run/pause, speed, auto-focus, log
+// replay) — plus `SidePanelModule` + `TokenPanelModule`: run/pause, speed, auto-focus, log
 // save/load and the selected-token / tokens-at-node inspector all live in a "Simulation" tab of the
 // side panel. The toolbar keeps only model loading and the Simulate/Playback mode toggle.
-import { SimulatorModule, AnimatorModule, SimulationPanelModule } from '../lib/index.js';
+import { SimulatorModule, AnimatorModule, TokenPanelModule } from '../lib/index.js';
 import SidePanelModule from 'bpmn-js-side-panel';
 import 'bpmn-js-side-panel/assets/side-panel.css';
 import '../assets/animation.css';
@@ -51,7 +51,7 @@ let primitives = null;  // low-level (token polling for the console diff)
 let simulator = null;  // interactive tool — owns record
 let animator = null;   // playback tool — owns replay
 let playback = null;   // run/pause controller around the animator
-let simulationPanel = null; // the Simulation side-panel tab
+let tokenPanel = null; // the Simulation side-panel tab
 let prev = new Map(); // token -> its `where(...)` description last frame (the diff baseline)
 
 let mode = 'simulate';
@@ -144,13 +144,13 @@ async function load(xml, name, log) {
   }
   if (viewer) {
     viewer.destroy();
-    viewer = animation = primitives = simulator = animator = playback = simulationPanel = null;
+    viewer = animation = primitives = simulator = animator = playback = tokenPanel = null;
   }
   prev = new Map();
 
   const next = new NavigatedViewer({
     container: '#canvas',
-    additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, SimulationPanelModule ],
+    additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, TokenPanelModule ],
     sidePanel: { parent: '#side-panel' }
   });
 
@@ -168,13 +168,13 @@ async function load(xml, name, log) {
   simulator = next.get('simulator'); // owns record
   animator = next.get('animator');   // owns replay
   playback = next.get('playback');   // run/pause controller
-  simulationPanel = next.get('simulationPanel');
+  tokenPanel = next.get('tokenPanel');
   wireEvents(next.get('eventBus'));
   next.get('canvas').zoom('fit-viewport', 'auto');
 
   shippedLog = log || null;
-  simulationPanel.setLog(shippedLog); // the panel's Run replays this when nothing is recorded/loaded
-  simulationPanel.setMode(mode);      // hide the playback-only controls in Simulate mode
+  tokenPanel.setLog(shippedLog); // the panel's Run replays this when nothing is recorded/loaded
+  tokenPanel.setMode(mode);      // hide the playback-only controls in Simulate mode
 
   // keep the current mode (loading a model in Playback stays in Playback): in Simulator we record the run
   if (mode === 'simulate') {
@@ -197,7 +197,7 @@ async function setMode(m) {
     if (m === 'play') {
       const recorded = simulator.getRecording();
       if (recorded.length) {
-        simulationPanel.setLog(recorded);
+        tokenPanel.setLog(recorded);
       }
       simulator.stopRecording();
     }
@@ -209,8 +209,8 @@ async function setMode(m) {
       simulator.startRecording(); // record the new interactive run
     }
   }
-  if (simulationPanel) {
-    simulationPanel.setMode(m); // also clears the process context + applies the per-mode controls
+  if (tokenPanel) {
+    tokenPanel.setMode(m); // also clears the process context + applies the per-mode controls
   }
   document.body.className = `mode-${m}`;
   $('#modeSimulate').classList.toggle('active', m === 'simulate');

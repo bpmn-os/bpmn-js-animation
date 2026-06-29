@@ -2,6 +2,21 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-06-29
+
+Adds a mode controller so the same package works in a **modeller** that toggles between editing and simulation, not only a viewer.
+
+### Changed
+
+- Renamed `SimulationPanelModule` → `TokenPanelModule` (service `simulationPanel` → `tokenPanel`, config `config.tokenPanel`); the side-panel tab is now labelled **"Tokens"** (configurable via `config.tokenPanel.label`). The token inspector is mode-agnostic (used by both simulate and playback), so "Tokens" fits better than "Simulation".
+- Fixed completion detection for a process whose only token is its start event (e.g. a lone start event with no outflow): the process now completes instead of hanging. A process/sub-process's **own** start event is no longer mistaken for an armed event-sub-process waiter.
+- The implicit-process box now repositions the process token's overlay container directly when it (re)sets the root's bounds, so the token tracks pans / mode round-trips instead of lagging at a stale position (without firing `element.changed` for the root, which would draw a spurious selection outline and mis-route clicks inside the box).
+
+### Added
+
+- `ModeModule` — an opt-in `mode` service with one switch, `setMode('model' | 'simulate' | 'playback')` (+ `getMode()`, a `mode.changed` event). One call turns the modeller's **editing off** outside `model`, the **simulator on** only in `simulate` (with a fresh recording), clears the tokens on every switch, toggles the `.bts-simulation` view + hides the palette, and — when modeller services are present — makes the canvas read-only (a folded-in port of bpmn-js-token-simulation's `DisableModeling`). Viewer-safe: it only touches modeller services (`directEditing`/`dragging`/`modeling`/`editorActions`/`palette`) when they exist. The host renders the control (toolbar toggle / on-canvas buttons) and calls `setMode`.
+- `simulator.setActive(active)` / `simulator.isActive()` — gate the simulator's reaction to user gestures (double-click to spawn/advance, gateway/flow picks). Default **on**, so existing viewers are unchanged; the `mode` controller turns it off outside `simulate`. `config.simulator.active` sets the initial value.
+
 ## [0.3.1] - 2026-06-29
 
 ### Changed

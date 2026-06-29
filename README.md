@@ -83,7 +83,7 @@ A token's animation tells you what it is waiting for:
 - **Standard-loop activity**: at completion the outflows dim, **double-click** with nothing selected to run **another iteration**, or **click an outflow then double-click** to leave the loop.
 - **Multi-instance activity**: the outer token **pulse-pauses** on the incoming flow, **double-click** it to spawn an activity-instance, then advance each instance token.
 
-The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo's **Simulation** panel you can **save** the log and **load** it back to replay with the animator.
+The simulator **records** the execution log (`startRecording` / `getRecording`). In the demo's **Tokens** panel you can **save** the log and **load** it back to replay with the animator.
 
 ## Animator
 
@@ -111,14 +111,14 @@ await animator.replay(executionLog);
 
 See [docs/execution-log.md](docs/execution-log.md) for the execution log format.
 
-## Simulation panel
+## Token panel
 
-`SimulationPanelModule` adds a **Simulation** tab to a [`bpmn-js-side-panel`](https://github.com/bpmn-os/bpmn-js-side-panel) that inspects the running tokens and hosts the controls. Add it alongside `SidePanelModule` and the simulator / animator you want to drive:
+`TokenPanelModule` adds a **Tokens** tab to a [`bpmn-js-side-panel`](https://github.com/bpmn-os/bpmn-js-side-panel) that inspects the running tokens and hosts the controls. Add it alongside `SidePanelModule` and the simulator / animator you want to drive (the tab label is configurable via `config.tokenPanel.label`):
 
 ```javascript
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
 import SidePanelModule from 'bpmn-js-side-panel';
-import { SimulatorModule, AnimatorModule, SimulationPanelModule } from 'bpmn-js-animation';
+import { SimulatorModule, AnimatorModule, TokenPanelModule } from 'bpmn-js-animation';
 
 import 'bpmn-js-side-panel/assets/side-panel.css';
 import 'bpmn-js-animation/assets/animation.css';
@@ -126,7 +126,7 @@ import 'bpmn-js-animation/assets/simulation-panel.css';
 
 const viewer = new NavigatedViewer({
   container: '#canvas',
-  additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, SimulationPanelModule ],
+  additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, TokenPanelModule ],
   sidePanel: { parent: '#side-panel' }
 });
 ```
@@ -137,6 +137,28 @@ The panel:
 - hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
 
 The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own.
+
+## Mode (modeller integration)
+
+`ModeModule` adds a `mode` service — one switch for a host that toggles between **editing** and **simulation** (e.g. a modeller). `mode.setMode('model' | 'simulate' | 'playback')` does it all in one call:
+
+- **model** — the simulator is off and the canvas is fully editable;
+- **simulate** — the simulator is on (double-click to drive, recording a log), and editing is disabled;
+- **playback** — read-only replay; both editing and the simulator are off.
+
+```javascript
+import BpmnModeler from 'bpmn-js/lib/Modeler';
+import { SimulatorModule, PlaybackModule, ModeModule } from 'bpmn-js-animation';
+
+const modeler = new BpmnModeler({
+  container: '#canvas',
+  additionalModules: [ SimulatorModule, PlaybackModule, ModeModule ]
+});
+
+modeler.get('mode').setMode('simulate'); // ← your toolbar/canvas control calls this; fires `mode.changed`
+```
+
+On each switch it clears the tokens, toggles the `.bts-simulation` view and the palette, and — when modeller services are present — makes the canvas read-only outside `model` (a folded-in port of token-simulation's `DisableModeling`). It is **viewer-safe**: in a plain viewer it only does the simulation gating (no modeller services to touch). The low-level gate is `simulator.setActive(active)` (default on), which `ModeModule` drives.
 
 ## Development
 
