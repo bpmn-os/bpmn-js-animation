@@ -45,7 +45,7 @@ describe('simulator', function() {
 
       const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-      expect(label).to.equal('Process_1_1');
+      expect(label).to.equal('Process_1°1');
 
       // process box is running (busy/pulse), the start event has departed
       expect(posAt('Process_1', label)).to.equal('busy');
@@ -57,13 +57,13 @@ describe('simulator', function() {
     });
 
 
-    it('numbers instances "<process>_k" with a per-process counter', async function() {
+    it('numbers instances "<process>°k" with a per-process counter', async function() {
       const sim = get('simulator');
 
       const a = await sim.spawnInstance('Process_1', 'StartEvent_1');
       const b = await sim.spawnInstance('Process_1', 'StartEvent_1');
 
-      expect([ a, b ]).to.eql([ 'Process_1_1', 'Process_1_2' ]);
+      expect([ a, b ]).to.eql([ 'Process_1°1', 'Process_1°2' ]);
     });
 
   });
@@ -166,7 +166,7 @@ describe('simulator', function() {
       await flush();
 
       // an instance was created and the token entered the task
-      expect(posAt('Task_1', 'Process_1_1')).to.equal('entry');
+      expect(posAt('Task_1', 'Process_1°1')).to.equal('entry');
     });
 
   });

@@ -2,6 +2,20 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-06-30
+
+Token-panel usability: start instances by name, in-panel usage hints, and a host model-mode note.
+
+### Added
+
+- **Instantiate process** group in the Tokens panel (Simulate mode): pick a process and spawn an instance by name with a ✓ button — repeat it to start several. The name is pre-filled with the next free `<process>°k`, and the group auto-expands as a call-to-action while there are no tokens. (Double-clicking a process start event still spawns an instance.)
+- In-panel **usage hints** for the double-click gestures, plus a footer note on (shift-)double-clicking instance stacks. The hints auto-hide when the token list needs the space and return on refresh / clear / mode switch.
+- `config.tokenPanel.modelNote` — an HTML string or element shown in the Tokens panel in **model** mode (e.g. a host call-to-action pointing at its mode controls).
+
+### Changed
+
+- Instance labels now use a degree sign: `<process>°k` (was `<process>_k`), which reads more clearly against modeller ids such as `Process_1`. Multi-instance sub-instances (`#k`) and event-subprocess firings are unchanged.
+
 ## [0.4.0] - 2026-06-29
 
 Adds a mode controller so the same package works in a **modeller** that toggles between editing and simulation, not only a viewer.
@@ -66,6 +80,8 @@ A large spring clean, breaking release. The execution-log format and the module 
 
 - Initial release. Token animation for bpmn-js: the high-level `animation` API, the low-level `primitives` layer, an interactive `simulator` that records runs, and an `animator` that replays an execution log.
 
+[0.5.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/bpmn-os/bpmn-js-animation/releases/tag/v0.1.0

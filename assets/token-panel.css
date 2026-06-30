@@ -9,6 +9,7 @@
   --t-grey-95: hsl(225, 10%, 95%);
   --t-accent: hsl(205, 100%, 50%);
   --t-accent-tint: hsl(205, 100%, 95%);
+  --t-error: hsl(360, 100%, 45%);
 
   box-sizing: border-box;
   display: flex;
@@ -148,6 +149,172 @@
 
 .bjs-token-toggle input:checked + .bjs-token-toggle-slider::before {
   transform: translateX(16px);
+}
+
+/* "Instantiate process" — a collapsible group + entries styled like the bpmn properties-panel */
+.bjs-token-group {
+  margin: 0 -10px; /* full width, like the header bar */
+  border-bottom: 1px solid var(--t-grey-75);
+}
+
+.bjs-token-group-header {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--t-grey-15);
+  cursor: pointer;
+}
+
+.bjs-token-group-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bjs-token-group.open .bjs-token-group-title {
+  font-weight: 500;
+}
+
+/* caret on the right (properties-panel group arrow): points right, rotates to down when open */
+.bjs-token-group-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  fill: var(--t-grey-35);
+  transition: transform 0.15s ease;
+}
+
+.bjs-token-group.open .bjs-token-group-arrow {
+  transform: rotate(90deg);
+}
+
+.bjs-token-group-entries {
+  display: none;
+  padding: 0 10px 10px;
+}
+
+.bjs-token-group.open .bjs-token-group-entries {
+  display: block;
+}
+
+.bjs-token-entry {
+  margin-bottom: 6px;
+}
+
+.bjs-token-entry-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--t-grey-35);
+}
+
+.bjs-token-select,
+.bjs-token-input {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--t-grey-75);
+  border-radius: 2px;
+  background: var(--t-grey-97);
+  font: inherit;
+  font-size: 13px;
+  color: var(--t-grey-15);
+}
+
+/* instance name + a compact confirm (checkmark) button on one row */
+.bjs-token-field-row {
+  display: flex;
+  gap: 6px;
+}
+
+.bjs-token-field-row .bjs-token-input {
+  flex: 1;
+}
+
+.bjs-token-confirm {
+  flex: 0 0 auto;
+  min-width: 30px;
+  padding: 3px 8px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.bjs-token-create-error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--t-error);
+}
+
+/* usage hint (info icon + text) below the Create button */
+.bjs-token-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--t-grey-35);
+}
+
+.bjs-token-hint-icon {
+  flex: 0 0 auto;
+  margin-top: 2px; /* centre the icon on the first text line (the line box is taller than the glyph) */
+  color: var(--t-grey-55);
+}
+
+/* two offset squares in the hint, like a node instance stack */
+.bjs-token-hint-stack {
+  display: inline-block;
+  vertical-align: middle;
+  color: var(--t-grey-35);
+}
+
+/* in the footer (a flex column with its own gap) the separator needs no extra margin */
+.bjs-token-footer .bjs-token-separator {
+  margin: 0;
+}
+
+/* a plain hollow circle in the hint, like a (none) start event */
+.bjs-token-hint-start {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--t-grey-35);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+/* a little bouncing dot in the hint, like a waiting (bouncing) token — reuses the bts-bounce keyframes */
+.bjs-token-hint-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--t-accent);
+  vertical-align: middle;
+  animation: bts-bounce 1s infinite ease;
+}
+
+/* model-mode placeholder note (host-supplied content) */
+.bjs-token-model-note {
+  padding: 16px 12px;
+  color: var(--t-grey-35);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* host-supplied note icons marked data-set-mode are clickable mode switches */
+.bjs-token-model-note [data-set-mode] {
+  cursor: pointer;
+}
+
+.bjs-token-model-note [data-set-mode]:hover {
+  color: var(--t-accent);
 }
 
 /* speed takes the rest of the run/pause row */
