@@ -2,6 +2,12 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-07-01
+
+### Fixed
+
+- The Tokens panel now updates the selected-token highlight when the selection changes **on the canvas** (or anywhere else), not only when selecting from the panel. Previously the "all" / at-node rows kept a stale highlight because only the "Selected tokens" list was reconciled on `token.selection.changed`.
+
 ## [0.5.0] - 2026-06-30
 
 Token-panel usability: start instances by name, in-panel usage hints, and a host model-mode note.
@@ -80,6 +86,7 @@ A large spring clean, breaking release. The execution-log format and the module 
 
 - Initial release. Token animation for bpmn-js: the high-level `animation` API, the low-level `primitives` layer, an interactive `simulator` that records runs, and an `animator` that replays an execution log.
 
+[0.5.1]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.2.0...v0.3.0
