@@ -453,6 +453,10 @@
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
+/* the row dot mirrors the canvas cue for tokens that need the user (reuses the animation.css keyframes) */
+.bjs-token-swatch.bts-anim-bounce      { animation: bts-bounce 1s infinite ease; }
+.bjs-token-swatch.bts-anim-pulse-pause { animation: bts-pulse-pause 1.8s infinite ease-in-out; }
+
 .bjs-token-badge {
   flex: 0 0 auto;
   font-size: 11px;

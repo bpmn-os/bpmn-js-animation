@@ -135,6 +135,7 @@ The panel:
 
 - has a **Tokens** view filter (radio): **all** lists every token; **selected** lists the selected token(s) **plus** the tokens at the selected node(s) — purely a display switch, it never changes the selection. **Click** a listed token to bring its stack to the front and select it, **double-click** to advance it;
 - has an **Instantiate process** group (Simulate mode) for spawning a named instance of a chosen process with a ✓ button — repeat it to start several. The instance name is pre-filled with the next free `<process>°k`, and the group auto-expands as a call-to-action while there are no tokens (double-clicking a process start event still works too);
+- marks **actionable** tokens by animating their row dot like the canvas — **bounce** (double-click to advance) or **pulse-pause** (pick / spawn a decision first) — so the list reads as a to-do surface (other tokens stay still);
 - shows brief **usage hints** for the double-click gestures, plus a footer note on (shift-)double-clicking instance stacks; the hints auto-hide when the token list needs the room and return on refresh;
 - in **model** mode shows an optional host note via `config.tokenPanel.modelNote` (an HTML string or element — e.g. a call-to-action pointing at the host's mode controls);
 - hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
