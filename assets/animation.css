@@ -33,6 +33,13 @@
   z-index: 1101;
 }
 
+/* The resting-token overlays (diagram-js overlays of type `bts-token-count`) sit above the bpmnlint
+   issue markers (z-index 500, 1000 on hover) so a marker on the same node can't hide the tokens, and
+   just below the moving-token layer (.bts-animation-overlay, 1101). */
+.djs-overlay-bts-token-count {
+  z-index: 1100;
+}
+
 /* resting token badge(s) rendered as a diagram-js overlay on a node */
 .bts-token-count-parent {
   white-space: nowrap;
