@@ -151,7 +151,7 @@ async function load(xml, name, log) {
   const next = new NavigatedViewer({
     container: '#canvas',
     additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, TokenPanelModule ],
-    sidePanel: { parent: '#side-panel' }
+    sidePanel: { parent: '#side-panel', width: '320px' }
   });
 
   try {
