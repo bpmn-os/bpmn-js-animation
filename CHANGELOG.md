@@ -2,6 +2,12 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] - 2026-07-13
+
+### Fixed
+
+- The resting-token count overlay now sits above the bpmnlint issue markers, so its count stays visible where a marker overlaps the node.
+
 ## [0.6.0] - 2026-07-01
 
 ### Added
@@ -92,6 +98,7 @@ A large spring clean, breaking release. The execution-log format and the module 
 
 - Initial release. Token animation for bpmn-js: the high-level `animation` API, the low-level `primitives` layer, an interactive `simulator` that records runs, and an `animator` that replays an execution log.
 
+[0.6.1]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/bpmn-os/bpmn-js-animation/compare/v0.4.0...v0.5.0
