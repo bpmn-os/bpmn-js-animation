@@ -46,13 +46,15 @@
   display: none;
 }
 
-/* --- footer (bottom): run/pause + speed (Playback) above a [Refresh][log] row --- */
+/* --- footer (bottom): run/pause + speed (Playback) above a [Refresh][log] row. A section inside
+   .bjs-token, so it breaks out to full width and re-insets its content like .bjs-token-group. --- */
 .bjs-token-footer {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 10px;
+  margin: 0 -10px;
+  padding: 10px 10px 0;
   border-top: 1px solid var(--t-grey-90);
 }
 
@@ -84,12 +86,14 @@
   cursor: default;
 }
 
-/* compact icon-only run/pause button */
+/* compact icon-only run/pause button. The icon is an inline SVG of fixed size, so the button keeps the
+   same width and height for both the play and pause states. */
 .bjs-token-run {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 2.2em;
-  text-align: center;
-  font-weight: bold;
 }
 
 /* auto-focus header bar — mirrors the host's properties-panel header (64px tall, padding 16px 10px,
@@ -274,9 +278,10 @@
   color: var(--t-grey-35);
 }
 
-/* in the footer (a flex column with its own gap) the separator needs no extra margin */
+/* the footer separator spans the full panel width, breaking out of the footer's 10px padding like
+   .bjs-token-group does inside .bjs-token */
 .bjs-token-footer .bjs-token-separator {
-  margin: 0;
+  margin: 0 -10px;
 }
 
 /* a plain hollow circle in the hint, like a (none) start event */
