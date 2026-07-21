@@ -55,7 +55,7 @@
   gap: 8px;
   margin: 0 -10px;
   padding: 10px 10px 0;
-  border-top: 1px solid var(--t-grey-90);
+  border-top: 1px solid var(--t-grey-75);
 }
 
 /* the bottom row — Refresh + the log button (Load/Save) side by side */
@@ -159,6 +159,18 @@
 .bjs-token-group {
   margin: 0 -10px; /* full width, like the header bar */
   border-bottom: 1px solid var(--t-grey-75);
+}
+
+/* The "Instantiate process" group is a bpmn-js-side-panel collapsible entry (createCollapsibleEntry).
+   Break it out of .bjs-token's 10px padding to full width (like .bjs-token-group / .bjs-token-footer)
+   so its caret reaches the panel edge and lines up with the Issues/Properties carets, add a full-width
+   divider from the token list below, and match this panel's 10px content rhythm for the title inset
+   (the caret's own right gap stays owned by side-panel.css). */
+.bjs-token-controls .bjs-collapsible-entry {
+  margin: 0 -10px;
+  padding-bottom: 10px; /* breathing room between the group and the full-width divider below */
+  border-bottom: 1px solid var(--t-grey-75);
+  --bjs-collapsible-entry-inset: 10px;
 }
 
 .bjs-token-group-header {
@@ -380,7 +392,7 @@
 /* divider between the selected-token section and the selected-node section(s) */
 .bjs-token-separator {
   margin: 12px 0;
-  border-top: 1px solid var(--t-grey-90);
+  border-top: 1px solid var(--t-grey-75);
 }
 
 /* a list title following the separator shouldn't double up the gap */

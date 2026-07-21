@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "bpmn-js": "^18.0.0",
-    "bpmn-js-side-panel": "github:bpmn-os/bpmn-js-side-panel#b97fb21acbe60d19b2beb7bb7d8e8fc35be854c3",
+    "bpmn-js-side-panel": "github:bpmn-os/bpmn-js-side-panel#6f4fcdb79bf0d99cf10052ff9a77083d39c2618b",
     "chai": "^4.5.0",
     "karma": "^6.4.4",
     "karma-chrome-launcher": "^3.2.0",
