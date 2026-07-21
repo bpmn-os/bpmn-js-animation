@@ -7,7 +7,9 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",

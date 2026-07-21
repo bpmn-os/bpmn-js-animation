@@ -87,7 +87,8 @@ describe('Animation', function() {
     });
 
     it('rejects an unsupported node', function() {
-      expect(() => sim().createToken({ node: 'Event_10nbvlp', label: 'X' })) // an end event
+      sim().createToken({ node: PROCESS, label: 'I1' });
+      expect(() => sim().createToken({ node: 'Event_10nbvlp', label: 'X', parentNode: PROCESS, parentLabel: 'I1' })) // an end event
         .to.throw(/not a process\/participant, a start\/boundary event, a link catch event, an activity, or an MI activity/);
     });
 
@@ -138,11 +139,11 @@ describe('Animation', function() {
       sim.createToken({ node: 'Participant_1c07lhk', label: 'A1' });
       sim.createToken({ node: 'Participant_1c07lhk', label: 'A2' });
 
-      const c1 = sim.createToken({ node: 'StartEventOrder', label: 'A1' }); // child of A1 (front)
+      const c1 = sim.createToken({ node: 'StartEventOrder', label: 'A1', parentNode: 'Participant_1c07lhk', parentLabel: 'A1' }); // child of A1 (front)
       expect(c1.stackIndices).to.include({ Participant_1c07lhk: 'A1' });
 
       await get('primitives').moveToFront('Participant_1c07lhk', 'A2'); // scroll to A2
-      const c2 = sim.createToken({ node: 'StartEventOrder', label: 'A2' });
+      const c2 = sim.createToken({ node: 'StartEventOrder', label: 'A2', parentNode: 'Participant_1c07lhk', parentLabel: 'A2' });
       expect(c2.stackIndices).to.include({ Participant_1c07lhk: 'A2' });
 
       // both coexist, addressable, distinct
@@ -164,7 +165,7 @@ describe('Animation', function() {
 
     it('creates a child of the scope token at center, same label + color', function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      const token = sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      const token = sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
 
       expect(token.label).to.equal('I1');
       expect(token.color).to.equal(root.color);
@@ -176,13 +177,13 @@ describe('Animation', function() {
 
     it('honors the animate effect', function() {
       sim().createToken({ node: PROCESS, label: 'B' });
-      const token = sim().createToken({ node: 'StartEvent_1', label: 'B', animate: 'pulse' });
+      const token = sim().createToken({ node: 'StartEvent_1', label: 'B', animate: 'pulse', parentNode: PROCESS, parentLabel: 'B' });
       expect(token.state.animate).to.equal('pulse');
     });
 
     it('rejects when the scope has no token of that label', function() {
-      expect(() => sim().createToken({ node: 'StartEvent_1', label: 'I1' }))
-        .to.throw(/no token <I1> at scope <Process_1>/);
+      expect(() => sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' }))
+        .to.throw(/parent token <I1> at <Process_1> not found/);
     });
 
   });
@@ -202,7 +203,7 @@ describe('Animation', function() {
 
     it('fires as a stacked child of the enclosing-scope token, inheriting its color', function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      const f1 = sim().createToken({ node: ESTART, label: 'e1' });
+      const f1 = sim().createToken({ node: ESTART, label: 'e1', parentNode: PROCESS, parentLabel: 'I1' });
 
       expect(f1.color).to.equal(root.color);
       expect(f1.stackIndices).to.include({ [EVTSP]: 'e1' });
@@ -212,33 +213,33 @@ describe('Animation', function() {
 
     it('stacks multiple concurrent (non-interrupting) firings', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: ESTART, label: 'e1' });
-      sim().createToken({ node: ESTART, label: 'e2' });
+      sim().createToken({ node: ESTART, label: 'e1', parentNode: PROCESS, parentLabel: 'I1' });
+      sim().createToken({ node: ESTART, label: 'e2', parentNode: PROCESS, parentLabel: 'I1' });
       expect(get('primitives').getStacks(EVTSP)).to.eql([ 'e1', 'e2' ]);
     });
 
     it('drops a firing key when its last token is consumed; the scope survives', async function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: ESTART, label: 'e1' });
-      sim().createToken({ node: ESTART, label: 'e2' });
+      sim().createToken({ node: ESTART, label: 'e1', parentNode: PROCESS, parentLabel: 'I1' });
+      sim().createToken({ node: ESTART, label: 'e2', parentNode: PROCESS, parentLabel: 'I1' });
 
-      await sim().consumeToken({ node: ESTART, label: 'e1' });
+      await sim().consumeToken({ node: ESTART, label: 'e1', parentNode: PROCESS, parentLabel: 'I1' });
       expect(get('primitives').getStacks(EVTSP)).to.eql([ 'e2' ]); // e1's firing ended
       expect(sim().getToken(PROCESS, 'I1')).to.equal(root);        // scope untouched
 
-      await sim().consumeToken({ node: ESTART, label: 'e2' });
+      await sim().consumeToken({ node: ESTART, label: 'e2', parentNode: PROCESS, parentLabel: 'I1' });
       expect(get('primitives').getStacks(EVTSP)).to.eql([]);        // evtsp un-stacked
       expect(sim().getToken(PROCESS, 'I1')).to.equal(root);
     });
 
     it('rejects firing with no enclosing-scope instance', function() {
-      expect(() => sim().createToken({ node: ESTART, label: 'e1' }))
-        .to.throw(/no enclosing-scope instance/);
+      expect(() => sim().createToken({ node: ESTART, label: 'e1', parentNode: PROCESS, parentLabel: 'I1' }))
+        .to.throw(/parent token <I1> at <Process_1> not found/);
     });
 
     it('keeps each process instance\'s firings across instances + scrolling (no orphaning)', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: ESTART, label: 'I1.e1' }); // fire for I1 while the process is size 1
+      sim().createToken({ node: ESTART, label: 'I1.e1', parentNode: PROCESS, parentLabel: 'I1' }); // fire for I1 while the process is size 1
 
       // a 2nd process instance grows the process stack 1 -> 2 — the context-key flip the bug hit
       sim().createToken({ node: PROCESS, label: 'I2' });
@@ -246,7 +247,7 @@ describe('Animation', function() {
 
       // fire for I2 (front it first); each instance keeps its own firings as we scroll between them
       await get('primitives').moveToFront(PROCESS, 'I2');
-      sim().createToken({ node: ESTART, label: 'I2.e1' });
+      sim().createToken({ node: ESTART, label: 'I2.e1', parentNode: PROCESS, parentLabel: 'I2' });
       expect(get('primitives').getStacks(EVTSP)).to.eql([ 'I2.e1' ]);
 
       await get('primitives').moveToFront(PROCESS, 'I1');
@@ -267,7 +268,7 @@ describe('Animation', function() {
 
     it('moves the token onto the flow and sends it to the far node', async function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      const start = sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      const start = sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
 
       const landed = await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
 
@@ -302,7 +303,7 @@ describe('Animation', function() {
 
     it('rejects a flow not connected to the node', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       let err;
       try { await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' }); } catch (e) { err = e; }
       expect(err.message).to.match(/not connected/);
@@ -324,7 +325,7 @@ describe('Animation', function() {
     // get the instance token onto the split gateway (resting on its incoming flow)
     async function toSplit() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' });
       return root;
     }
@@ -441,7 +442,7 @@ describe('Animation', function() {
 
     it('joinTokens rejects a non-gateway node', async function() {
       let err;
-      try { await sim().joinTokens({ node: 'StartEvent_1', label: 'I1' }); } catch (e) { err = e; }
+      try { await sim().joinTokens({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' }); } catch (e) { err = e; }
       expect(err.message).to.match(/not a gateway/);
     });
 
@@ -465,7 +466,7 @@ describe('Animation', function() {
 
     it('removes the token and its whole subtree', async function() {
       const root = sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' }); // child of root
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' }); // child of root
       expect(sim().getChildren(root)).to.have.length(1);
 
       const removed = await sim().consumeToken({ node: PROCESS, label: 'I1' });
@@ -478,7 +479,7 @@ describe('Animation', function() {
 
     it('cascade deletes descendants even when they rest on flows', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' });
       await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_a' });
       await sim().forkToken({ node: 'Gateway_Split', label: 'I1', sequenceFlow: 'Flow_b' });
@@ -494,7 +495,7 @@ describe('Animation', function() {
 
     it('rejects consuming a token resting on a sequence flow', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_s' }); // now on Flow_s at the split
 
       let err;
@@ -528,7 +529,7 @@ describe('Animation', function() {
 
       sim().createToken({ node: PROCESS, label: 'I1' });
       sim().createToken({ node: PROCESS, label: 'I2' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I2' }); // a child token on the 2nd instance
+      sim().createToken({ node: 'StartEvent_1', label: 'I2', parentNode: PROCESS, parentLabel: 'I2' }); // a child token on the 2nd instance
       expect(get('primitives').getStacks(PROCESS)).to.eql([ 'I1', 'I2' ]);
       expect(dot('StartEvent_1'), 'I2 child hidden while I1 is front').to.not.exist; // I1 is front
 
@@ -567,7 +568,7 @@ describe('Animation', function() {
 
     it('sweeps a token that just arrived resting on a flow (flow→anchor)', async function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       // travel to the activity — the token now rests ON its incoming flow there
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
       expect(sim().getEntry('MultiInstanceActivity_1', 'I1').sequenceFlow).to.equal('Flow_13p16ha');
@@ -644,7 +645,7 @@ describe('Animation', function() {
     // walk a token onto the end event, resting on its incoming flow
     async function toEndEventOnFlow() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
       await sim().advanceToken({ node: 'MultiInstanceActivity_1', label: 'I1', sequenceFlow: 'Flow_0ldndng' });
     }
@@ -690,7 +691,7 @@ describe('Animation', function() {
     // get the instance token onto the looping Activity_1 (resting on its incoming flow)
     async function toLoopActivity() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_1ra1q8g' }); // → Gateway_1
       await sim().advanceToken({ node: 'Gateway_1', label: 'I1', sequenceFlow: 'Flow_1jj1qlk' });     // → Activity_1
     }
@@ -731,7 +732,7 @@ describe('Animation', function() {
     // an instance token swept onto Activity_1 (anchored there)
     async function toActivity() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_09j0ytu' }); // → Activity_1
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', position: 'busy' });                // sweep in
     }
@@ -760,7 +761,7 @@ describe('Animation', function() {
       await toActivity();
       const activityToken = sim().getToken('Activity_1', 'I1');
 
-      const token = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      const token = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1', parentNode: 'Activity_1', parentLabel: 'I1' });
 
       expect(token.label).to.equal('I1');
       expect(token.color).to.equal(activityToken.color);          // cloned from the host
@@ -770,13 +771,13 @@ describe('Animation', function() {
 
     it('rejects when the attached activity has no token', function() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      expect(() => sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' }))
-        .to.throw(/no token <I1> at the attached activity <Activity_1>/);
+      expect(() => sim().createToken({ node: 'BoundaryEvent_1', label: 'I1', parentNode: 'Activity_1', parentLabel: 'I1' }))
+        .to.throw(/parent token <I1> at <Activity_1> not found/);
     });
 
     it('cascades: consuming the activity removes its boundary listener', async function() {
       await toActivity();
-      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1', parentNode: 'Activity_1', parentLabel: 'I1' });
       expect(sim().getToken('BoundaryEvent_1', 'I1')).to.exist;
 
       await sim().consumeToken({ node: 'Activity_1', label: 'I1' });
@@ -785,7 +786,7 @@ describe('Animation', function() {
 
     it('sheds the boundary listener when the activity departs normally (W1)', async function() {
       await toActivity();
-      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      sim().createToken({ node: 'BoundaryEvent_1', label: 'I1', parentNode: 'Activity_1', parentLabel: 'I1' });
 
       // the activity completes and departs on its normal outflow → its children are shed
       await sim().advanceToken({ node: 'Activity_1', label: 'I1', sequenceFlow: 'Flow_norm' }); // → EndEvent_2
@@ -796,7 +797,7 @@ describe('Animation', function() {
       await toActivity();
       const root = sim().getToken(PROCESS, 'I1');
       const activityToken = sim().getToken('Activity_1', 'I1');
-      const boundary = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1' });
+      const boundary = sim().createToken({ node: 'BoundaryEvent_1', label: 'I1', parentNode: 'Activity_1', parentLabel: 'I1' });
       expect(sim().getChildren(activityToken)).to.include(boundary);
 
       // fire: advancing the boundary along its outflow cancels the host (cascading to the listener) and
@@ -827,7 +828,7 @@ describe('Animation', function() {
     // outer thread token resting on the MI activity's incoming flow (never enters)
     async function toMIActivity() {
       sim().createToken({ node: PROCESS, label: 'I1' });
-      sim().createToken({ node: 'StartEvent_1', label: 'I1' });
+      sim().createToken({ node: 'StartEvent_1', label: 'I1', parentNode: PROCESS, parentLabel: 'I1' });
       await sim().advanceToken({ node: 'StartEvent_1', label: 'I1', sequenceFlow: 'Flow_13p16ha' });
     }
 
@@ -835,8 +836,8 @@ describe('Animation', function() {
       await toMIActivity();
       const parent = sim().getToken(MI, 'I1'); // rests on the incoming flow
 
-      const s1 = sim().createToken({ node: MI, label: 'I1#1' });
-      const s2 = sim().createToken({ node: MI, label: 'I1#2' });
+      const s1 = sim().createToken({ node: MI, label: 'I1#1', parentNode: MI, parentLabel: 'I1' });
+      const s2 = sim().createToken({ node: MI, label: 'I1#2', parentNode: MI, parentLabel: 'I1' });
 
       expect(s1.color).to.equal(parent.color);
       expect(s1.stackIndices).to.include({ [MI]: 'I1#1' });
@@ -847,21 +848,21 @@ describe('Animation', function() {
     it('parks the parent and closes the spawn window when the first sub starts running', async function() {
       await toMIActivity();
       const parent = sim().getToken(MI, 'I1');
-      sim().createToken({ node: MI, label: 'I1#1' }); // spawned at `entry`
+      sim().createToken({ node: MI, label: 'I1#1', parentNode: MI, parentLabel: 'I1' }); // spawned at `entry`
 
       expect(parent.state.hidden).to.equal(false); // visible while spawning (subs at entry)
 
       await sim().advanceToken({ node: MI, label: 'I1#1', position: 'busy' }); // leaves entry → runs
       expect(parent.state.hidden).to.equal(true); // parked
 
-      expect(() => sim().createToken({ node: MI, label: 'I1#2' })).to.throw(/spawn window is closed/);
+      expect(() => sim().createToken({ node: MI, label: 'I1#2', parentNode: MI, parentLabel: 'I1' })).to.throw(/spawn window is closed/);
     });
 
     it('releases the parent onto the outgoing flow when the last sub is consumed, then it travels', async function() {
       await toMIActivity();
       const parent = sim().getToken(MI, 'I1');
-      sim().createToken({ node: MI, label: 'I1#1' });
-      sim().createToken({ node: MI, label: 'I1#2' });
+      sim().createToken({ node: MI, label: 'I1#1', parentNode: MI, parentLabel: 'I1' });
+      sim().createToken({ node: MI, label: 'I1#2', parentNode: MI, parentLabel: 'I1' });
 
       for (const sub of [ 'I1#1', 'I1#2' ]) {
         await sim().advanceToken({ node: MI, label: sub, position: 'completion' });
@@ -880,8 +881,8 @@ describe('Animation', function() {
 
     it('rejects spawning when no outer thread rests on the incoming flow', function() {
       sim().createToken({ node: PROCESS, label: 'I1' }); // never advanced onto the MI activity
-      expect(() => sim().createToken({ node: MI, label: 'I1#1' }))
-        .to.throw(/no token resting on .* incoming flow/);
+      expect(() => sim().createToken({ node: MI, label: 'I1#1', parentNode: MI, parentLabel: 'I1' }))
+        .to.throw(/parent token <I1> at <MultiInstanceActivity_1> not found/);
     });
 
   });

@@ -7,7 +7,9 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -135,7 +137,9 @@
     "action": "createToken",
     "node": "Event_096uk4c",
     "label": "Process_1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Task_B",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -194,7 +198,9 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_2"
+    "label": "Process_2",
+    "parentNode": "Process",
+    "parentLabel": "Process_2"
   },
   {
     "action": "advanceToken",

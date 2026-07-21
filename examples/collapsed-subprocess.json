@@ -7,13 +7,17 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
     "label": "Process_1^Activity_0r6q3a2#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -46,18 +50,24 @@
     "action": "createToken",
     "node": "EscBoundary_1",
     "label": "Process_1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "ErrorBoundary_1",
     "label": "Process_1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "StartEvent_2",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -178,13 +188,17 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_2"
+    "label": "Process_2",
+    "parentNode": "Process",
+    "parentLabel": "Process_2"
   },
   {
     "action": "createToken",
     "node": "Event_0vz4qr8",
     "label": "Process_2^Activity_0r6q3a2#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Process",
+    "parentLabel": "Process_2"
   },
   {
     "action": "advanceToken",
@@ -217,18 +231,24 @@
     "action": "createToken",
     "node": "EscBoundary_1",
     "label": "Process_2",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_2"
   },
   {
     "action": "createToken",
     "node": "ErrorBoundary_1",
     "label": "Process_2",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_2"
   },
   {
     "action": "createToken",
     "node": "StartEvent_2",
-    "label": "Process_2"
+    "label": "Process_2",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_2"
   },
   {
     "action": "advanceToken",

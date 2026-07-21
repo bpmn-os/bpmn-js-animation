@@ -7,13 +7,17 @@
   {
     "action": "createToken",
     "node": "StartEventMachine",
-    "label": "MachineProcess_1"
+    "label": "MachineProcess_1",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_1"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_1^EventSubProcess#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
@@ -41,13 +45,17 @@
   {
     "action": "createToken",
     "node": "StartEventMachine",
-    "label": "MachineProcess_2"
+    "label": "MachineProcess_2",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_2"
   },
   {
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_2^EventSubProcess#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_2"
   },
   {
     "action": "advanceToken",
@@ -75,7 +83,9 @@
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "OrderProcess_1"
+    "label": "OrderProcess_1",
+    "parentNode": "OrderProcess",
+    "parentLabel": "OrderProcess_1"
   },
   {
     "action": "advanceToken",
@@ -93,12 +103,16 @@
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_1#1"
+    "label": "OrderProcess_1#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_1"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_1#2"
+    "label": "OrderProcess_1#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_1"
   },
   {
     "action": "createToken",
@@ -108,7 +122,9 @@
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "OrderProcess_2"
+    "label": "OrderProcess_2",
+    "parentNode": "OrderProcess",
+    "parentLabel": "OrderProcess_2"
   },
   {
     "action": "advanceToken",
@@ -126,12 +142,16 @@
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_2#1"
+    "label": "OrderProcess_2#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_2"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_2#2"
+    "label": "OrderProcess_2#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_2"
   },
   {
     "action": "createToken",
@@ -141,7 +161,9 @@
   {
     "action": "createToken",
     "node": "StartEventOrder",
-    "label": "OrderProcess_3"
+    "label": "OrderProcess_3",
+    "parentNode": "OrderProcess",
+    "parentLabel": "OrderProcess_3"
   },
   {
     "action": "advanceToken",
@@ -159,12 +181,16 @@
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_3#1"
+    "label": "OrderProcess_3#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_3"
   },
   {
     "action": "createToken",
     "node": "JobActivity",
-    "label": "OrderProcess_3#2"
+    "label": "OrderProcess_3#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_3"
   },
   {
     "action": "advanceToken",
@@ -176,7 +202,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_1#1"
+    "label": "OrderProcess_1#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_1#1"
   },
   {
     "action": "advanceToken",
@@ -230,7 +258,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_2#1"
+    "label": "OrderProcess_2#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_2#1"
   },
   {
     "action": "advanceToken",
@@ -284,7 +314,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_3#1"
+    "label": "OrderProcess_3#1",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_3#1"
   },
   {
     "action": "advanceToken",
@@ -338,7 +370,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_1^EventSubProcess#2",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
@@ -349,7 +383,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1^EventSubProcess#1"
+    "label": "MachineProcess_1^EventSubProcess#1",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_1^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
@@ -367,7 +403,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_2^EventSubProcess#2",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_2"
   },
   {
     "action": "advanceToken",
@@ -378,7 +416,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2^EventSubProcess#1"
+    "label": "MachineProcess_2^EventSubProcess#1",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_2^EventSubProcess#1"
   },
   {
     "action": "advanceToken",
@@ -462,7 +502,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_2#2"
+    "label": "OrderProcess_2#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_2#2"
   },
   {
     "action": "advanceToken",
@@ -582,7 +624,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_1#2"
+    "label": "OrderProcess_1#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_1#2"
   },
   {
     "action": "advanceToken",
@@ -636,7 +680,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_1^EventSubProcess#3",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
@@ -647,7 +693,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1^EventSubProcess#2"
+    "label": "MachineProcess_1^EventSubProcess#2",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_1^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
@@ -665,7 +713,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_2^EventSubProcess#3",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_2"
   },
   {
     "action": "advanceToken",
@@ -676,7 +726,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2^EventSubProcess#2"
+    "label": "MachineProcess_2^EventSubProcess#2",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_2^EventSubProcess#2"
   },
   {
     "action": "advanceToken",
@@ -760,7 +812,9 @@
   {
     "action": "createToken",
     "node": "JobStartEvent",
-    "label": "OrderProcess_3#2"
+    "label": "OrderProcess_3#2",
+    "parentNode": "JobActivity",
+    "parentLabel": "OrderProcess_3#2"
   },
   {
     "action": "advanceToken",
@@ -814,7 +868,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_1^EventSubProcess#4",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_1"
   },
   {
     "action": "advanceToken",
@@ -825,7 +881,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_1^EventSubProcess#3"
+    "label": "MachineProcess_1^EventSubProcess#3",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_1^EventSubProcess#3"
   },
   {
     "action": "advanceToken",
@@ -930,7 +988,9 @@
     "action": "createToken",
     "node": "CatchRequestMessage",
     "label": "MachineProcess_2^EventSubProcess#4",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "MachineProcess",
+    "parentLabel": "MachineProcess_2"
   },
   {
     "action": "advanceToken",
@@ -941,7 +1001,9 @@
   {
     "action": "createToken",
     "node": "ConductJobTask",
-    "label": "MachineProcess_2^EventSubProcess#3"
+    "label": "MachineProcess_2^EventSubProcess#3",
+    "parentNode": "AdHocSubProcess",
+    "parentLabel": "MachineProcess_2^EventSubProcess#3"
   },
   {
     "action": "advanceToken",

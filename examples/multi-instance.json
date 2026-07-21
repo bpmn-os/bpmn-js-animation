@@ -7,19 +7,25 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "EvtStart_1",
     "label": "Process_1^EventSub_1#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "ErrStart_2",
     "label": "Process_1^EventSub_2#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -74,19 +80,25 @@
     "action": "createToken",
     "node": "Activity_2",
     "label": "Process_1#1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_2",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "Activity_2",
     "label": "Process_1#2",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_2",
+    "parentLabel": "Process_1"
   },
   {
     "action": "createToken",
     "node": "Activity_2",
     "label": "Process_1#3",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_2",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -162,7 +174,9 @@
     "action": "createToken",
     "node": "BoundaryEvent_1",
     "label": "Process_1",
-    "animate": "bounce"
+    "animate": "bounce",
+    "parentNode": "Activity_1",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",

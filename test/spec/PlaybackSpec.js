@@ -44,7 +44,7 @@ describe('execution-log playback (examples/collaboration.json)', function() {
     // record a short run driven via the API (the simulator captures calls on the shared instance)
     simulator.startRecording();
     sim.createToken({ node: 'MachineProcess', label: 'M1' });
-    sim.createToken({ node: 'StartEventMachine', label: 'M1' });
+    sim.createToken({ node: 'StartEventMachine', label: 'M1', parentNode: 'MachineProcess', parentLabel: 'M1' });
     await sim.advanceToken({ node: 'StartEventMachine', label: 'M1', sequenceFlow: 'Flow_1rghjse' });
     await sim.advanceToken({ node: 'ConditionalEvent', label: 'M1' });
     const recorded = simulator.stopRecording();

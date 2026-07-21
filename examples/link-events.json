@@ -7,7 +7,9 @@
   {
     "action": "createToken",
     "node": "StartEvent_1",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
@@ -62,7 +64,9 @@
   {
     "action": "createToken",
     "node": "LinkCatch_A",
-    "label": "Process_1"
+    "label": "Process_1",
+    "parentNode": "Process",
+    "parentLabel": "Process_1"
   },
   {
     "action": "advanceToken",
