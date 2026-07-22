@@ -15,7 +15,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 10px;
   font-size: 13px;
   color: var(--t-grey-15);
 }
@@ -31,6 +30,8 @@
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
+  --bjs-entry-inset: 10px;
+  border-bottom: 1px solid var(--t-grey-75);
 }
 
 /* playback-only group: compact run/pause button + speed slider on one row */
@@ -53,8 +54,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 0 -10px;
-  padding: 10px 10px 0;
+  padding: 10px;
   border-top: 1px solid var(--t-grey-75);
 }
 
@@ -105,7 +105,6 @@
   gap: 8px;
   min-height: 64px;
   max-height: 64px;
-  margin: -10px -10px 0;
   padding: 16px 10px;
   background-color: var(--t-grey-95);
   border-bottom: 1px solid var(--t-grey-75);
@@ -157,21 +156,9 @@
 
 /* "Instantiate process" — a collapsible group + entries styled like the bpmn properties-panel */
 .bjs-token-group {
-  margin: 0 -10px; /* full width, like the header bar */
   border-bottom: 1px solid var(--t-grey-75);
 }
 
-/* The "Instantiate process" group is a bpmn-js-side-panel collapsible entry (createCollapsibleEntry).
-   Break it out of .bjs-token's 10px padding to full width (like .bjs-token-group / .bjs-token-footer)
-   so its caret reaches the panel edge and lines up with the Issues/Properties carets, add a full-width
-   divider from the token list below, and match this panel's 10px content rhythm for the title inset
-   (the caret's own right gap stays owned by side-panel.css). */
-.bjs-token-controls .bjs-collapsible-entry {
-  margin: 0 -10px;
-  padding-bottom: 10px; /* breathing room between the group and the full-width divider below */
-  border-bottom: 1px solid var(--t-grey-75);
-  --bjs-collapsible-entry-inset: 10px;
-}
 
 .bjs-token-group-header {
   display: flex;
@@ -293,7 +280,7 @@
 /* the footer separator spans the full panel width, breaking out of the footer's 10px padding like
    .bjs-token-group does inside .bjs-token */
 .bjs-token-footer .bjs-token-separator {
-  margin: 0 -10px;
+  margin: 0;
 }
 
 /* a plain hollow circle in the hint, like a (none) start event */
@@ -352,7 +339,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-top: 10px;
+  padding: 10px 10px 0;
 }
 
 .bjs-token-empty {
@@ -373,11 +360,24 @@
   margin-bottom: 4px;
 }
 
-/* "Tokens" heading with the (all / selected) view-filter radios */
+/* "Tokens" heading with the (all / selected) view-filter radios — a FIXED header above the scrolling
+   inspector (it sits outside the inspector, so the token list scrolls in the region below it). */
 .bjs-token-filter {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 12px 10px 8px; /* generous top gap from the controls above; a little breathing room below */
+}
+/* an inset hairline sets the filter off from the token list — spans only within the 10px inset margins
+   (not full width), so it reads as a divider under the heading content, not a panel-wide separator */
+.bjs-token-filter::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  border-bottom: 1px solid var(--t-grey-75);
 }
 .bjs-token-filter label {
   display: inline-flex;
