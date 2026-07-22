@@ -344,6 +344,7 @@
 
 .bjs-token-slider {
   flex: 1;
+  accent-color: var(--t-accent); /* blue, matching the other controls (not the UA default) */
 }
 
 /* --- inspector (fills the middle, scrolls) --- */
@@ -387,6 +388,7 @@
 }
 .bjs-token-filter input[type="radio"] {
   margin: 0;
+  accent-color: var(--t-accent); /* blue, matching the other controls (not the UA default) */
 }
 
 /* divider between the selected-token section and the selected-node section(s) */
