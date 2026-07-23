@@ -347,14 +347,6 @@
   font-style: italic;
 }
 
-.bjs-token-selected {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
 .bjs-token-list-title {
   color: var(--t-grey-35);
   margin-bottom: 4px;
@@ -402,42 +394,41 @@
   margin-top: 0;
 }
 
-.bjs-token-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.bjs-token-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
-  border-radius: 3px;
+/* A token row is a side-panel collapsible entry (.bjs-token-entry). In the demo there is no detail
+   renderer, so entries are non-expandable flat rows (no caret); a consumer can pass a detail renderer
+   (e.g. BPMNOS status) to make them expandable. Hover / selection / cursor sit on the header row. */
+.bjs-token-clickable > .bjs-collapsible-entry-header {
   cursor: pointer;
 }
 
-.bjs-token-row:hover {
+.bjs-token-clickable > .bjs-collapsible-entry-header:hover {
   background: var(--t-grey-95);
 }
 
-.bjs-token-row.selected {
+.bjs-token-selected > .bjs-collapsible-entry-header,
+.bjs-token-selected.bjs-token-clickable > .bjs-collapsible-entry-header:hover {
   background: var(--t-accent-tint);
 }
 
+/* the summary fills the entry's title slot: [swatch][label + node][hidden badge] */
+.bjs-token-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 /* token info column: label on top, node id below */
-.bjs-token-token {
-  flex: 1;
+.bjs-token-info {
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  line-height: 1.25;
 }
 
 /* the node id (a token is identified by label + node) — smaller and bold */
-.bjs-token-token-node {
+.bjs-token-node {
   font-size: 11px;
   font-weight: bold;
   color: var(--t-grey-35);
@@ -447,7 +438,7 @@
 }
 
 /* middle-truncated label: head ellipsizes, tail (the "#k" end) always stays visible */
-.bjs-token-token-label {
+.bjs-token-label {
   display: flex;
   min-width: 0;
 }
@@ -478,6 +469,7 @@
 
 .bjs-token-badge {
   flex: 0 0 auto;
+  margin-left: 4px;
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 10px;
@@ -487,3 +479,15 @@
   background: var(--t-grey-90);
   color: var(--t-grey-55);
 }
+
+/* detail body a consumer fills for expandable token entries (e.g. a BPMNOS status/data view) */
+.bjs-token-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 10px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.bjs-token-kv dt { color: var(--t-grey-55); }
+.bjs-token-kv dd { margin: 0; }
