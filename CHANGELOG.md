@@ -6,6 +6,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- The cursor over an element in a read-only mode is the ordinary pointer rather than the move cursor, which promised a gesture that would not happen. An element a mode exception permits a move or a resize on keeps the move cursor, and a host drawing its own cursors within an element still wins over both.
 - Loading another model while a replay is running no longer leaves the playback controller playing, with the panel's run button stuck on **Pause** over a diagram that is not running. A run belongs to the diagram it plays on, so clearing or destroying that diagram returns the controller to idle at once and fires `playback.changed`. The abandoned run is left to unwind on its own, and its failure against a diagram whose tokens are gone is no longer reported, where it previously surfaced as an unhandled rejection.
 
 ### Changed

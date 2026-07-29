@@ -208,6 +208,18 @@
   display: block !important;
 }
 
+/* The cursor must say what the mode allows. diagram-js gives every element's hit area the move cursor, which
+   in a read-only mode promises a gesture that will not happen, so it reverts to the ordinary pointer; an
+   element an exception permits a move or a resize on keeps it. A host drawing its own cursors within an
+   element, as a box with controls in it does, sets them on the element and wins over both. */
+.bts-simulation .djs-element .djs-hit {
+  cursor: default;
+}
+
+.bts-simulation .bts-editable .djs-hit {
+  cursor: move;
+}
+
 /* The resize handles are drawn in the canvas's own `resizers` layer rather than within the element, so they
    cannot be addressed element by element. diagram-js draws them for the selection alone, so `Mode` marks the
    container `bts-resizable` while everything selected may be resized. */
