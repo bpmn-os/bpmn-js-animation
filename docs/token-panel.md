@@ -48,11 +48,15 @@ discloses the body. The summary click stays free for selecting the token, so onl
 body.
 
 Expandability belongs to the entry and is settled when the entry is created, by whether that entry was
-given a renderer. It does not follow what the body turns out to hold, so a host with nothing to show
-for a particular token draws that, a `None` or a sentence saying as much, rather than leaving the body
-empty, since an empty body behind a caret reads as a fault. An entry a host creates itself decides for
-itself; the rows of one list agree with one another because a list passes the options it was given to
-every entry it creates.
+given a renderer. The two are not one entry in two states but two different side-panel entries: a row
+with no renderer is a simple entry, which discloses nothing and whose summary takes the full width,
+and a row with one is a collapsible entry carrying a caret and a body. An entry a host creates itself
+decides for itself; the rows of one list agree with one another because a list passes the options it
+was given to every entry it creates.
+
+Expandability does not follow what the body turns out to hold, so a host with nothing to show for a
+particular token draws that, a `None` or a sentence saying as much, rather than leaving the body
+empty, since an empty body behind a caret reads as a fault.
 
 The function is called again whenever the row updates, which is on every change to its token and on
 every hop from one node to the next, so a value that changes while the row stands open is redrawn
@@ -91,8 +95,9 @@ import { createTokenEntry, createTokenList, createPlaybackControlsEntry } from '
 
 One token as a side-panel entry. The summary is the token's colour swatch, carrying the same motion
 cue the dot carries on the canvas, its label, the node it rests at, and a badge when the token belongs
-to an instance that is not the one on show. The entry is expandable exactly when `renderDetail` is
-given.
+to an instance that is not the one on show. Which entry it is follows from `renderDetail`: given one,
+the row is a collapsible entry with a caret that opens the body; without one, it is a simple entry,
+which discloses nothing and gives the summary the width a caret would have taken.
 
 | Option | Type | Description |
 | --- | --- | --- |

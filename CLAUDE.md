@@ -367,11 +367,15 @@ diagram services of their own, all three **exported** so a host composes its own
 instead of copying them. `TokenPanel` is the packaged assembly (a "Tokens" tab; no-ops without a
 `sidePanel`), documented in `docs/token-panel.md`.
 
-- **`createTokenEntry(token, opts)`** — one token as a `createCollapsibleEntry`: swatch (carrying the
+- **`createTokenEntry(token, opts)`** — one token as a side-panel entry: swatch (carrying the
   canvas motion cue) + middle-truncating label + node tag + "hidden" badge. **`renderDetail(token,
-  contentEl)` is what makes a row expandable** (caret-scoped `toggleOn:'caret'`, so a summary click still
-  *selects*); it is re-run on every `update`, clearing `contentEl` first — the element itself survives, so a
-  host's live view stays current **in place**. Kept generic by two injected helpers (`displayNode`,
+  contentEl)` picks the entry kind**: given one, a `createCollapsibleEntry` (caret-scoped
+  `toggleOn:'caret'`, so a summary click still *selects*), re-run on every `update` and clearing
+  `contentEl` first — the element itself survives, so a host's live view stays current **in place**;
+  without one, a **`createSimpleEntry`**, a row that discloses nothing and gives the summary the width
+  a caret would have taken. (The third case, a row that *cannot* open but stands among rows that can,
+  is the collapsible entry's `expandable: false`, which reserves the caret's space — not used here,
+  since a list's rows all take the same options.) Kept generic by two injected helpers (`displayNode`,
   `isVisible`).
 - **`createTokenList(opts)`** — a keyed live list of those entries over `createListEntry`. **Default key =
   `` `${node}|${label}` ``** (the package's own identity rule), so concurrent tokens of one instance get

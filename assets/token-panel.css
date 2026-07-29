@@ -394,19 +394,24 @@
   margin-top: 0;
 }
 
-/* A token row is a side-panel collapsible entry (.bjs-token-entry). In the demo there is no detail
-   renderer, so entries are non-expandable flat rows (no caret); a consumer can pass a detail renderer
-   (e.g. BPMNOS status) to make them expandable. Hover / selection / cursor sit on the header row. */
-.bjs-token-clickable > .bjs-collapsible-entry-header {
+/* A token row (.bjs-token-entry) is one of two side-panel entries. Without a detail renderer, as in the
+   demo, it is a SIMPLE entry: a row that discloses nothing, whose label takes the full width. With one
+   (e.g. a BPMNOS status view) it is a COLLAPSIBLE entry, with a caret that opens the host's body.
+   Hover / selection / cursor sit on the row of either. */
+.bjs-token-clickable > .bjs-collapsible-entry-header,
+.bjs-token-clickable > .bjs-simple-entry-row {
   cursor: pointer;
 }
 
-.bjs-token-clickable > .bjs-collapsible-entry-header:hover {
+.bjs-token-clickable > .bjs-collapsible-entry-header:hover,
+.bjs-token-clickable > .bjs-simple-entry-row:hover {
   background: var(--t-grey-95);
 }
 
 .bjs-token-selected > .bjs-collapsible-entry-header,
-.bjs-token-selected.bjs-token-clickable > .bjs-collapsible-entry-header:hover {
+.bjs-token-selected > .bjs-simple-entry-row,
+.bjs-token-selected.bjs-token-clickable > .bjs-collapsible-entry-header:hover,
+.bjs-token-selected.bjs-token-clickable > .bjs-simple-entry-row:hover {
   background: var(--t-accent-tint);
 }
 

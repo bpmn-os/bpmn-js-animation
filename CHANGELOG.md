@@ -8,7 +8,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 - **`createTokenList` keys a row by the pair `node|label`, where it keyed by the label alone.** That is the identity a token has in this package, so two concurrent tokens of one instance — a scope token and a token within it, or two parallel branches — now occupy two rows instead of sharing one. A caller wanting another identity, the label alone among them, passes `key`. The Tokens panel takes the new default.
 - The Tokens panel re-keys a row when its token hops, so a row still follows its token from node to node, keeping the row, the body drawn inside it and the list's scroll position.
-- A token row has the same shape whether or not it carries a caret, so a list holding rows of both kinds keeps one alignment. The row's summary is narrower by the caret's width than it was, since the space is now reserved on every row. This comes from the `bpmn-js-side-panel` pin, whose collapsible entry renders the caret on a plain row too and hides it with `visibility`.
+- A token row is a **simple** side-panel entry when no detail renderer is given and a **collapsible** one when there is. A row that discloses nothing therefore reserves no space for a caret and its summary takes the full width, which is what it looked like before, while a row that discloses keeps its caret. This needs the `bpmn-js-side-panel` pin, whose `createSimpleEntry` is new; that release also makes a collapsible entry created with `expandable: false` reserve the caret's space, which is the other case, a row that cannot open standing among rows that can.
 
 ### Added
 
