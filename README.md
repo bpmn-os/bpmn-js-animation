@@ -182,7 +182,7 @@ const modeler = new BpmnModeler({
 });
 ```
 
-An operation runs while a run is on when some exception names it and applies to every element the call names; a drag starts when an exception is about the element the gesture concerns, the operation it ends in being judged again when it is issued; the context pad opens only where an entry is kept and shows the kept entries alone; and an element a move or a resize is permitted on keeps its handles and its selection outline, which the simulation view otherwise hides. Only the outermost call is judged, since how an operation decomposes into others is no business of the host permitting it. `mode.allows(operation, element)` and `mode.entriesFor(element)` answer the same questions to a host driving the modeller itself.
+An operation runs while a run is on when some exception names it and applies to every element the call names; a drag starts when an exception is about the element the gesture concerns, which is `applies` answering to the operation `dragging`, and the operation the gesture ends in is judged on its own when it is issued; the context pad opens only where an entry is kept and shows the kept entries alone; and an element a move or a resize is permitted on keeps its handles and its selection outline, which the simulation view otherwise hides. Only the outermost call is judged, since how an operation decomposes into others is no business of the host permitting it. `mode.allows(operation, element)` and `mode.entriesFor(element)` answer the same questions to a host driving the modeller itself.
 
 ## Development
 

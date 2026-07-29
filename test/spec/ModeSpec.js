@@ -12,14 +12,28 @@ import linearXML from '../diagrams/linear.bpmn';
 
 const NOTE = 'bpmn:TextAnnotation';
 
-// appending a note is about the task it hangs off, moving one is about the note itself, and the pad is
-// offered on the task, which is where the entry that appends it lives
+// appending a note is about the task it hangs off, and the pad is offered there, which is where the entry
+// that appends it lives; everything else — moving one, and the gesture that moves it — is about the note
 const exceptions = [ {
   operations: [ 'appendShape', 'moveShape' ],
   entries: [ 'append.text-annotation' ],
   applies: (operation, element) =>
-    operation === 'moveShape' ? element.type === NOTE : element.type === 'bpmn:Task'
+    operation === 'appendShape' || operation === 'contextPad'
+      ? element.type === 'bpmn:Task'
+      : element.type === NOTE
 } ];
+
+// a mouse event at an element's centre, which is what a move gesture is started from
+function moveEvent(element) {
+  return {
+    x: element.x + element.width / 2,
+    y: element.y + element.height / 2,
+    clientX: 0, clientY: 0,
+    target: document.querySelector('.djs-container'),
+    preventDefault: () => {},
+    stopPropagation: () => {}
+  };
+}
 
 describe('Mode, and what it permits while a run is on', function() {
 
@@ -108,6 +122,26 @@ describe('Mode, and what it permits while a run is on', function() {
     mode.setMode('model');
 
     expect(canvas.hasMarker(appended, 'bts-editable')).to.be.false;
+  });
+
+  it('lets a drag start on an element an exception is about, and on nothing else', function() {
+    const mode = get('mode'),
+          dragging = get('dragging');
+
+    mode.setMode('playback');
+
+    const box = get('modeling').appendShape(task(), { type: NOTE, width: 100, height: 30 },
+      { x: task().x, y: task().y - 80 });
+
+    expect(mode.concerns(box)).to.be.true;
+    expect(mode.concerns(task())).to.be.false;
+
+    get('move').start(moveEvent(box), box, true);
+    expect(dragging.context(), 'a gesture on the box engages').to.exist;
+    dragging.cancel();
+
+    get('move').start(moveEvent(task()), task(), true);
+    expect(dragging.context(), 'a gesture on anything else does not').to.not.exist;
   });
 
   it('takes exceptions after the fact as well', function() {
