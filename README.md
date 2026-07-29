@@ -140,7 +140,11 @@ The panel:
 - in **model** mode shows an optional host note via `config.tokenPanel.modelNote` (an HTML string or element — e.g. a call-to-action pointing at the host's mode controls);
 - hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
 
+A row lists a token and, where the host supplies `config.tokenPanel.renderTokenDetail`, expands to show a body the host draws, such as the state a token carries in the host's own engine. A row is identified by the node and the label of its token, and it is carried across a hop from one node to the next with everything drawn inside it intact.
+
 The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own.
+
+The panel is assembled from three exported factories, `createTokenEntry`, `createTokenList` and `createPlaybackControlsEntry`, which a host composes into a token list of its own. See [docs/token-panel.md](docs/token-panel.md) for the configuration and for those parts.
 
 ## Mode (modeller integration)
 

@@ -1,8 +1,10 @@
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 
+import SidePanelModule from 'bpmn-js-side-panel';
+
 // Boot with both opt-in tools (each pulls in the enabling API via `__depends__`) so specs can reach
 // `simulator` (record) and `animator` (replay) alongside `primitives` + `animation`.
-import { SimulatorModule, AnimatorModule } from '../lib/index.js';
+import { SimulatorModule, AnimatorModule, TokenPanelModule } from '../lib/index.js';
 
 let viewer;
 let container;
@@ -36,6 +38,51 @@ export function bootstrap(xml, config = {}) {
 
     return viewer.importXML(xml);
   };
+}
+
+/**
+ * The same, with a side panel and the Tokens tab. The side panel needs the canvas and its own slot to
+ * be siblings under one wrapper, so the container built here holds both, and the viewer renders into
+ * the canvas child rather than into the container itself.
+ *
+ * @param {string} xml
+ * @param {object} [config] extra viewer config (e.g. { tokenPanel: { renderTokenDetail } })
+ */
+export function bootstrapPanel(xml, config = {}) {
+  return function() {
+    container = document.createElement('div');
+    container.style.width = '900px';
+    container.style.height = '600px';
+    document.body.appendChild(container);
+
+    const canvas = document.createElement('div');
+    const slot = document.createElement('div');
+    container.appendChild(canvas);
+    container.appendChild(slot);
+
+    viewer = new BpmnViewer({
+      container: canvas,
+      additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, TokenPanelModule ],
+      sidePanel: { parent: slot },
+      ...config
+    });
+
+    installStackShims(viewer.get('primitives'));
+    viewer.get('animation').autoFocus(false);
+
+    return viewer.importXML(xml);
+  };
+}
+
+// The token rows of the Tokens tab, in display order. Scoped to the inspector's lists, since the
+// panel's own form rows (the Instantiate group's fields) carry the same class for their styling.
+export function rows() {
+  return Array.from(document.querySelectorAll('.bjs-token-inspector .bjs-list > .bjs-token-entry'));
+}
+
+/** The node tag shown on a token row. */
+export function rowNode(row) {
+  return row.querySelector('.bjs-token-node').textContent;
 }
 
 // Count/index conveniences the specs use, kept out of the production service (it's key-based:

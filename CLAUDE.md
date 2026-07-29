@@ -31,7 +31,7 @@ npm run build    # production bundle of the demo → dist/ (sanity-checks all im
 
 ## Docs (keep in sync)
 
-User-facing docs live in three places — **keep them current with every public-API change in the
+User-facing docs live in four places — **keep them current with every public-API change in the
 same commit** (a renamed/removed/added method, changed signature, or new behaviour):
 
 - **`README.md`** — purpose & what, install, a minimal basic-usage snippet, links to the guides.
@@ -41,6 +41,9 @@ same commit** (a renamed/removed/added method, changed signature, or new behavio
 - **`docs/execution-log.md`** — the shared **execution-log format**, plus its producer/consumer API: the
   `simulator`'s recording (`startRecording` / `getRecording`) and the `animator`'s `replay`. (The
   `animator`/`simulator` *tools* themselves are described in `README.md`, not a per-tool doc.)
+- **`docs/token-panel.md`** — the **token UI**: `config.tokenPanel` (incl. `renderTokenDetail`) and the
+  three exported factories the panel is composed of (`createTokenEntry` / `createTokenList` /
+  `createPlaybackControlsEntry`). The panel's *behaviour* stays in `README.md`; this is its API.
 
 `CLAUDE.md` (this file) is the **internal architecture/invariant** doc — a different audience;
 update it too, but it is not a substitute for the user-facing guides. When you change a public
@@ -356,6 +359,39 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     distributed by length for steady speed), with a `finish()` fast-forward + `_done` guard.
     `sendToken` drives it via `_move`. Keep edits below the banner minimal for upstream syncing.
 
+### Token UI (`TokenEntry` / `TokenList` / `TokenPanel`)
+
+Plain DOM built on `bpmn-js-side-panel`'s entry components (a **dev** dependency here; a consumer of
+these factories installs it itself — it is neither a runtime nor a declared peer dependency), no
+diagram services of their own, all three **exported** so a host composes its own panel from the same parts
+instead of copying them. `TokenPanel` is the packaged assembly (a "Tokens" tab; no-ops without a
+`sidePanel`), documented in `docs/token-panel.md`.
+
+- **`createTokenEntry(token, opts)`** — one token as a `createCollapsibleEntry`: swatch (carrying the
+  canvas motion cue) + middle-truncating label + node tag + "hidden" badge. **`renderDetail(token,
+  contentEl)` is what makes a row expandable** (caret-scoped `toggleOn:'caret'`, so a summary click still
+  *selects*); it is re-run on every `update`, clearing `contentEl` first — the element itself survives, so a
+  host's live view stays current **in place**. Kept generic by two injected helpers (`displayNode`,
+  `isVisible`).
+- **`createTokenList(opts)`** — a keyed live list of those entries over `createListEntry`. **Default key =
+  `` `${node}|${label}` ``** (the package's own identity rule), so concurrent tokens of one instance get
+  **two rows**; `key` overrides it (the label alone was the pre-0.7 default). The side-panel list underneath
+  is keyed by an **opaque per-row handle**, never by the token key — that is what makes **`rekey(previous,
+  token)`** a pure map rename with **no DOM touch** (element, expanded body, focus/selection inside it and
+  the list's scroll all survive; a remove+re-add would detach the row and lose focus). `rekey` **never
+  creates** (unknown `previous` → `undefined`) and, onto an occupied key (homogeneous queued tokens), keeps
+  the **listed** row and drops the renamed one, as `add` also keeps one row per key. `keys()` maps the
+  handles back, so it still reports token keys in display order.
+- **`TokenPanel`** — incremental: one token event → one DOM op, never a rebuild. `_onTokenMoved` **re-keys**
+  from `{ ...e.token, node: e.from }` (the `token.moved` payload is the *destination* token, so the row's
+  old identity is reconstructed from `from`) — `remove` on leaving an inspected node takes that same
+  `previous`. `_tokenListOptions` passes `config.tokenPanel.renderTokenDetail` to **both** lists; the panel
+  neither reads nor refreshes a body (a host that changes values keeps them current itself — `_refreshRows`
+  stays private and is only for row *summaries*: stack front flip, selection highlight).
+- **Class-name caveat:** `.bjs-token-entry` is both a token row **and** the panel's own form rows
+  (Instantiate group), so DOM queries for rows must be scoped to `.bjs-token-inspector .bjs-list`
+  (`test/TestHelper.js` `rows()`).
+
 ### Key invariants
 - **Identity = `(node, label, sequenceFlow, stackIndices)`.** The rest flow lets same-label tokens
   coexist on distinct flows; `stackIndices` lets the same label coexist across **instances**. A token's
@@ -378,8 +414,12 @@ token-relevant subset of upstream's stylesheet plus the `.bts-overflow` / `.bts-
 
 ## Testing
 
-`npm test` runs karma + mocha in headless Chrome (`test/spec/TokensSpec.js`, booting
-a `NavigatedViewer` via `test/TestHelper.js`). It uses a **system Chrome** (no
+`npm test` runs karma + mocha in headless Chrome over `test/spec/*Spec.js` (Animation, Primitives,
+Playback, Outline, Classify, DoubleClickScroll, ExamplesReplay, TokenList, TokenPanel), booting
+a `NavigatedViewer` via `test/TestHelper.js` — `bootstrap` for the plain viewer, **`bootstrapPanel`**
+for the UI specs (it builds the canvas + slot layout the side panel needs and adds
+`SidePanelModule` + `TokenPanelModule`; `rows()` / `rowNode()` read the rendered rows).
+`TokenListSpec` needs no viewer at all — the factories are plain DOM. It uses a **system Chrome** (no
 puppeteer — its Chromium download is blocked here); `karma.conf.js` sets
 `CHROME_BIN` (default `google-chrome`, override via env) and runs
 `ChromeHeadlessNoSandbox`. Determinism comes from bootstrapping with

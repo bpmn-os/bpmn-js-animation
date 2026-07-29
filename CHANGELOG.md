@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **`createTokenList` keys a row by the pair `node|label`, where it keyed by the label alone.** That is the identity a token has in this package, so two concurrent tokens of one instance — a scope token and a token within it, or two parallel branches — now occupy two rows instead of sharing one. A caller wanting another identity, the label alone among them, passes `key`. The Tokens panel takes the new default.
+- The Tokens panel re-keys a row when its token hops, so a row still follows its token from node to node, keeping the row, the body drawn inside it and the list's scroll position.
+
+### Added
+
+- `createTokenList` gained `rekey(previous, token)`, which renames a row's key and updates it from its new token without touching the document. `previous` is the token as the row was keyed, which for a hop is the moved token with the node it left, as the `token.moved` event reports it.
+- `config.tokenPanel.renderTokenDetail` — a host-supplied `(token, contentEl) => void` that draws the inside of a token row. Given one, every row in the Tokens panel gains a caret and expands to show what the host draws, redrawn on every update of the row. The row-level `createTokenEntry` has taken such a renderer all along; the packaged panel could not be given one.
+- [docs/token-panel.md](docs/token-panel.md) documents the panel's configuration and the three exported factories it is composed of.
+
 ## [0.6.1] - 2026-07-13
 
 ### Fixed
