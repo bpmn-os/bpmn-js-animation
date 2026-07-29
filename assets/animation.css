@@ -202,10 +202,16 @@
 }
 
 /* An element a mode exception permits a move or a resize on is still editable while a run is on, so it must
-   still look and behave as one: `Mode` marks it `bts-editable` and it keeps the handles and the outline
-   hidden above, until the mode ends or the exceptions change. */
-.bts-simulation .bts-editable .djs-outline,
-.bts-simulation .bts-editable .djs-resizer {
+   still look and behave as one: `Mode` marks it `bts-editable`, which gives it back the outline hidden
+   above, until the mode ends or the exceptions change. */
+.bts-simulation .bts-editable .djs-outline {
+  display: block !important;
+}
+
+/* The resize handles are drawn in the canvas's own `resizers` layer rather than within the element, so they
+   cannot be addressed element by element. diagram-js draws them for the selection alone, so `Mode` marks the
+   container `bts-resizable` while everything selected may be resized. */
+.bts-simulation.bts-resizable .djs-resizer {
   display: block !important;
 }
 
