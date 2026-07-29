@@ -1,10 +1,11 @@
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
+import BpmnModeler from 'bpmn-js/lib/Modeler';
 
 import SidePanelModule from 'bpmn-js-side-panel';
 
 // Boot with both opt-in tools (each pulls in the enabling API via `__depends__`) so specs can reach
 // `simulator` (record) and `animator` (replay) alongside `primitives` + `animation`.
-import { SimulatorModule, AnimatorModule, TokenPanelModule } from '../lib/index.js';
+import { SimulatorModule, AnimatorModule, TokenPanelModule, AnimationModule, ModeModule } from '../lib/index.js';
 
 let viewer;
 let container;
@@ -69,6 +70,31 @@ export function bootstrapPanel(xml, config = {}) {
 
     installStackShims(viewer.get('primitives'));
     viewer.get('animation').autoFocus(false);
+
+    return viewer.importXML(xml);
+  };
+}
+
+/**
+ * The same as {@link bootstrap}, on a full **Modeler**, for the specs that are about what modelling a mode
+ * permits: only a modeller has the `modeling`, `dragging` and `contextPad` services there is anything to
+ * permit of.
+ *
+ * @param {string} xml
+ * @param {object} [config] extra modeller config, e.g. `{ mode: { exceptions } }`
+ */
+export function bootstrapModeler(xml, config = {}) {
+  return function() {
+    container = document.createElement('div');
+    container.style.width = '900px';
+    container.style.height = '600px';
+    document.body.appendChild(container);
+
+    viewer = new BpmnModeler({
+      container,
+      additionalModules: [ AnimationModule, ModeModule ],
+      ...config
+    });
 
     return viewer.importXML(xml);
   };

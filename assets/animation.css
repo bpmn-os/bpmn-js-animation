@@ -201,6 +201,14 @@
   display: none !important;
 }
 
+/* An element a mode exception permits a move or a resize on is still editable while a run is on, so it must
+   still look and behave as one: `Mode` marks it `bts-editable` and it keeps the handles and the outline
+   hidden above, until the mode ends or the exceptions change. */
+.bts-simulation .bts-editable .djs-outline,
+.bts-simulation .bts-editable .djs-resizer {
+  display: block !important;
+}
+
 /* opt-in: show the node-selection frame again (hidden above). Enabled by adding `.bts-node-selection`
    to the container — via `config.simulator.nodeSelection` (default off) or the simulation panel
    (`config.simulationPanel.nodeSelection`, default on). Shapes only; flows stay dimmed, not framed. */

@@ -168,6 +168,22 @@ modeler.get('mode').setMode('simulate'); // ← your toolbar/canvas control call
 
 On each switch it clears the tokens, toggles the `.bts-simulation` view and the palette, and — when modeller services are present — makes the canvas read-only outside `model` (a folded-in port of token-simulation's `DisableModeling`, including hiding the context pad). It is **viewer-safe**: in a plain viewer it only does the simulation gating (no modeller services to touch). The low-level gate is `simulator.setActive(active)` (default on), which `ModeModule` drives.
 
+Read-only is the default rather than the whole story. Some elements are about the run rather than about the process — a note a reader opens to see what a node holds — and a host may keep the modelling of those alive by declaring **exceptions**, as `config.mode.exceptions` or through `mode.setExceptions(exceptions)`:
+
+```js
+const modeler = new BpmnModeler({
+  mode: {
+    exceptions: [ {
+      operations: [ 'appendShape', 'moveShape', 'resizeShape', 'removeElements' ],
+      entries: [ 'my-note' ],                       // context pad entries kept; every other is stripped
+      applies: (operation, element) => isNote(element) || operation === 'appendShape'
+    } ]
+  }
+});
+```
+
+An operation runs while a run is on when some exception names it and applies to every element the call names; a drag starts when an exception is about the element the gesture concerns, the operation it ends in being judged again when it is issued; the context pad opens only where an entry is kept and shows the kept entries alone; and an element a move or a resize is permitted on keeps its handles and its selection outline, which the simulation view otherwise hides. Only the outermost call is judged, since how an operation decomposes into others is no business of the host permitting it. `mode.allows(operation, element)` and `mode.entriesFor(element)` answer the same questions to a host driving the modeller itself.
+
 ## Development
 
 ```sh
