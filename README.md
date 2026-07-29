@@ -142,7 +142,7 @@ The panel:
 
 A row lists a token and, where the host supplies `config.tokenPanel.renderTokenDetail`, expands to show a body the host draws, such as the state a token carries in the host's own engine. A row is identified by the node and the label of its token, and it is carried across a hop from one node to the next with everything drawn inside it intact.
 
-The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own.
+The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own. A run belongs to the diagram it plays on, so loading another model, which clears that diagram, returns the controller to idle and the run button to **Run**.
 
 The panel is assembled from three exported factories, `createTokenEntry`, `createTokenList` and `createPlaybackControlsEntry`, which a host composes into a token list of its own. See [docs/token-panel.md](docs/token-panel.md) for the configuration and for those parts.
 

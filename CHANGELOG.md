@@ -4,6 +4,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+### Fixed
+
+- Loading another model while a replay is running no longer leaves the playback controller playing, with the panel's run button stuck on **Pause** over a diagram that is not running. A run belongs to the diagram it plays on, so clearing or destroying that diagram returns the controller to idle at once and fires `playback.changed`. The abandoned run is left to unwind on its own, and its failure against a diagram whose tokens are gone is no longer reported, where it previously surfaced as an unhandled rejection.
+
 ### Changed
 
 - **`createTokenList` keys a row by the pair `node|label`, where it keyed by the label alone.** That is the identity a token has in this package, so two concurrent tokens of one instance — a scope token and a token within it, or two parallel branches — now occupy two rows instead of sharing one. A caller wanting another identity, the label alone among them, passes `key`. The Tokens panel takes the new default.
