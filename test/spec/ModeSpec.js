@@ -5,35 +5,23 @@ import { bootstrapModeler, cleanup, get } from '../TestHelper';
 import linearXML from '../diagrams/linear.bpmn';
 
 /**
- * A mode that is not `model` is read-only, and a host may keep a part of the modeller alive within it by
- * declaring exceptions. The exception used here permits a note to be appended to a task and moved, and keeps
- * one context pad entry, which is the shape of what a host showing execution data during a run needs.
+ * A mode that is not `model` refuses modelling through the rules, which diagram-js asks before it offers a
+ * gesture, so what is forbidden is not offered rather than offered and quietly ignored. A host may keep part
+ * of the modeller alive within such a mode by declaring exceptions, in terms of the `modeling` operations it
+ * thinks in; `ModeRules` is the one place that vocabulary meets diagram-js's rule names.
+ *
+ * The exception below has the shape of what a host showing execution data during a run needs: a note it may
+ * move and take away, and one context pad entry, offered on the element the note is about.
  */
 
 const NOTE = 'bpmn:TextAnnotation';
 
-// appending a note is about the task it hangs off, and the pad is offered there, which is where the entry
-// that appends it lives; everything else — moving one, and the gesture that moves it — is about the note
 const exceptions = [ {
-  operations: [ 'appendShape', 'moveShape' ],
+  operations: [ 'moveShape', 'moveElements', 'removeElements' ],
   entries: [ 'append.text-annotation' ],
   applies: (operation, element) =>
-    operation === 'appendShape' || operation === 'contextPad'
-      ? element.type === 'bpmn:Task'
-      : element.type === NOTE
+    operation === 'contextPad' ? element.type === 'bpmn:Task' : element.type === NOTE
 } ];
-
-// a mouse event at an element's centre, which is what a move gesture is started from
-function moveEvent(element) {
-  return {
-    x: element.x + element.width / 2,
-    y: element.y + element.height / 2,
-    clientX: 0, clientY: 0,
-    target: document.querySelector('.djs-container'),
-    preventDefault: () => {},
-    stopPropagation: () => {}
-  };
-}
 
 describe('Mode, and what it permits while a run is on', function() {
 
@@ -42,49 +30,57 @@ describe('Mode, and what it permits while a run is on', function() {
 
   const task = () => get('elementRegistry').get('Task_1');
 
+  // a note of the kind the exception is about, made while modelling is still allowed
   function note() {
-    return get('elementRegistry').filter(element => element.type === NOTE)[0];
+    return get('modeling').appendShape(task(), { type: NOTE, width: 100, height: 30 },
+      { x: task().x, y: task().y - 80 });
   }
 
-  it('refuses an operation no exception names', function() {
-    const modeling = get('modeling'),
-          shape = task(),
-          x = shape.x;
-
-    get('mode').setMode('playback');
-    modeling.moveShape(shape, { x: 40, y: 0 });
-
-    expect(shape.x).to.equal(x);
-  });
-
-  it('runs an operation an exception names, on an element it is about', function() {
-    const modeling = get('modeling');
-
-    get('mode').setMode('playback');
-
-    const appended = modeling.appendShape(task(), { type: NOTE, width: 100, height: 30 },
-      { x: task().x, y: task().y - 80 });
-
-    expect(appended).to.exist;
-
-    const y = appended.y;
-
-    modeling.moveShape(appended, { x: 0, y: -20 });
-
-    expect(appended.y).to.equal(y - 20, 'the note it permits a move on has moved');
-  });
-
-  it('leaves the model alone again when the mode returns to model', function() {
-    const mode = get('mode'),
-          modeling = get('modeling'),
+  it('refuses a gesture on an element no exception is about', function() {
+    const rules = get('rules'),
           shape = task();
+
+    expect(rules.allowed('elements.move', { shapes: [ shape ] }), 'while modelling').to.not.equal(false);
+
+    get('mode').setMode('playback');
+
+    expect(rules.allowed('elements.move', { shapes: [ shape ] })).to.equal(false);
+    expect(rules.allowed('shape.resize', { shape })).to.equal(false);
+    expect(rules.allowed('elements.delete', { elements: [ shape ] })).to.equal(false);
+    expect(rules.allowed('connection.start', { source: shape })).to.equal(false);
+  });
+
+  it('leaves an element an exception is about to the rules below', function() {
+    const rules = get('rules'),
+          box = note();
+
+    get('mode').setMode('playback');
+
+    expect(rules.allowed('elements.move', { shapes: [ box ], target: box.parent }),
+      'a move it permits').to.not.equal(false);
+    expect(rules.allowed('elements.delete', { elements: [ box ] }),
+      'a deletion it permits').to.not.equal(false);
+    expect(rules.allowed('shape.resize', { shape: box }),
+      'a resize it does not name').to.equal(false);
+  });
+
+  it('refuses a gesture naming an element it is not about, even beside one it is', function() {
+    const rules = get('rules'),
+          box = note();
+
+    get('mode').setMode('playback');
+
+    expect(rules.allowed('elements.move', { shapes: [ box, task() ] })).to.equal(false);
+  });
+
+  it('leaves modelling whole again when the mode returns to model', function() {
+    const mode = get('mode'),
+          rules = get('rules');
 
     mode.setMode('playback');
     mode.setMode('model');
 
-    modeling.moveShape(shape, { x: 40, y: 0 });
-
-    expect(shape.x).to.not.equal(0, 'modelling is whole again');
+    expect(rules.allowed('elements.move', { shapes: [ task() ] })).to.not.equal(false);
   });
 
   it('opens the context pad only where an entry is kept, and keeps only that entry', function() {
@@ -109,53 +105,47 @@ describe('Mode, and what it permits while a run is on', function() {
 
   it('marks what a gesture is permitted on, and unmarks it when the mode ends', function() {
     const mode = get('mode'),
-          canvas = get('canvas');
+          canvas = get('canvas'),
+          box = note();
 
     mode.setMode('playback');
 
-    const appended = get('modeling').appendShape(task(), { type: NOTE, width: 100, height: 30 },
-      { x: task().x, y: task().y - 80 });
-
-    expect(canvas.hasMarker(appended, 'bts-editable')).to.be.true;
+    expect(canvas.hasMarker(box, 'bts-editable')).to.be.true;
     expect(canvas.hasMarker(task(), 'bts-editable')).to.be.false;
 
     mode.setMode('model');
 
-    expect(canvas.hasMarker(appended, 'bts-editable')).to.be.false;
+    expect(canvas.hasMarker(box, 'bts-editable')).to.be.false;
   });
 
-  it('lets a drag start on an element an exception is about, and on nothing else', function() {
-    const mode = get('mode'),
-          dragging = get('dragging');
+  it('lets the keyboard take away what a run permits, and nothing else', function() {
+    const editorActions = get('editorActions'),
+          elementRegistry = get('elementRegistry'),
+          box = note();
 
-    mode.setMode('playback');
+    get('mode').setMode('playback');
 
-    const box = get('modeling').appendShape(task(), { type: NOTE, width: 100, height: 30 },
-      { x: task().x, y: task().y - 80 });
+    get('selection').select(task());
+    editorActions.trigger('removeSelection');
+    expect(elementRegistry.get('Task_1'), 'a task the exception is not about').to.exist;
 
-    expect(mode.concerns(box)).to.be.true;
-    expect(mode.concerns(task())).to.be.false;
-
-    get('move').start(moveEvent(box), box, true);
-    expect(dragging.context(), 'a gesture on the box engages').to.exist;
-    dragging.cancel();
-
-    get('move').start(moveEvent(task()), task(), true);
-    expect(dragging.context(), 'a gesture on anything else does not').to.not.exist;
+    get('selection').select(box);
+    editorActions.trigger('removeSelection');
+    expect(elementRegistry.get(box.id), 'the note it is about').to.not.exist;
   });
 
   it('takes exceptions after the fact as well', function() {
-    const mode = get('mode');
+    const mode = get('mode'),
+          rules = get('rules'),
+          box = note();
 
     mode.setExceptions([]);
     mode.setMode('playback');
 
-    const shape = task(),
-          x = shape.x;
+    expect(rules.allowed('elements.move', { shapes: [ box ] })).to.equal(false);
 
-    get('modeling').appendShape(shape, { type: NOTE, width: 100, height: 30 }, { x: shape.x, y: shape.y - 80 });
+    mode.setExceptions(exceptions);
 
-    expect(note()).to.not.exist;
-    expect(shape.x).to.equal(x);
+    expect(rules.allowed('elements.move', { shapes: [ box ], target: box.parent })).to.not.equal(false);
   });
 });
