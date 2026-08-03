@@ -102,8 +102,8 @@ which discloses nothing and gives the summary the width a caret would have taken
 | Option | Type | Description |
 | --- | --- | --- |
 | `renderDetail` | `Function` | `(token, contentEl) => void`. Draws the body, and its presence makes the entry expandable. |
-| `onClick` | `Function` | `(token) => void`. A single click on the row. A click inside the disclosed body is the body's, so opening a section or filling in a field there neither selects nor advances the token. |
-| `onDblClick` | `Function` | `(token) => void`. A double click on the row, under the same rule. |
+| `onClick` | `Function` | `(token, event) => void`. A single click on the row, with the DOM event it came from, so that a modifier the reader held is known to whoever answers. A click inside the disclosed body is the body's, so opening a section or filling in a field there neither selects nor advances the token. |
+| `onDblClick` | `Function` | `(token, event) => void`. A double click on the row, under the same rule. |
 | `displayNode` | `Function` | `(nodeId) => string`. The text the node tag shows. Defaults to the id. |
 | `isVisible` | `Function` | `(token) => boolean`. Whether the token is the one on show, which decides the badge. Defaults to always. |
 | `controls` | `Node` or `Node[]` | What the row carries beside its label: a button that acts on the token, a pair of arrows that move it in an order. Their clicks do not select or advance the token, the entry's controls slot stopping them. |
@@ -115,8 +115,13 @@ that mounts its own later, and `token()` reports the token the row currently sta
 
 A token that is selected carries `bjs-token-selected`, and the stylesheet tints the whole entry with it,
 the summary and the disclosed body alike, since what a token holds belongs to that token. A row given
-`onClick` carries `bjs-token-clickable` and lights up the same region on hover, a click anywhere in the
-entry being what selects it.
+`onClick` carries `bjs-token-clickable` and lights up the same region on hover, a click on its summary
+being what selects it.
+
+The panel answers a click by revealing the token's stacks and firing `token.click`, carrying the reader's
+own event as `originalEvent`. A click therefore behaves in a list as it behaves on the canvas: plain, it
+selects that token alone and clears the rest, and clears it too where it was the only one selected; with
+shift held, it adds the token to the selection, or takes it out again where it was already in it.
 
 ### `createTokenList`
 
