@@ -342,9 +342,13 @@
   padding: 10px 10px 0;
 }
 
+/* What a list says when it holds nothing. The region it sits in pads its top and its sides but not its
+   bottom, rows carrying their own spacing, so the sentence is given below it the margin it has above it and
+   does not sit flush against whatever follows. */
 .bjs-token-empty {
   color: var(--t-grey-55);
   font-style: italic;
+  margin-bottom: 10px;
 }
 
 .bjs-token-list-title {
