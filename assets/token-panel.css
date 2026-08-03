@@ -401,21 +401,30 @@
 /* A token row (.bjs-token-entry) is one of two side-panel entries. Without a detail renderer, as in the
    demo, it is a SIMPLE entry: a row that discloses nothing, whose label takes the full width. With one
    (e.g. a BPMNOS status view) it is a COLLAPSIBLE entry, with a caret that opens the host's body.
-   Hover / selection / cursor sit on the row of either. */
+   Hover and cursor sit on the row of either; selection sits on the entry. */
 .bjs-token-clickable > .bjs-collapsible-entry-header,
 .bjs-token-clickable > .bjs-simple-entry-row {
   cursor: pointer;
 }
 
-.bjs-token-clickable > .bjs-collapsible-entry-header:hover,
-.bjs-token-clickable > .bjs-simple-entry-row:hover {
+/* Hovering lights the whole entry rather than its summary alone, so that an expanded entry is hovered as it
+   is selected and the two read as one region, the region being the token. A click within the body is the
+   body's own and selects nothing, so what the hover offers is what the summary answers. */
+.bjs-token-clickable:hover {
   background: var(--t-grey-95);
 }
 
-.bjs-token-selected > .bjs-collapsible-entry-header,
-.bjs-token-selected > .bjs-simple-entry-row,
-.bjs-token-selected.bjs-token-clickable > .bjs-collapsible-entry-header:hover,
-.bjs-token-selected.bjs-token-clickable > .bjs-simple-entry-row:hover {
+/* A selected token is tinted as a whole rather than along its summary: what a token holds belongs to that
+   token, so an expanded entry whose body stayed white would read as one row selected above an unrelated
+   block. The tint is therefore on the entry, which contains the summary and the body alike, and what the
+   body draws inside it keeps no background of its own. */
+.bjs-token-selected {
+  background: var(--t-accent-tint);
+}
+
+/* hovering a selected entry keeps the selection's colour rather than greying it, the entry being already
+   the one the reader has picked out */
+.bjs-token-selected.bjs-token-clickable:hover {
   background: var(--t-accent-tint);
 }
 

@@ -102,8 +102,8 @@ which discloses nothing and gives the summary the width a caret would have taken
 | Option | Type | Description |
 | --- | --- | --- |
 | `renderDetail` | `Function` | `(token, contentEl) => void`. Draws the body, and its presence makes the entry expandable. |
-| `onClick` | `Function` | `(token) => void`. A single click on the row. |
-| `onDblClick` | `Function` | `(token) => void`. A double click on the row. |
+| `onClick` | `Function` | `(token) => void`. A single click on the row. A click inside the disclosed body is the body's, so opening a section or filling in a field there neither selects nor advances the token. |
+| `onDblClick` | `Function` | `(token) => void`. A double click on the row, under the same rule. |
 | `displayNode` | `Function` | `(nodeId) => string`. The text the node tag shows. Defaults to the id. |
 | `isVisible` | `Function` | `(token) => boolean`. Whether the token is the one on show, which decides the badge. Defaults to always. |
 | `controls` | `Node` or `Node[]` | What the row carries beside its label: a button that acts on the token, a pair of arrows that move it in an order. Their clicks do not select or advance the token, the entry's controls slot stopping them. |
@@ -112,6 +112,11 @@ which discloses nothing and gives the summary the width a caret would have taken
 The entry is `{ element, update, contentEl, controlsEl, token }`, where `update(token)` re-applies the row
 from a token, redrawing the body with it, `controlsEl` is the slot the controls are held in, for a caller
 that mounts its own later, and `token()` reports the token the row currently stands for.
+
+A token that is selected carries `bjs-token-selected`, and the stylesheet tints the whole entry with it,
+the summary and the disclosed body alike, since what a token holds belongs to that token. A row given
+`onClick` carries `bjs-token-clickable` and lights up the same region on hover, a click anywhere in the
+entry being what selects it.
 
 ### `createTokenList`
 
