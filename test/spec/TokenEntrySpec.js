@@ -76,4 +76,33 @@ describe('createTokenEntry', function() {
       .to.equal(expandable.element.getBoundingClientRect().height);
   });
 
+  // A panel that asks something of the reader about a token puts its control on the row. The control
+  // acts on the token; it neither selects it nor advances it, which is what the row's own clicks do.
+  it('carries a panel\'s control, whose clicks are its own', async function() {
+    let acted = 0, clicked = 0, advanced = 0;
+
+    const control = document.createElement('button');
+    control.addEventListener('click', () => acted++);
+
+    const entry = place(createTokenEntry(token(), {
+      controls: control,
+      onClick: () => clicked++,
+      onDblClick: () => advanced++
+    }));
+
+    expect(entry.controlsEl.firstChild).to.equal(control);
+    expect(control.getBoundingClientRect().right)
+      .to.be.at.most(entry.element.getBoundingClientRect().right);
+
+    control.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    // the row defers its own click by 250ms so a double click can cancel it: waiting past that is what
+    // shows the control's click never started it
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(acted).to.equal(1);
+    expect(clicked).to.equal(0);
+    expect(advanced).to.equal(0);
+  });
+
 });

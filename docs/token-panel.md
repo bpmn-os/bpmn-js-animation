@@ -106,10 +106,12 @@ which discloses nothing and gives the summary the width a caret would have taken
 | `onDblClick` | `Function` | `(token) => void`. A double click on the row. |
 | `displayNode` | `Function` | `(nodeId) => string`. The text the node tag shows. Defaults to the id. |
 | `isVisible` | `Function` | `(token) => boolean`. Whether the token is the one on show, which decides the badge. Defaults to always. |
+| `controls` | `Node` or `Node[]` | What the row carries beside its label: a button that acts on the token, a pair of arrows that move it in an order. Their clicks do not select or advance the token, the entry's controls slot stopping them. |
 | `open` | `boolean` | Whether an expandable entry starts open. Defaults to `false`. |
 
-The entry is `{ element, update, contentEl, token }`, where `update(token)` re-applies the row from a
-token, redrawing the body with it, and `token()` reports the token the row currently stands for.
+The entry is `{ element, update, contentEl, controlsEl, token }`, where `update(token)` re-applies the row
+from a token, redrawing the body with it, `controlsEl` is the slot the controls are held in, for a caller
+that mounts its own later, and `token()` reports the token the row currently stands for.
 
 ### `createTokenList`
 
@@ -125,6 +127,7 @@ and apply to every row the list creates.
 | `key` | `Function` | `(token) => string`. What identifies a row. Defaults to the pair `` `${node}|${label}` ``. |
 | `separators` | `boolean` | Whether a hairline is drawn between rows. Defaults to `false`. |
 | `renderDetail`, `onClick`, `onDblClick`, `displayNode`, `isVisible` | `Function` | Passed to every entry the list creates. See `createTokenEntry`. |
+| `controls` | `Function` | `(token) => Node|Node[]`. Asked per row for what that row carries. |
 
 | Operation | Description |
 | --- | --- |
