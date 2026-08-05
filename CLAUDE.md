@@ -264,7 +264,9 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     in front of every node, so the frame came to cover what it frames. A layer is not a plane, so diagram-js
     neither hides nor shows it on a drill: `_followRoot`, on `root.set`, removes a box whose root is no
     longer the one shown and redraws it on the way back, since a plane switch moves no token and nothing
-    else would. Only `getGraphics` is shimmed
+    else would. `_ensureProcessBox` also refuses to draw while another plane is shown — a stack changes on
+    every token move, and a token entering a collapsed sub-process changes the outer process's stack while
+    the reader is drilled in; the stack is recorded, the box waits for its plane. Only `getGraphics` is shimmed
     (`_stackGfx` → the box, since `getGraphics(root)` is the layer);
     bounds are real, so at-process tokens (3a/3c) + scope tokens (3e — `root.children` have real `parent`) work
     unchanged. Scroll content = the active layer's groups (`_processBoxContent`; the root has no

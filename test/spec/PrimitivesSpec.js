@@ -1847,6 +1847,31 @@ describe('Primitives', function() {
         expect(tokens.getProcessBox()).to.equal('Process_C');
         expect(tokens.getStackSize('Process_C')).to.equal(2, 'and it is stacked as it was');
       });
+
+
+      // A token advancing into the collapsed sub-process redraws the outer process's stack while the
+      // reader is watching the sub-process, which must not put the outer frame over what they are watching.
+      it('is not drawn by a redraw asked for while another plane is shown', function() {
+        const tokens = get('primitives'),
+              canvas = get('canvas'),
+              er = get('elementRegistry');
+
+        tokens.setStackSize('Process_C', 2);
+        canvas.setRootElement(er.get('Collapsed_1_plane'));
+
+        tokens.setStackSize('Process_C', 3);
+
+        expect(document.querySelector('.bts-process-box'),
+          'the outer frame stays off the plane drilled into').to.not.exist;
+        expect(tokens.getProcessBox()).to.equal(null);
+        expect(tokens.getStackSize('Process_C')).to.equal(3, 'though the stack is recorded all the same');
+
+        canvas.setRootElement(er.get('Process_C'));
+
+        expect(document.querySelector('.bts-process-box'),
+          'and is drawn on the way back out, at the size it grew to').to.exist;
+        expect(tokens.getStackSize('Process_C')).to.equal(3);
+      });
     });
 
 

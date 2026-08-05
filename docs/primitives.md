@@ -137,3 +137,5 @@ What the box wraps is what the process executes. An artifact is left out of it: 
 The box is drawn in a layer of its own, below every plane layer, rather than among the elements diagram-js manages. It pans and zooms with the diagram as any layer does. Drawn into the active layer it would be a stranger among children diagram-js reorders, and adding any shape to the root moves it to the end of that layer, which is in front of every node: the frame would come to cover what it frames.
 
 That layer is not a plane, so diagram-js neither hides nor shows it on a drill, and the box follows the active root itself: drilling into a collapsed sub-process removes it, and drilling back out draws it again with the stack it had. It is drawn again rather than merely revealed because a plane switch moves no token, so nothing else would redraw it.
+
+The box is never drawn while another plane is shown. A stack changes whenever a token moves, and a token advancing into a collapsed sub-process changes the outer process's stack while the reader is watching the sub-process; the stack is recorded, and the box waits for its own plane.

@@ -154,7 +154,7 @@ Turns auto-focus on or off. While on, every function that touches a token brings
 
 `focusToken(token) → Promise`
 
-Brings a token's instance, and the stacked ancestors in its scope, to the front, and resolves once the reveal has settled. It is the manual counterpart to `autoFocus`, and the [animator](../README.md#animator) uses it to follow the active instance during replay. A no-op when nothing in the token's chain is stacked.
+Brings a token into view, which is two things: the plane it rests on is drilled to, and its instance and the stacked ancestors in its scope are brought to the front. It resolves once the reveal has settled. It is the manual counterpart to `autoFocus`, and the [animator](../README.md#animator) uses it to follow the active instance during replay. The drill is a no-op when the token is already on the plane shown, as the front move is when nothing in its chain is stacked, so revealing a token that is already visible does nothing.
 
 | Parameter | Type | Description |
 | --- | --- | --- |

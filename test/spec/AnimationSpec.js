@@ -8,6 +8,7 @@ import eventSubXML from '../diagrams/event-subprocess.bpmn';
 import parallelJoinXML from '../diagrams/parallel-join.bpmn';
 import exclusiveGatewayXML from '../diagrams/exclusive-gateway.bpmn'; // Activity_1 is a standard loop
 import boundaryXML from '../diagrams/boundary.bpmn';
+import collapsedXML from '../collapsed.bpmn';
 
 const PROCESS = 'Process_1';
 
@@ -885,6 +886,49 @@ describe('Animation', function() {
         .to.throw(/parent token <I1> at <MultiInstanceActivity_1> not found/);
     });
 
+  });
+
+
+  // Revealing a token is making it visible, and a token inside a collapsed sub-process is on a plane of
+  // its own. A caller that reveals before acting — the Tokens tab, selecting or advancing — would
+  // otherwise act on a token the reader is not looking at.
+  describe('reveal — the plane the token lives on', function() {
+
+    beforeEach(bootstrap(collapsedXML));
+
+    afterEach(cleanup);
+
+
+    it('drills in to a token inside a collapsed sub-process', async function() {
+      const canvas = get('canvas');
+
+      expect(canvas.getRootElement().id).to.equal('Process_C');
+
+      await get('animation').reveal({ node: 'Inner_1', label: 'X', stackIndices: {} });
+
+      expect(canvas.getRootElement().id).to.equal('Collapsed_1_plane');
+    });
+
+
+    it('drills back out to a token on the plane the sub-process sits on', async function() {
+      const canvas = get('canvas'),
+            er = get('elementRegistry');
+
+      canvas.setRootElement(er.get('Collapsed_1_plane'));
+
+      await get('animation').reveal({ node: 'Collapsed_1', label: 'X', stackIndices: {} });
+
+      expect(canvas.getRootElement().id).to.equal('Process_C');
+    });
+
+
+    it('stays where it is for a token on the plane already shown', async function() {
+      const canvas = get('canvas');
+
+      await get('animation').reveal({ node: 'Collapsed_1', label: 'X', stackIndices: {} });
+
+      expect(canvas.getRootElement().id).to.equal('Process_C');
+    });
   });
 
 });
