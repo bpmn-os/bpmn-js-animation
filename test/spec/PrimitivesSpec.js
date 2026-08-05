@@ -2,6 +2,7 @@ import { expect } from 'chai';
 
 import {
   bootstrap,
+  bootstrapModeler,
   cleanup,
   get,
   dots,
@@ -1742,6 +1743,110 @@ describe('Primitives', function() {
       tokens.createToken('Process_1', 'P', 'tomato', { position: pos('center-middle') });
 
       expect(dotAt('Process_1')).to.exist;
+    });
+
+
+    // What the box frames, and where it sits, once the diagram is modelled rather than only viewed. These
+    // want a modeller: adding a shape is what makes diagram-js reorder the layer it manages, and that
+    // reordering is what used to bring the frame in front of what it frames.
+    describe('while the diagram is modelled', function() {
+
+      beforeEach(bootstrapModeler(diagramXML, { animation: { animationDuration: 0 } }));
+
+      function annotate(x, y) {
+        const modeling = get('modeling'),
+              elementFactory = get('elementFactory'),
+              annotation = elementFactory.createShape({
+                type: 'bpmn:TextAnnotation', width: 180, height: 60
+              });
+
+        modeling.createShape(annotation, { x, y }, get('elementRegistry').get('Process_1'));
+
+        return annotation;
+      }
+
+
+      it('leaves an artifact out of what it wraps', function() {
+        const tokens = get('primitives'),
+              er = get('elementRegistry');
+
+        // an annotation far from the flow, as a reader would place one
+        const annotation = annotate(1200, 900);
+
+        tokens.setStackSize('Process_1', 2);
+
+        const root = er.get('Process_1');
+
+        expect(root.x + root.width).to.be.below(annotation.x,
+          'the box stops short of a comment rather than stretching to reach it');
+      });
+
+
+      it('stays behind the diagram when a shape is added to the root', function() {
+        const tokens = get('primitives'),
+              canvas = get('canvas');
+
+        tokens.setStackSize('Process_1', 2);
+
+        const layer = document.querySelector('.bts-process-box').parentNode,
+              viewport = layer.parentNode,
+              behind = () => Array.from(viewport.children).indexOf(layer) === 0;
+
+        expect(behind()).to.be.true;
+        expect(canvas.getActiveLayer().contains(document.querySelector('.bts-process-box'))).to.be.false;
+
+        annotate(1200, 900);
+
+        expect(behind()).to.be.true;
+        expect(canvas.getActiveLayer().contains(document.querySelector('.bts-process-box'))).to.be.false;
+      });
+
+
+      it('draws itself again around content that has moved', function() {
+        const tokens = get('primitives'),
+              er = get('elementRegistry');
+
+        tokens.setStackSize('Process_1', 2);
+
+        const before = er.get('Process_1').width;
+
+        get('modeling').moveElements([ er.get('StartEvent_1') ], { x: -300, y: 0 });
+        tokens.setStackSize('Process_1', 2);
+
+        expect(er.get('Process_1').width).to.be.above(before,
+          'the frame follows the content rather than staying where it was drawn');
+      });
+    });
+
+
+    // The box lives in a layer of its own, which diagram-js neither hides nor shows with a plane, so it
+    // must follow the active root itself.
+    describe('while another plane is drilled into', function() {
+
+      beforeEach(bootstrap(collapsedXML, { animation: { animationDuration: 0 } }));
+
+      it('goes with the plane it frames, and comes back with it', function() {
+        const tokens = get('primitives'),
+              canvas = get('canvas'),
+              er = get('elementRegistry');
+
+        tokens.setStackSize('Process_C', 2);
+
+        expect(document.querySelector('.bts-process-box')).to.exist;
+        expect(tokens.getProcessBox()).to.equal('Process_C');
+
+        canvas.setRootElement(er.get('Collapsed_1_plane'));
+
+        expect(document.querySelector('.bts-process-box'),
+          'the outer frame does not stand over the plane drilled into').to.not.exist;
+        expect(tokens.getProcessBox()).to.equal(null);
+
+        canvas.setRootElement(er.get('Process_C'));
+
+        expect(document.querySelector('.bts-process-box')).to.exist;
+        expect(tokens.getProcessBox()).to.equal('Process_C');
+        expect(tokens.getStackSize('Process_C')).to.equal(2, 'and it is stacked as it was');
+      });
     });
 
 

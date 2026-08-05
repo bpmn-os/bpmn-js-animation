@@ -96,6 +96,10 @@ export function bootstrapModeler(xml, config = {}) {
       ...config
     });
 
+    // the same conveniences the viewer bootstraps install, so a spec reads alike whichever it boots on
+    installStackShims(viewer.get('primitives'));
+    viewer.get('animation').autoFocus(false);
+
     return viewer.importXML(xml);
   };
 }

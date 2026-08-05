@@ -252,12 +252,23 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     `is(element, 'bpmn:Process')` (a pool is `bpmn:Participant`, excluded), `_ensureProcessBox` lazily draws a
     **pool-style box** we own: `getBBox(children) + banner/padding`, **set on the root element** (`x/y/width/
     height`, saved + restored) so every bounds-based path works on it, and a `.bts-process-box` `<g>`
-    (`.djs-visual` = white-filled rect + `x=30` banner divider + rotated `bpmn:Process` name) inserted as the
-    **first child of `canvas.getActiveLayer()`** (behind the flow groups; opaque white so offset copies hide
-    content). Only `getGraphics` is shimmed (`_stackGfx` → the box, since `getGraphics(root)` is the layer);
+    (`.djs-visual` = white-filled rect + `x=30` banner divider + rotated `bpmn:Process` name). The children
+    wrapped are the ones that take part in the process: `wrappable` drops connections, boundless shapes and
+    **`bpmn:Artifact`**, since an annotation or a group comments on the diagram, may sit anywhere, and would
+    stretch the frame across empty space to reach a comment. The box is redrawn whenever that extent changes,
+    not only when the root does, so a diagram modelled under a run keeps its frame around the content.
+    The `<g>` goes in a **layer of its own**, `canvas.getLayer('processBox', -1)`, below every plane layer
+    (diagram-js: plane content at 0, utility layers at 1) and still inside the viewport, so it pans and zooms
+    with the diagram. It used to be the first child of `canvas.getActiveLayer()`; that made it a stranger
+    among children diagram-js reorders, and **adding any shape to the root moved it to the end of the layer**,
+    in front of every node, so the frame came to cover what it frames. A layer is not a plane, so diagram-js
+    neither hides nor shows it on a drill: `_followRoot`, on `root.set`, removes a box whose root is no
+    longer the one shown and redraws it on the way back, since a plane switch moves no token and nothing
+    else would. Only `getGraphics` is shimmed
+    (`_stackGfx` → the box, since `getGraphics(root)` is the layer);
     bounds are real, so at-process tokens (3a/3c) + scope tokens (3e — `root.children` have real `parent`) work
-    unchanged. Scroll content = the layer's groups beside the box (`_processBoxContent`, the root has no
-    `.djs-children`). `getProcessBox() → id|null`; drawn for `size>=1` (size 1 = box only), removed on
+    unchanged. Scroll content = the active layer's groups (`_processBoxContent`; the root has no
+    `.djs-children`, and the box is no longer among them). `getProcessBox() → id|null`; drawn for `size>=1` (size 1 = box only), removed on
     `size<1`/`clear` (bounds restored). The example
     selects the pool-less process by **clicking the empty background** (`element.click` fires with the root).
   - **`throwIcon(node,label,selector?)` / `catchIcon(node,label,selector?)`** (both →

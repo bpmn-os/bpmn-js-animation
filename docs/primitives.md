@@ -131,3 +131,9 @@ A token's instance membership is **fixed** (a move keeps it); only the node's di
 ### Implicit process box
 
 A bare `bpmn:Process` with no pool has no shape of its own, so the box *is* its first instance. `setStacks(processId, keys)` (with one or more keys) draws a **pool-style box** (outer rect + left banner with the process name) around its flow nodes — at one key just the box, at more keys the box plus offset copies — and clearing the keys removes it. `getProcessBox()` returns its id. The box behaves like a sub-process — it carries tokens at the process and tokens in its scope, and supports selection.
+
+What the box wraps is what the process executes. An artifact is left out of it: a text annotation or a group says something about the diagram rather than taking part in it, and it may be placed anywhere, so wrapping one would stretch the frame across empty space to reach a comment. The box is drawn again whenever the extent of what it wraps has changed, so a diagram modelled while a box stands keeps a frame around its content rather than around where the content used to be.
+
+The box is drawn in a layer of its own, below every plane layer, rather than among the elements diagram-js manages. It pans and zooms with the diagram as any layer does. Drawn into the active layer it would be a stranger among children diagram-js reorders, and adding any shape to the root moves it to the end of that layer, which is in front of every node: the frame would come to cover what it frames.
+
+That layer is not a plane, so diagram-js neither hides nor shows it on a drill, and the box follows the active root itself: drilling into a collapsed sub-process removes it, and drilling back out draws it again with the stack it had. It is drawn again rather than merely revealed because a plane switch moves no token, so nothing else would redraw it.
