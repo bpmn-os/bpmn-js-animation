@@ -251,7 +251,10 @@ The low-level `primitives` service (`lib/primitives.js`) owns both token animati
     size>=1)` is called on a node where
     `is(element, 'bpmn:Process')` (a pool is `bpmn:Participant`, excluded), `_ensureProcessBox` lazily draws a
     **pool-style box** we own: `getBBox(children) + banner/padding`, **set on the root element** (`x/y/width/
-    height`, saved + restored) so every bounds-based path works on it, and a `.bts-process-box` `<g>`
+    height`, saved + restored — *which* of them the root had, not only their values: `getType` types by
+    `'x' in element`, so a bound given back as `undefined` leaves the root a shape for good, `Canvas._clear`
+    then skips `removeRootElement`, and the next import draws into a viewport no longer in the document)
+    so every bounds-based path works on it, and a `.bts-process-box` `<g>`
     (`.djs-visual` = white-filled rect + `x=30` banner divider + rotated `bpmn:Process` name). The children
     wrapped are the ones that take part in the process: `wrappable` drops connections, boundless shapes and
     **`bpmn:Artifact`**, since an annotation or a group comments on the diagram, may sit anywhere, and would

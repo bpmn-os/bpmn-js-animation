@@ -1,9 +1,12 @@
 import { expect } from 'chai';
 
+import { getType } from 'diagram-js/lib/util/Elements';
+
 import {
   bootstrap,
   bootstrapModeler,
   cleanup,
+  getViewer,
   get,
   dots,
   marker
@@ -1872,6 +1875,46 @@ describe('Primitives', function() {
           'and is drawn on the way back out, at the size it grew to').to.exist;
         expect(tokens.getStackSize('Process_C')).to.equal(3);
       });
+    });
+
+
+    // diagram-js types an element by which properties it carries, not by their values, so a root left
+    // carrying an `x` is a shape for good — and a shape is not unwound on a clear the way a root is.
+    it('gives the root its bounds back exactly as it found them', function() {
+      const tokens = get('primitives'),
+            er = get('elementRegistry'),
+            root = er.get('Process_1');
+
+      expect('x' in root, 'a bare root carries no position to begin with').to.be.false;
+
+      tokens.setStackSize('Process_1', 2);
+
+      expect('x' in root).to.be.true;
+
+      tokens.setStackSize('Process_1', 0);
+
+      expect('x' in root, 'and carries none again once the box is gone').to.be.false;
+      expect(getType(root)).to.equal('root', 'so diagram-js still knows it for a root');
+    });
+
+
+    it('leaves a diagram loaded over it drawable', async function() {
+      const tokens = get('primitives');
+
+      tokens.setStackSize('Process_1', 2);
+      tokens.createToken('StartEvent_1', 'A', 'tomato');
+
+      expect(document.querySelector('.bts-process-box')).to.exist;
+
+      // load another model over the running one, as a host's "open" does
+      await getViewer().importXML(diagramXML);
+
+      const canvas = get('canvas');
+
+      expect(document.contains(canvas.getActiveLayer()),
+        'the canvas the new diagram was drawn into is in the document').to.be.true;
+      expect(document.querySelectorAll('.djs-shape').length,
+        'and the new diagram is drawn').to.be.above(0);
     });
 
 

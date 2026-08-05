@@ -138,4 +138,6 @@ The box is drawn in a layer of its own, below every plane layer, rather than amo
 
 That layer is not a plane, so diagram-js neither hides nor shows it on a drill, and the box follows the active root itself: drilling into a collapsed sub-process removes it, and drilling back out draws it again with the stack it had. It is drawn again rather than merely revealed because a plane switch moves no token, so nothing else would redraw it.
 
+The root element is borrowed rather than altered. The box sets its bounds so that every bounds-based path — overlays, anchors, the outline, the `+k` marker — works on a process that has no shape of its own, and gives them back exactly as it found them when the box goes, removing a bound the root never had rather than emptying it. diagram-js types an element by which properties it carries, so a root left carrying an emptied bound would be a shape from then on, and a shape is not unwound on a clear the way a root is.
+
 The box is never drawn while another plane is shown. A stack changes whenever a token moves, and a token advancing into a collapsed sub-process changes the outer process's stack while the reader is watching the sub-process; the stack is recorded, and the box waits for its own plane.
