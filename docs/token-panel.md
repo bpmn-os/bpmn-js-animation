@@ -194,3 +194,9 @@ nothing to start. The slider sets the step duration through `primitives.setAnima
 
 The control is `{ element, update, runButton }`, where `update()` re-syncs the button for a host-side
 change the control cannot observe, such as a newly supplied log.
+
+A log may be one that grows. A player that produces a run as it plays it says so through `isStreaming()`,
+and while it does an empty log is a run that has produced no record yet rather than nothing to play, so it
+is played and the records are drawn as they arrive. Without that a manual run whose first step waits — on a
+decision, on an instantiation still to come — would be started and then thrown away. The method is
+optional, and a player without it is asked for a log that is complete when it arrives.
