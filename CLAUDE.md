@@ -388,11 +388,14 @@ instead of copying them. `TokenPanel` is the packaged assembly (a "Tokens" tab; 
   contentEl)` picks the entry kind**: given one, a `createCollapsibleEntry` (caret-scoped
   `toggleOn:'caret'`, so a summary click still *selects*), re-run on every `update` and clearing
   `contentEl` first — the element itself survives, so a host's live view stays current **in place**;
-  without one, a **`createSimpleEntry`**, a row that discloses nothing and gives the summary the width
-  a caret would have taken. (The third case, a row that *cannot* open but stands among rows that can,
-  is the collapsible entry's `expandable: false`, which reserves the caret's space — not used here,
-  since a list's rows all take the same options.) Kept generic by two injected helpers (`displayNode`,
-  `isVisible`).
+  without one, a **`createSimpleEntry`**, which discloses nothing and *is* the summary: the summary is its
+  `content` where it is a collapsible entry's `label`, so no caret is reserved and it runs to the reading
+  inset on either side. A simple entry has a content slot of its own, holding that summary, which is **not**
+  a body — `contentEl` is handed on as `null` unless the entry is expandable, or a click on the summary
+  would count as a click in the detail and select nothing. (The third case, a row that *cannot* open but
+  stands among rows that can, is the collapsible entry's `expandable: false`, which reserves the caret's
+  space — not used here, since a list's rows all take the same options.) Kept generic by two injected
+  helpers (`displayNode`, `isVisible`).
 - **`createTokenList(opts)`** — a keyed live list of those entries over `createListEntry`. **Default key =
   `` `${node}|${label}` ``** (the package's own identity rule), so concurrent tokens of one instance get
   **two rows**; `key` overrides it (the label alone was the pre-0.7 default). The side-panel list underneath

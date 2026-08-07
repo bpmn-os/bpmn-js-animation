@@ -11,6 +11,12 @@
   --t-accent-tint: hsl(205, 100%, 95%);
   --t-error: hsl(360, 100%, 45%);
 
+  /* The side panel gives an entry a width it keeps whatever holds it, so that a column narrower than its
+     content clips rather than reflowing it. A token row wants the opposite: its label truncates in the
+     middle, keeping the head and the "°k" tail both in view, and it can only do that if it is given the
+     width there is. So it is told there is no minimum, and every row shrinks with the panel. */
+  --bjs-entry-min-width: 0;
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -399,11 +405,13 @@
 }
 
 /* A token row (.bjs-token-entry) is one of two side-panel entries. Without a detail renderer, as in the
-   demo, it is a SIMPLE entry: a row that discloses nothing, whose label takes the full width. With one
-   (e.g. a BPMNOS status view) it is a COLLAPSIBLE entry, with a caret that opens the host's body.
-   Hover and cursor sit on the row of either; selection sits on the entry. */
+   demo, it is a SIMPLE entry: what it holds is the summary, shown always and taking the full width. With
+   one (e.g. a BPMNOS status view) it is a COLLAPSIBLE entry, whose summary is its label and whose caret
+   opens the host's body. Cursor and hover sit on what stands for the token in either — the collapsible
+   entry's header, and the whole of a simple entry, which is that summary and nothing else; selection sits
+   on the entry. */
 .bjs-token-clickable > .bjs-collapsible-entry-header,
-.bjs-token-clickable > .bjs-simple-entry-row {
+.bjs-token-clickable.bjs-simple-entry {
   cursor: pointer;
 }
 

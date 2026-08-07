@@ -49,8 +49,9 @@ body.
 
 Expandability belongs to the entry and is settled when the entry is created, by whether that entry was
 given a renderer. The two are not one entry in two states but two different side-panel entries: a row
-with no renderer is a simple entry, which discloses nothing and whose summary takes the full width,
-and a row with one is a collapsible entry carrying a caret and a body. An entry a host creates itself
+with no renderer is a simple entry, which discloses nothing, so the summary is what the entry holds and
+takes the full width, and a row with one is a collapsible entry whose label is that summary, carrying a
+caret and a body. An entry a host creates itself
 decides for itself; the rows of one list agree with one another because a list passes the options it
 was given to every entry it creates.
 
@@ -96,8 +97,9 @@ import { createTokenEntry, createTokenList, createPlaybackControlsEntry } from '
 One token as a side-panel entry. The summary is the token's colour swatch, carrying the same motion
 cue the dot carries on the canvas, its label, the node it rests at, and a badge when the token belongs
 to an instance that is not the one on show. Which entry it is follows from `renderDetail`: given one,
-the row is a collapsible entry with a caret that opens the body; without one, it is a simple entry,
-which discloses nothing and gives the summary the width a caret would have taken.
+the row is a collapsible entry with a caret that opens the body; without one, it is a simple entry, which
+discloses nothing and is the summary itself, so no caret is reserved and the summary runs to the reading
+inset on either side.
 
 | Option | Type | Description |
 | --- | --- | --- |

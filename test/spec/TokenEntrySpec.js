@@ -58,22 +58,38 @@ describe('createTokenEntry', function() {
     expect(expandable.element.querySelector('.bjs-collapsible-entry-arrow')).to.exist;
   });
 
-  // A row that discloses nothing gives its summary the width a caret would have taken. The two kinds
-  // never share a list, so this is a difference between panels rather than within one.
-  it('gives the summary the caret\'s width when there is no caret', function() {
+  // Both kinds start their summary at the reading inset, and each ends it where its own kind ends: a row
+  // that discloses nothing runs to the reading inset on the right too, since a line of text stops where a
+  // line of text stops; one that discloses stops short of its caret, which keeps the smaller gap a
+  // circular control keeps from an edge. The two kinds never share a list, so this is a difference between
+  // panels rather than within one.
+  it('insets the summary by the reading inset, and stops short of a caret where there is one', function() {
     const simple = place(createTokenEntry(token()));
     const expandable = place(detailed());
 
     const summary = (entry) => entry.element.querySelector('.bjs-token-summary').getBoundingClientRect();
     const caret = expandable.element.querySelector('.bjs-collapsible-entry-arrow').getBoundingClientRect();
-    // the row's flex gap, read from the empty controls slot that sits right of the summary
-    const gap = expandable.element.querySelector('.bjs-collapsible-entry-controls')
-      .getBoundingClientRect().left - summary(expandable).right;
 
-    expect(summary(simple).width).to.equal(summary(expandable).width + caret.width + gap);
-    expect(summary(simple).left).to.equal(summary(expandable).left);
+    // the two measures the side panel keeps: where a line of text stops, and where a circular control sits
+    const measure = (name, fallback) =>
+      parseFloat(getComputedStyle(simple.element).getPropertyValue(name)) || fallback;
+    const inset = measure('--bjs-entry-inset', 12),
+          controlGap = measure('--bjs-control-gap', 4);
+
+    const startsAt = (entry) =>
+      summary(entry).left - entry.element.getBoundingClientRect().left;
+
+    expect([ startsAt(simple), startsAt(expandable) ]).to.deep.equal([ inset, inset ]);
+
+    // a line of text stops at the reading inset; a circular control stops at the smaller control gap
+    expect(simple.element.getBoundingClientRect().right - summary(simple).right).to.equal(inset);
+    expect(expandable.element.getBoundingClientRect().right - caret.right).to.equal(controlGap);
+
+    // The two are not the same height for the same summary: a simple entry is a box of content and takes
+    // the inset a box takes, where a collapsible entry's header is a row and takes a row's. Since the two
+    // kinds never share a list, that is a difference between panels and never one within a list.
     expect(simple.element.getBoundingClientRect().height)
-      .to.equal(expandable.element.getBoundingClientRect().height);
+      .to.be.above(expandable.element.getBoundingClientRect().height);
   });
 
   // A panel that asks something of the reader about a token puts its control on the row. The control
