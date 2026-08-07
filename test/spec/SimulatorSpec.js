@@ -9,6 +9,7 @@ import terminateXML from '../diagrams/terminate.bpmn';
 import inclusiveXML from '../diagrams/inclusive.bpmn';
 import loopXML from '../diagrams/loop.bpmn';
 import miXML from '../diagrams/mi-task.bpmn';
+import miSubXML from '../diagrams/mi-subprocess.bpmn';
 import eventBasedXML from '../diagrams/event-based-gateway.bpmn';
 import subprocessXML from '../diagrams/subprocess.bpmn';
 import eventSubXML from '../diagrams/event-subprocess.bpmn';
@@ -518,6 +519,51 @@ describe('simulator — multi-instance activity', function() {
     await sim._step(MI, label + '#2'); // completion → consume (last) → parent departs
     expect(simulation.getTokens(MI, label)).to.have.length(0); // parent traveled out
     expect(tokenAt('Process_1', label)).to.not.exist;          // end passed through → done
+  });
+
+});
+
+
+describe('simulator — multi-instance sub-process', function() {
+
+  // StartEvent_1 → MISub_1 (‖, holding Inner_start → Inner_task → Inner_end) → EndEvent_1
+  beforeEach(bootstrap(miSubXML, { animation: { animationDuration: 0 } }));
+  afterEach(cleanup);
+
+  const MI = 'MISub_1';
+  const IN = 'Flow_in';
+
+  // A sub-instance of a multi-instance sub-process is a scope like any other sub-process: it finishes
+  // when its own body finishes, and never because it was double-clicked. Only the multi-instance TASK
+  // steps from busy on a click, having no body to wait for.
+  it('waits at busy for its own body rather than completing on a click', async function() {
+    const sim = get('simulator');
+    const simulation = get('animation');
+
+    const label = await sim.spawnInstance('Process_1', 'StartEvent_1');
+
+    await sim._step(MI, label, IN);           // the parent spawns one sub-instance
+    const sub = label + '#1';
+    expect(simulation.getToken(MI, sub)).to.exist;
+
+    await sim._step(MI, sub);                 // entry → busy, which seeds and auto-runs the body
+    await flush();
+    expect(posAt(MI, sub)).to.equal('busy');
+    expect(simulation.getChildren(simulation.getToken(MI, sub)), 'the body was seeded').to.not.be.empty;
+
+    await sim._step(MI, sub);                 // the click under test
+    expect(posAt(MI, sub), 'still busy: the body has not finished').to.equal('busy');
+
+    // run the body out: the task runs and the end consumes, and it is that last consume which completes
+    // the sub-instance, with nothing clicked on the sub-instance itself
+    await sim._step('Inner_task', sub);       // entry → busy
+    await sim._step('Inner_task', sub);       // busy → completion
+    await sim._step('Inner_task', sub);       // completion → departed
+    await flush();
+    await sim._step('Inner_end', sub);
+    await flush();
+
+    expect(posAt(MI, sub), 'its body finished, so it did').to.equal('completion');
   });
 
 });
