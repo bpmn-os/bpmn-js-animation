@@ -346,6 +346,10 @@
   min-height: 0;
   overflow-y: auto;
   padding: 10px 10px 0;
+  /* This region pays the inset, so the entries it holds do not pay it again — the side panel's rule that
+     the inset is paid once, stated here because this container is the one that paid it. Without it a token
+     row would sit ten pixels further in than the heading above it, which names the very list it holds. */
+  --bjs-entry-inset: 0;
 }
 
 /* What a list says when it holds nothing. The region it sits in pads its top and its sides but not its
@@ -487,6 +491,11 @@
   height: 12px;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.2);
+  /* The row clips what overflows it, so that a label too long for it ends in an ellipsis. A pulsing dot
+     grows about its centre — fourteen pixels taken to 1.1 reach past each edge by seven tenths of one —
+     and the dot is the first thing in the row, so its growth would be shaved against that clip. Two pixels
+     of room is enough for it and survives rounding, and is too little to be read as an indent. */
+  margin-left: 2px;
 }
 
 /* the row dot mirrors the canvas cue for tokens that need the user (reuses the animation.css keyframes) */
