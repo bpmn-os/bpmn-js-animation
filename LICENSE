@@ -4,9 +4,8 @@ This package vendors and adapts the token animation renderer
 (`lib/Animation.js`) from bpmn-js-token-simulation:
 Copyright (c) 2014-present Camunda Services GmbH
 
-Icons in `lib/TokenPanel.js` are from Font Awesome Free
-(https://fontawesome.com), licensed CC BY 4.0
-(https://creativecommons.org/licenses/by/4.0/). The load-log icon is modified.
+Icons in `lib/TokenPanel.js` are from Feather (https://feathericons.com):
+Copyright (c) 2013-2017 Cole Bemis, MIT licensed.
 
 All other code:
 Copyright (c) 2026-present the bpmn-js-token-animation contributors
