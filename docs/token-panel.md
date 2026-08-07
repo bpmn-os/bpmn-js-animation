@@ -34,7 +34,7 @@ The panel reads `config.tokenPanel`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `label` | `string` | The tab label. Defaults to `Tokens`. |
+| `label` | `string` | The tab label. Defaults to `Tokens`. The panel appends the number of tokens standing to it, so the tab reads `Tokens (5)` while a run is on and `Tokens` while none is; the count is in the name rather than beside it because the name is what a selector shows in one of the side panel's views and a column's resizer shows in the other. |
 | `nodeSelection` | `boolean` | Whether the node selection frame is drawn while the panel is present. Defaults to `true`, since the panel inspects the selected node. |
 | `modelNote` | `string` or `Node` | Content shown instead of the panel's own contents while the host is in `model` mode, such as a note pointing at the host's mode controls. |
 | `renderTokenDetail` | `Function` | Draws the inside of a token row. See below. |
