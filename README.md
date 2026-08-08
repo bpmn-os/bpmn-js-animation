@@ -76,7 +76,7 @@ A token's animation tells you what it is waiting for:
 | Cue | Meaning | What to do |
 | --- | --- | --- |
 | **bounce** | the token is waiting for **you** | **double-click it** to advance to its next step |
-| **pulse** | a process / sub-process is **running** | nothing, it completes on its own once its contents finish |
+| **none** | a process / sub-process is **running** | nothing, it completes on its own once its contents finish |
 | **pulse-pause** | a **decision** the simulator can't make without a data layer | pick / spawn, then double-click |
 
 - **Diverging gateway** (exclusive / inclusive / complex): its outflows **dim**; **click** the flow(s) you want (one for exclusive, several for inclusive), then **double-click the token** to depart. A parallel or event-based gateway forks automatically.
