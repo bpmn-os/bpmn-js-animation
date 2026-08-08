@@ -138,7 +138,7 @@ The panel:
 - marks **actionable** tokens by animating their row dot like the canvas — **bounce** (double-click to advance) or **pulse-pause** (pick / spawn a decision first) — so the list reads as a to-do surface (other tokens stay still);
 - shows brief **usage hints** for the double-click gestures, plus a footer note on (shift-)double-clicking instance stacks; the hints auto-hide when the token list needs the room and return on refresh;
 - in **model** mode shows an optional host note via `config.tokenPanel.modelNote` (an HTML string or element — e.g. a call-to-action pointing at the host's mode controls);
-- hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, **refresh**, and an **auto-focus** toggle.
+- hosts **run / pause** + **animation speed** (Playback mode), **save / load** execution log, and **refresh**. Auto-focus is not among them: it governs the canvas rather than this list, so a host draws that control where its own furniture over the canvas goes, reading `animator.getAutoFocus()`, writing `animator.autoFocus(on)` and following `autoFocus.changed`. The glyph for it is exported as `AUTO_FOCUS_ICON`.
 
 A row lists a token and, where the host supplies `config.tokenPanel.renderTokenDetail`, expands to show a body the host draws, such as the state a token carries in the host's own engine. A row is identified by the node and the label of its token, and it is carried across a hop from one node to the next with everything drawn inside it intact.
 

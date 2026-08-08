@@ -366,8 +366,9 @@
   margin-bottom: 4px;
 }
 
-/* "Tokens" heading with the (all / selected) view-filter radios — a FIXED header above the scrolling
-   inspector (it sits outside the inspector, so the token list scrolls in the region below it). */
+/* The (all / selected) view-filter radios. They stand in the tab's band, under the tab's name, where the
+   side panel already supplies the inset and the rule beneath, so there the filter gives up its own padding
+   and its own hairline. */
 .bjs-token-filter {
   position: relative;
   display: flex;
@@ -377,6 +378,39 @@
 }
 /* an inset hairline sets the filter off from the token list — spans only within the 10px inset margins
    (not full width), so it reads as a divider under the heading content, not a panel-wide separator */
+/* In the band the filter stands outside `.bjs-token`, where this package declares its palette, so it takes
+   the side panel's own tokens, which are declared on the document. Without them the radios fall back to the
+   browser's accent, which is whatever colour the reader's system happens to use. */
+.bjs-tab-header > .bjs-token-filter {
+  padding: 0;
+  gap: 2px;
+  color: var(--bjs-grey-35, hsl(225, 10%, 35%));
+  accent-color: var(--bjs-accent, hsl(205, 100%, 45%));
+}
+
+/* In a band the options read as the Issues band's severities read, being the same thing said of another
+   list: the same size, the same gap between a control and its word, the same greys for what is chosen and
+   what is not, and the first of them flush with the tab's name above. */
+.bjs-tab-header > .bjs-token-filter label {
+  gap: 6px;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--bjs-grey-55, hsl(225, 10%, 55%));
+}
+
+.bjs-tab-header > .bjs-token-filter label:first-of-type {
+  padding-left: 0;
+}
+
+.bjs-tab-header > .bjs-token-filter label:has(input:checked) {
+  color: var(--bjs-grey-15, hsl(225, 10%, 15%));
+}
+
+.bjs-tab-header > .bjs-token-filter::after {
+  content: none;
+}
+
 .bjs-token-filter::after {
   content: "";
   position: absolute;

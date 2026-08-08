@@ -26,6 +26,13 @@
     #mode button:first-child { border-radius: 4px 0 0 4px; }
     #mode button:last-child { border-radius: 0 4px 4px 0; border-left: none; }
     #mode button.active { background: #06c; color: #fff; border-color: #06c; }
+    /* a setting rather than an action: it stays down while it is on, and says so by inverting */
+    #autoFocus { display: inline-flex; align-items: center; gap: 6px; }
+    #autoFocus svg {
+      width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    #autoFocus[aria-pressed="true"] { background: #06c; color: #fff; border-color: #06c; }
     /* mode-specific hints — shown for the active mode only */
     .hint.only-simulate, .hint.only-play { display: none; }
     body.mode-simulate .hint.only-simulate { display: inline; }
@@ -48,6 +55,10 @@
         <button id="modeSimulate" class="active">Simulation</button>
         <button id="modePlay">Playback</button>
       </span>
+      <span class="sep"></span>
+
+      <button id="autoFocus" type="button" aria-pressed="false"
+              title="Follow the run: bring the active instance to the front and drill to its plane"></button>
       <span class="sep"></span>
 
       <button id="load">Load diagram…</button>

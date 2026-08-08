@@ -52,7 +52,8 @@ The animator consumes a log. It re-issues each entry as the corresponding `anima
 | Method (on `animator`) | Description |
 | --- | --- |
 | `replay(log, { gate? })` → `Promise` | Replay a log in order, re-issuing each entry as its `animation` call. The optional `gate` pauses or aborts replay. The timing and focus behaviour are described below the table. |
-| `autoFocus(on = true)` | While replaying, follow the active instance and plane. This forwards to [`animation.autoFocus`](animation.md#autofocus) so the post-operation reveal also runs. It is off by default. |
+| `autoFocus(on = true)` | While replaying, follow the active instance and plane. This forwards to [`animation.autoFocus`](animation.md#autofocus) so the post-operation reveal also runs, and announces `autoFocus.changed` with the new value. Setting it to what it already is announces nothing. It is on unless the host states `animator: { autoFocus: false }`. |
+| `getAutoFocus()` | Whether auto-focus is on. The setting belongs to the animator rather than to any control, so a host may draw one control for it, or several, or none, and each reads this and follows `autoFocus.changed`. |
 
 ```javascript
 const animator = viewer.get('animator');

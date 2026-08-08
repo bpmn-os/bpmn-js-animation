@@ -7,10 +7,11 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 // The opt-in tools — `simulator` (interactive driving, owns record) and `animator` (playback, owns
-// replay) — plus `SidePanelModule` + `TokenPanelModule`: run/pause, speed, auto-focus, log
-// save/load and the selected-token / tokens-at-node inspector all live in a "Simulation" tab of the
-// side panel. The toolbar keeps only model loading and the Simulate/Playback mode toggle.
-import { SimulatorModule, AnimatorModule, TokenPanelModule } from '../lib/index.js';
+// replay) — plus `SidePanelModule` + `TokenPanelModule`: run/pause, speed, log save/load and the
+// selected-token / tokens-at-node inspector all live in a "Simulation" tab of the side panel. The toolbar
+// keeps model loading, the Simulate/Playback mode toggle, and auto-focus, which governs the canvas rather
+// than the panel and so belongs with the demo's own furniture over it.
+import { SimulatorModule, AnimatorModule, TokenPanelModule, AUTO_FOCUS_ICON } from '../lib/index.js';
 import SidePanelModule from 'bpmn-js-side-panel';
 import 'bpmn-js-side-panel/assets/side-panel.css';
 import '../assets/animation.css';
@@ -170,6 +171,8 @@ async function load(xml, name, log) {
   playback = next.get('playback');   // run/pause controller
   tokenPanel = next.get('tokenPanel');
   wireEvents(next.get('eventBus'));
+  next.get('eventBus').on('autoFocus.changed', showAutoFocus);
+  showAutoFocus();   // a new viewer is a new animator, so the button says what that one holds
   next.get('canvas').zoom('fit-viewport', 'auto');
 
   shippedLog = log || null;
@@ -216,6 +219,29 @@ async function setMode(m) {
   $('#modeSimulate').classList.toggle('active', m === 'simulate');
   $('#modePlay').classList.toggle('active', m === 'play');
 }
+
+// --- auto-focus — a setting of the animator's, drawn here because it is about the canvas ------------
+//
+// The button reads the setting rather than assuming it, writes it on a press, and follows `autoFocus.changed`
+// so it says what the setting is however it was written. It is the demo's own control: the package ships the
+// glyph and no control, a host knowing where its furniture goes.
+
+const autoFocusButton = $('#autoFocus');
+
+autoFocusButton.innerHTML = AUTO_FOCUS_ICON + '<span>Auto-focus</span>';
+
+autoFocusButton.addEventListener('click', () => {
+  if (animator) {
+    animator.autoFocus(!animator.getAutoFocus());
+  }
+});
+
+function showAutoFocus() {
+  autoFocusButton.disabled = !animator;
+  autoFocusButton.setAttribute('aria-pressed', String(!!animator && animator.getAutoFocus()));
+}
+
+showAutoFocus();
 
 $('#modeSimulate').addEventListener('click', () => setMode('simulate'));
 $('#modePlay').addEventListener('click', () => setMode('play'));

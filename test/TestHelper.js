@@ -27,15 +27,15 @@ export function bootstrap(xml, config = {}) {
     viewer = new BpmnViewer({
       container,
       additionalModules: [ SimulatorModule, AnimatorModule ],
+      // The API-level specs assert the autofocus-OFF behaviour, front being the first instance, where the
+      // animator turns it on as it is built. It is said in the config rather than written afterwards, so
+      // that the animator stays the one writer of the setting; a spec about the setting itself passes
+      // `animator: {}` to state no opinion and get the animator's own default.
+      animator: { autoFocus: false },
       ...config
     });
 
     installStackShims(viewer.get('primitives'));
-
-    // the bundled `simulator` turns on `animation.autoFocus` (the interactive default); the
-    // API-level specs assert the autofocus-OFF default (front = first instance), so reset it —
-    // the simulator's own focus behaviour is exercised in SimulatorSpec where it matters.
-    viewer.get('animation').autoFocus(false);
 
     return viewer.importXML(xml);
   };
@@ -65,11 +65,11 @@ export function bootstrapPanel(xml, config = {}) {
       container: canvas,
       additionalModules: [ SimulatorModule, AnimatorModule, SidePanelModule, TokenPanelModule ],
       sidePanel: { parent: slot },
+      animator: { autoFocus: false },   // as in `bootstrap`: the animator is the one writer of the setting
       ...config
     });
 
     installStackShims(viewer.get('primitives'));
-    viewer.get('animation').autoFocus(false);
 
     return viewer.importXML(xml);
   };

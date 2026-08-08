@@ -144,7 +144,7 @@ await animation.consumeToken({ node: 'EndEvent_1', label: 'order-42' });
 
 `autoFocus(on = true) → void`
 
-Turns auto-focus on or off. While on, every function that touches a token brings that token's instance to the front, so the just-touched token is the visible one. It is off by default. When several instances run at once a stacked node shows only its front instance's tokens, so this keeps the active instance in view. While a reveal is animating, `advanceToken` waits for it, so a move never overlaps a reveal.
+Turns auto-focus on or off. While on, every function that touches a token brings that token's instance to the front, so the just-touched token is the visible one. It is off by default here; a host adding the [animator](../README.md#animator) gets it on unless it states otherwise, the animator setting it as it is built. When several instances run at once a stacked node shows only its front instance's tokens, so this keeps the active instance in view. While a reveal is animating, `advanceToken` waits for it, so a move never overlaps a reveal.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
