@@ -64,14 +64,42 @@
   border-top: 1px solid var(--t-grey-75);
 }
 
-/* the bottom row — Refresh + the log button (Load/Save) side by side */
-.bjs-token-footer-row {
+/* The controls a run is driven by, as one entry: what drives the run stands at the left and what acts on
+   the run as a whole at the right, so a reader's hand knows where each is whatever the entry is mounted in.
+   It is one line and stays one line, and it stands at a height of its own: a row that wrapped would change
+   the height of whatever holds it as a name or a state changed, and the slider is what gives way instead,
+   being the only thing here that can be shorter without becoming something else. */
+.bjs-token-controls-entry {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;   /* what remains keeps the right edge when the transport is not there */
   gap: 8px;
+  height: 32px;
 }
 
-.bjs-token-footer-row .bjs-token-btn {
-  flex: 1;
+.bjs-token-controls-entry > .bjs-token-playback {
+  flex: 1 1 auto;
+}
+
+/* Against the right edge, and never stretched or squeezed: three icons are three icons. What holds them
+   there is the speed group taking the room to its left; an automatic margin would do it too, but an
+   automatic margin swallows the free space before anything may grow into it, and the slider is meant to
+   grow. */
+.bjs-token-controls-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* An icon alone says what it is when it is pointed at, so it takes the room of an icon rather than the room
+   of a word. */
+.bjs-token-controls-row .bjs-token-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
 }
 
 .bjs-token-btn {
@@ -99,7 +127,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.2em;
+  /* the same box as the three that act on the run as a whole, so that every control in the entry is drawn
+     alike and only the icons tell them apart */
+  padding: 4px 6px;
 }
 
 /* auto-focus header bar — mirrors the host's properties-panel header (64px tall, padding 16px 10px,
@@ -328,15 +358,26 @@
 }
 
 /* speed takes the rest of the run/pause row */
+/* The speed takes the room the row has to spare, so that the slider may grow into it; what it does not use
+   stays between it and the controls held to the right, since the slider itself stops at its own cap. */
 .bjs-token-speed {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .bjs-token-slider {
-  flex: 1;
+  /* The slider takes the room the row has to spare and no more: it grows into it, shrinks to a stub where
+     the tab is narrow, and stops at a width past which a longer slider says nothing more precisely. That
+     cap is what keeps it from stretching across the panel's footer, where it is the only thing in the row
+     that can grow. A range input asks for about 130px of its own, so the three numbers are what it takes,
+     what it may shrink to, and where it stops. */
+  flex: 1 1 auto;
+  width: 72px;
+  min-width: 36px;
+  max-width: 200px;
   accent-color: var(--t-accent); /* blue, matching the other controls (not the UA default) */
 }
 

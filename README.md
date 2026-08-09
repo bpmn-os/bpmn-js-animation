@@ -144,7 +144,7 @@ A row lists a token and, where the host supplies `config.tokenPanel.renderTokenD
 
 The panel no-ops when no side panel is present. Its run/pause is backed by `PlaybackModule` — a reusable playback controller (`play` / `pause` / `resume` / `stop`, with a `playback.changed` event) that wraps the animator and can be used on its own. A run belongs to the diagram it plays on, so loading another model, which clears that diagram, returns the controller to idle and the run button to **Run**.
 
-The panel is assembled from three exported factories, `createTokenEntry`, `createTokenList` and `createPlaybackControlsEntry`, which a host composes into a token list of its own. See [docs/token-panel.md](docs/token-panel.md) for the configuration and for those parts.
+The panel is assembled from exported factories — `createTokenEntry`, `createTokenList`, `createControlsEntry` and the `createPlaybackControlsEntry` within it — which a host composes into a token list of its own. The controls a run is driven by are one entry, drawn at the foot of the tab unless the host sets `controls: false` and mounts it somewhere of its own, such as the panel's footer. See [docs/token-panel.md](docs/token-panel.md) for the configuration and for those parts.
 
 ## Mode (modeller integration)
 

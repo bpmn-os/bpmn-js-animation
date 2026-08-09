@@ -38,6 +38,7 @@ The panel reads `config.tokenPanel`.
 | `nodeSelection` | `boolean` | Whether the node selection frame is drawn while the panel is present. Defaults to `true`, since the panel inspects the selected node. |
 | `modelNote` | `string` or `Node` | Content shown instead of the panel's own contents while the host is in `model` mode, such as a note pointing at the host's mode controls. |
 | `renderTokenDetail` | `Function` | Draws the inside of a token row. See below. |
+| `controls` | `boolean` | Whether the panel draws the controls a run is driven by at the foot of its tab. Defaults to `true`. A host with a place of its own for what governs the whole panel sets `false` and mounts `createControlsEntry` there, so that a run has one set of controls rather than two. |
 
 ## The body of a token row
 
@@ -174,6 +175,43 @@ list re-keys with
 ```javascript
 eventBus.on('token.moved', (e) => list.rekey({ ...e.token, node: e.from }, e.token));
 ```
+
+### `createControlsEntry`
+
+`createControlsEntry(options) → controls`
+
+The controls a run is driven by, as one entry: run and pause with the speed beside them at the left, and at
+the right the three that act on the run as a whole, which are to begin again, to load a log to replay and to
+save the log a run produced. The three carry no words and say what they are when they are pointed at.
+
+The panel draws one at the foot of its tab unless the host sets `controls: false`; a host that keeps what
+governs the whole panel elsewhere, such as the side panel's own footer, mounts one there instead. Either way
+it is the same entry, so a run has one transport wherever it is put.
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `playback` | `Object` | The playback controller service. Required. |
+| `primitives` | `Object` | The primitives service, for the speed. Required. |
+| `eventBus` | `Object` | The transport re-syncs itself on `playback.changed`, and `tokenPanel.refresh` is announced on it when a run is begun again. Required. |
+| `animation` | `Object` | Cleared when a run is begun again. |
+| `simulator` | `Object` | Where there is one, what it recorded is what a save saves; without one it is what the playback service is playing. |
+| `resolveLog` | `Function` | `async () => log`. What an idle start plays, when the log does not come from a registered log source. |
+| `canStart` | `Function` | `() => boolean`. Whether the idle button is enabled. |
+| `onLoad` | `Function` | `(log) => void`. A log read from a file, for the host to hold and to play. |
+| `filename` | `string` | What a save writes to. Defaults to `execution-log.json`. |
+
+The entry is `{ element, transport, update, setMode, setLogButton, destroy }`.
+
+`setMode('play' | 'simulate')` says what the entry is for. A driven simulation has nothing to play, so the
+transport and its speed are not drawn; what acts on the run as a whole stays where it is and keeps the right
+edge, so the controls a reader reaches for do not move as a host turns over.
+
+`setLogButton('load' | 'save')` says which of the two log controls may act: both stay where they are and the
+other is greyed, since a log cannot be read into a run that is producing its own.
+
+The speed slider grows into the room the row has to spare and stops at 200px, and shrinks to a stub where
+there is none, so the entry is one line at one height whether it stands at the foot of a narrow tab or
+across the panel's footer.
 
 ### `createPlaybackControlsEntry`
 
