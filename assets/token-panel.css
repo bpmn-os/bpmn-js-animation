@@ -1,6 +1,10 @@
-.bjs-token {
-  /* vendor (diagram-js / properties-panel) grey ramp + blue accent — kept self-contained, since this
-     module is used standalone (its demo has no host token layer) */
+/* The grey ramp and the blue accent, on every root this package draws from: the panel itself, and the
+   controls entry, which a host may mount anywhere — the panel's footer among them, which is outside the
+   panel and would otherwise leave every colour here unresolved, and an unresolved colour takes its whole
+   declaration with it, so a border would simply not be drawn. They are kept in the package rather than on
+   the document, since it is used standalone and its demo has no host token layer. */
+.bjs-token,
+.bjs-token-controls-entry {
   --t-grey-15: hsl(225, 10%, 15%);
   --t-grey-35: hsl(225, 10%, 35%);
   --t-grey-55: hsl(225, 10%, 55%);
@@ -10,7 +14,9 @@
   --t-accent: hsl(205, 100%, 50%);
   --t-accent-tint: hsl(205, 100%, 95%);
   --t-error: hsl(360, 100%, 45%);
+}
 
+.bjs-token {
   /* The side panel gives an entry a width it keeps whatever holds it, so that a column narrower than its
      content clips rather than reflowing it. A token row wants the opposite: its label truncates in the
      middle, keeping the head and the "°k" tail both in view, and it can only do that if it is given the
@@ -70,6 +76,10 @@
    the height of whatever holds it as a name or a state changed, and the slider is what gives way instead,
    being the only thing here that can be shorter without becoming something else. */
 .bjs-token-controls-entry {
+  /* the panel's own text, since the entry may stand outside the panel */
+  box-sizing: border-box;
+  font-size: 13px;
+  color: var(--t-grey-15);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
