@@ -38,12 +38,13 @@
 }
 
 /* --- controls (top) --- */
+/* No rule of its own: the band above it draws one, and what stands in here draws its own beneath it, so a
+   region holding nothing that is shown would otherwise double the line under the band. */
 .bjs-token-controls {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   --bjs-entry-inset: 10px;
-  border-bottom: 1px solid var(--t-grey-75);
 }
 
 /* playback-only group: compact run/pause button + speed slider on one row */
