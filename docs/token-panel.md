@@ -209,9 +209,12 @@ edge, so the controls a reader reaches for do not move as a host turns over.
 `setLogButton('load' | 'save')` says which of the two log controls may act: both stay where they are and the
 other is greyed, since a log cannot be read into a run that is producing its own.
 
-The speed slider grows into the room the row has to spare and stops at 200px, and shrinks to a stub where
-there is none, so the entry is one line at one height whether it stands at the foot of a narrow tab or
-across the panel's footer.
+The entry takes the slot it is mounted in, its width and its height, with a floor of 32px under the height
+for a slot that states none, and everything it is drawn with is in its own class; a host mounts it and writes
+no CSS. The speed slider grows into the room the row has to spare and stops at 200px, and shrinks to a stub
+where there is none, so the entry is one line at the height of its slot whether it stands at the foot of a
+narrow tab or across the panel's footer. Where the slot is narrower than the controls, the row is clipped at
+its left, so the three that act on the run stay against the right edge.
 
 ### `createPlaybackControlsEntry`
 

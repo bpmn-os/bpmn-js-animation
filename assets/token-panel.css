@@ -76,8 +76,13 @@
    the height of whatever holds it as a name or a state changed, and the slider is what gives way instead,
    being the only thing here that can be shorter without becoming something else. */
 .bjs-token-controls-entry {
-  /* the panel's own text, since the entry may stand outside the panel */
+  /* The entry is dropped into a slot and takes that slot: its width and its height, with a floor under the
+     height for a slot that states none. Everything it is drawn with is here, so a host mounts it and writes
+     no CSS of its own. */
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 32px;
   font-size: 13px;
   color: var(--t-grey-15);
   display: flex;
@@ -85,7 +90,6 @@
   align-items: center;
   justify-content: flex-end;   /* what remains keeps the right edge when the transport is not there */
   gap: 8px;
-  height: 32px;
 }
 
 .bjs-token-controls-entry > .bjs-token-playback {
