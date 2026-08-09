@@ -88,7 +88,9 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-end;   /* what remains keeps the right edge when the transport is not there */
+  /* From the left, so that a slot narrower than the controls cuts them at the right: the transport is what
+     a reader needs first, and aligning to the end put the cut on the left and took the play button first. */
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -99,12 +101,19 @@
 /* Against the right edge, and never stretched or squeezed: three icons are three icons. What holds them
    there is the speed group taking the room to its left; an automatic margin would do it too, but an
    automatic margin swallows the free space before anything may grow into it, and the slider is meant to
-   grow. */
+   grow. Nothing aligns the row to the end either, since the row is what a slot too narrow for the entry
+   must cut off: the transport is what a reader needs first, so the cut falls at the right. */
 .bjs-token-controls-row {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* With no transport there is nothing to its left to hold it there, so it holds itself: there is room in
+   that case, the entry being shorter by the transport and its speed. */
+.bjs-token-playback[hidden] + .bjs-token-controls-row {
+  margin-left: auto;
 }
 
 /* An icon alone says what it is when it is pointed at, so it takes the room of an icon rather than the room
